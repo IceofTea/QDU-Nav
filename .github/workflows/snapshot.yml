@@ -1,0 +1,38 @@
+name: refresh-snapshot
+on:
+  schedule:
+    - cron: '23 0,6,12,18 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: snapshot
+  cancel-in-progress: true
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Crawl jwc.qdu.edu.cn and rebuild snapshot
+        run: node scripts/snapshot.mjs
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "qdu-nav-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/snapshot.json
+          if git diff --cached --quiet; then
+            echo "snapshot unchanged, skip commit"
+          else
+            git commit -m "data: refresh snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git push
+            echo "snapshot refreshed and pushed (deploy workflow will rebuild the site)"
+          fi
