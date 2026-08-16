@@ -58,6 +58,14 @@ function parseHomeNotices(html) {
   return out
 }
 
+function parseNews(html) {
+  const out = []
+  const re = /<a href="(info\/[^"]+\.htm)" title="([^"]*)">[\s\S]*?(?:<img src="([^"]+)")?/g
+  let m
+  while ((m = re.exec(html))) out.push({ title: m[2], url: abs(m[1]), img: m[3] ? JWC + m[3] : null })
+  return out
+}
+
 const normRoom = (r) => (r || '').replace(/[（(]智慧[)）]/g, '').trim()
 
 async function getCourse() {
@@ -84,9 +92,10 @@ async function getCourse() {
   return { semester, count: parsed.count, rooms, rows: parsed.rows, latestUrl: latest.url }
 }
 
-const [courses, notices, calendar, course] = await Promise.all([
+const [courses, notices, news, calendar, course] = await Promise.all([
   fetchText(JWC + '/xxgk/kcap.htm').then(({ text }) => ({ items: parseList(text, JWC + '/xxgk/kcap.htm') })),
   fetchText(JWC + '/index.htm').then(({ text }) => ({ items: parseHomeNotices(text) })),
+  fetchText(JWC + '/index.htm').then(({ text }) => ({ items: parseNews(text) })),
   fetchText(JWC + '/xl.htm').then(({ text }) => ({ items: parseList(text, JWC + '/xl.htm') })),
   getCourse()
 ])
@@ -96,6 +105,7 @@ const snap = {
   source: JWC,
   courses,
   notices,
+  news,
   calendar,
   courseTable: {
     semester: course.semester,
@@ -114,5 +124,5 @@ const outFile = path.join(outDir, 'snapshot.json')
 fs.writeFileSync(outFile, JSON.stringify(snap))
 console.log(`snapshot written: ${outFile}`)
 console.log(`courseTable: ${snap.courseTable.semester} / ${snap.courseTable.count} 条 / ${snap.courseTable.rooms} 教室`)
-console.log(`courses ${snap.courses.items.length} / notices ${snap.notices.items.length} / calendar ${snap.calendar.items.length}`)
+console.log(`courses ${snap.courses.items.length} / notices ${snap.notices.items.length} / news ${snap.news.items.length} / calendar ${snap.calendar.items.length}`)
 console.log(`size: ${(fs.statSync(outFile).size / 1024).toFixed(1)} KB`)

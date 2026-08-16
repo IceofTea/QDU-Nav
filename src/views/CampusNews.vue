@@ -10,6 +10,7 @@ const tab = ref('notice')
 const loading = ref(true)
 const refreshing = ref(false)
 const online = ref(false)
+const staticMode = ref(false)
 const fetchedAt = ref('')
 const costMs = ref(null)
 const cached = ref(false)
@@ -27,11 +28,13 @@ const loadAll = async (force) => {
   if (n && Array.isArray(n.items) && n.items.length) {
     notices.value = n.items
     online.value = true
+    staticMode.value = !!n.static
     fetchedAt.value = n.fetchedAt
     costMs.value = n.costMs
     cached.value = n.cached
   } else {
     notices.value = fallbackNotices
+    staticMode.value = false
   }
   if (ns && Array.isArray(ns.items) && ns.items.length) news.value = ns.items
   else news.value = fallbackNews
@@ -58,7 +61,7 @@ function open(url) {
   <div class="view-top">
     <button class="back-btn" @click="emit('back')">← 返回首页</button>
     <div class="view-title">校园动态</div>
-    <div class="view-sub">教务处官方通知与动态 · 由服务端实时抓取</div>
+    <div class="view-sub">教务处官方通知与动态 · {{ staticMode ? '构建时快照（静态部署）' : '由服务端实时抓取' }}</div>
   </div>
 
   <template v-if="selected">
@@ -68,7 +71,7 @@ function open(url) {
   <template v-else>
     <div v-if="!loading" class="source-bar">
       <span class="dot" :class="online ? 'live' : 'off'"></span>
-      <span>{{ online ? '官方实时数据' : '官方接口暂不可达，展示演示数据' }}</span>
+      <span>{{ staticMode ? '官方数据快照（构建时）' : online ? '官方实时数据' : '官方接口暂不可达，展示演示数据' }}</span>
       <span class="sep">·</span>
       <span>来源 jwc.qdu.edu.cn</span>
       <template v-if="online">

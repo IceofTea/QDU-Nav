@@ -33,6 +33,11 @@ export async function staticNotices(all) {
   return { items: d.notices.items, source: d.source, fetchedAt: d.updatedAt, cached: true, static: true }
 }
 
+export async function staticNews() {
+  const d = await loadSnap()
+  return d ? { items: d.news.items, source: d.source, fetchedAt: d.updatedAt, cached: true, static: true } : null
+}
+
 export async function staticCalendar() {
   const d = await loadSnap()
   return d ? { items: d.calendar.items, source: d.source, fetchedAt: d.updatedAt, cached: true, static: true } : null

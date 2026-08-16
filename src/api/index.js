@@ -1,6 +1,7 @@
 import {
   staticCourses,
   staticNotices,
+  staticNews,
   staticCalendar,
   staticCourseTable,
   staticEmptyRooms,
@@ -28,6 +29,7 @@ async function staticFallback(path) {
   const q = new URLSearchParams(qs || '')
   if (p === '/courses') return staticCourses()
   if (p === '/notices') return staticNotices(q.get('all') === '1')
+  if (p === '/news') return staticNews()
   if (p === '/calendar') return staticCalendar()
   if (p === '/courseTable') return staticCourseTable()
   if (p === '/emptyRooms')
