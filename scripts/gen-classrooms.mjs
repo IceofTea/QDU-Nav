@@ -122,7 +122,7 @@ const buildings = [
       name,
       campus: meta.campus,
       zone: meta.zone,
-      desc: `${meta.campus}${meta.zone}排课教学楼，覆盖 ${allRooms} 间教室（据教务处 ${snap.courseTable.semester}课程总表）${meta.alias ? ' · ' + meta.alias : ''}`,
+      desc: `${meta.campus}${meta.zone}排课教学楼，覆盖 ${allRooms} 间教室（据教务处课程总表 ${snap.courseTables.length} 个学期并集，含 ${snap.courseTable.semester}）${meta.alias ? ' · ' + meta.alias : ''}`,
       mapUrl: 'https://www.amap.com/search?query=' + encodeURIComponent(`青岛大学${meta.campus}${name}`),
       nearby: [],
       route: [],

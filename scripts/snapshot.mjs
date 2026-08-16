@@ -68,37 +68,59 @@ function parseNews(html) {
 
 const normRoom = (r) => (r || '').replace(/[（(]智慧[)）]/g, '').trim()
 
-async function getCourse() {
+async function getCourses() {
   const listHtml = (await fetchText(JWC + '/xxgk/kcap.htm')).text
   const rows = parseList(listHtml, JWC + '/xxgk/kcap.htm')
-  const latest = rows.find((i) => /课程总表/.test(i.title) && /本科/.test(i.title)) || rows.find((i) => /课程总表/.test(i.title))
-  if (!latest) throw new Error('未找到课程总表')
-  const detailHtml = (await fetchText(latest.url)).text
-  const dl = /href="([^"]*download\.jsp[^"]*)"/.exec(detailHtml)?.[1]
-  if (!dl) throw new Error('未找到附件下载地址')
-  const dlUrl = new URL(dl, latest.url).href
-  const buf = await fetchBuf(dlUrl, latest.url)
-  const tmp = path.join(os.tmpdir(), `kcb_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.xlsx`)
-  fs.writeFileSync(tmp, buf)
-  let parsed
-  try {
-    const { stdout } = await execFileP(PY, [PARSE_PY, tmp], { maxBuffer: 64 * 1024 * 1024 })
-    parsed = JSON.parse(stdout)
-  } finally {
-    fs.rmSync(tmp, { force: true })
+  const items = rows.filter((i) => /课程总表/.test(i.title)).slice(0, 8)
+  if (!items.length) throw new Error('未找到课程总表')
+  const results = []
+  for (const it of items) {
+    const semester = (it.title.match(/青岛大学(\S*?)课程总表/) || [])[1] || it.title
+    try {
+      const detailHtml = (await fetchText(it.url)).text
+      const dl = /href="([^"]*download\.jsp[^"]*)"/.exec(detailHtml)?.[1]
+      if (!dl) {
+        console.warn(`skip ${it.title}: 无附件`)
+        continue
+      }
+      const dlUrl = new URL(dl, it.url).href
+      const buf = await fetchBuf(dlUrl, it.url)
+      const tmp = path.join(os.tmpdir(), `kcb_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.xlsx`)
+      fs.writeFileSync(tmp, buf)
+      let parsed
+      try {
+        const { stdout } = await execFileP(PY, [PARSE_PY, tmp], { maxBuffer: 64 * 1024 * 1024 })
+        parsed = JSON.parse(stdout)
+      } finally {
+        fs.rmSync(tmp, { force: true })
+      }
+      results.push({ semester, title: it.title, count: parsed.count, url: it.url, rows: parsed.rows })
+      console.log(`  ${it.title}: ${parsed.count} 条`)
+    } catch (e) {
+      console.warn(`skip ${it.title}: ${e.message}`)
+    }
   }
-  const rooms = new Set(parsed.rows.map((r) => r.r && normRoom(r.r)).filter(Boolean)).size
-  const semester = (latest.title.match(/青岛大学(\S*?)课程总表/) || [])[1] || latest.title
-  return { semester, count: parsed.count, rooms, rows: parsed.rows, latestUrl: latest.url }
+  if (!results.length) throw new Error('未抓到任何课程总表')
+  return results
 }
 
-const [courses, notices, news, calendar, course] = await Promise.all([
+const [courses, notices, news, calendar, courseTables] = await Promise.all([
   fetchText(JWC + '/xxgk/kcap.htm').then(({ text }) => ({ items: parseList(text, JWC + '/xxgk/kcap.htm') })),
   fetchText(JWC + '/index.htm').then(({ text }) => ({ items: parseHomeNotices(text) })),
   fetchText(JWC + '/index.htm').then(({ text }) => ({ items: parseNews(text) })),
   fetchText(JWC + '/xl.htm').then(({ text }) => ({ items: parseList(text, JWC + '/xl.htm') })),
-  getCourse()
+  getCourses()
 ])
+
+const latest = courseTables[0]
+const mergedRows = []
+for (const t of courseTables) {
+  const term = t.semester
+  for (const row of t.rows) {
+    mergedRows.push({ c: row.c, t: row.t, cls: row.cls, d: row.d, s: row.s, e: row.e, w: row.w, r: row.r, term })
+  }
+}
+const allRooms = new Set(mergedRows.map((r) => r.r && normRoom(r.r)).filter(Boolean)).size
 
 const snap = {
   updatedAt: new Date().toISOString(),
@@ -107,15 +129,16 @@ const snap = {
   notices,
   news,
   calendar,
+  courseTables: courseTables.map((t) => ({ semester: t.semester, title: t.title, count: t.count, url: t.url })),
   courseTable: {
-    semester: course.semester,
-    count: course.count,
-    rooms: course.rooms,
+    semester: latest.semester,
+    count: latest.count,
+    rooms: allRooms,
     updatedAt: new Date().toISOString(),
     cached: true,
-    latestUrl: course.latestUrl
+    latestUrl: latest.url
   },
-  rows: course.rows
+  rows: mergedRows
 }
 
 const outDir = path.join(__dirname, '..', 'public', 'data')
@@ -123,6 +146,6 @@ fs.mkdirSync(outDir, { recursive: true })
 const outFile = path.join(outDir, 'snapshot.json')
 fs.writeFileSync(outFile, JSON.stringify(snap))
 console.log(`snapshot written: ${outFile}`)
-console.log(`courseTable: ${snap.courseTable.semester} / ${snap.courseTable.count} 条 / ${snap.courseTable.rooms} 教室`)
+console.log(`courseTable: ${snap.courseTable.semester} / ${snap.courseTable.count} 条 / ${snap.courseTable.rooms} 教室（${snap.courseTables.length} 个学期并集）`)
 console.log(`courses ${snap.courses.items.length} / notices ${snap.notices.items.length} / news ${snap.news.items.length} / calendar ${snap.calendar.items.length}`)
 console.log(`size: ${(fs.statSync(outFile).size / 1024).toFixed(1)} KB`)

@@ -4,6 +4,9 @@ let loading = null
 
 const normRoom = (r) => (r || '').replace(/[（(]智慧[)）]/g, '').trim()
 
+const rowsOf = (d, term) => (term && term !== 'all' ? d.rows.filter((r) => r.term === term) : d.rows)
+const allRoomsOf = (d) => [...new Set(d.rows.map((r) => r.r && normRoom(r.r)).filter(Boolean))]
+
 export async function loadSnap() {
   if (snap) return snap
   if (loading) return loading
@@ -45,33 +48,48 @@ export async function staticCalendar() {
 
 export async function staticCourseTable() {
   const d = await loadSnap()
-  return d ? { semester: d.courseTable.semester, count: d.courseTable.count, rooms: d.courseTable.rooms, updatedAt: d.courseTable.updatedAt, cached: true, static: true, latestUrl: d.courseTable.latestUrl } : null
+  if (!d) return null
+  return {
+    semester: d.courseTable.semester,
+    count: d.courseTable.count,
+    rooms: d.courseTable.rooms,
+    updatedAt: d.courseTable.updatedAt,
+    cached: true,
+    static: true,
+    latestUrl: d.courseTable.latestUrl,
+    semesters: (d.courseTables || []).map((t) => t.semester)
+  }
 }
 
-export async function staticEmptyRooms(day, period, kw) {
+export async function staticEmptyRooms(day, period, kw, term) {
   const d = await loadSnap()
   if (!d) return null
+  const cur = term && term !== 'all' ? term : d.courseTable.semester
   const busy = new Set()
-  for (const r of d.rows) {
+  for (const r of rowsOf(d, cur)) {
     if (r.d === day && period >= r.s && period <= r.e) busy.add(normRoom(r.r))
   }
-  let all = [...new Set(d.rows.map((r) => r.r && normRoom(r.r)).filter(Boolean))]
+  let all = allRoomsOf(d)
   if (kw) all = all.filter((x) => x.includes(kw))
   const empty = all.filter((x) => !busy.has(x)).sort()
-  return { semester: d.courseTable.semester, day, period, total: all.length, emptyCount: empty.length, rooms: empty, static: true }
+  return { semester: cur, day, period, total: all.length, emptyCount: empty.length, rooms: empty, static: true }
 }
 
-export async function staticRoomSchedule(room) {
+export async function staticRoomSchedule(room, term) {
   const d = await loadSnap()
   if (!d) return null
   const nr = normRoom(room)
-  const list = d.rows.filter((r) => normRoom(r.r) === nr).sort((a, b) => a.d - b.d || a.s - b.s)
-  return { semester: d.courseTable.semester, room: nr, count: list.length, schedule: list, static: true }
+  const cur = term && term !== 'all' ? term : d.courseTable.semester
+  const list = rowsOf(d, cur)
+    .filter((r) => normRoom(r.r) === nr)
+    .sort((a, b) => a.d - b.d || a.s - b.s)
+  return { semester: cur, room: nr, count: list.length, schedule: list, static: true }
 }
 
-export async function staticCourseQuery(q) {
+export async function staticCourseQuery(q, term) {
   const d = await loadSnap()
   if (!d) return null
-  const hits = d.rows.filter((r) => r.cls.includes(q) || r.c.includes(q) || r.t.includes(q))
-  return { semester: d.courseTable.semester, q, count: hits.length, rows: hits.slice(0, 200), static: true }
+  const cur = term && term !== 'all' ? term : d.courseTable.semester
+  const hits = rowsOf(d, cur).filter((r) => r.cls.includes(q) || r.c.includes(q) || r.t.includes(q))
+  return { semester: cur, q, count: hits.length, rows: hits.slice(0, 200), static: true }
 }

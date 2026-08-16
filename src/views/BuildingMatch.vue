@@ -7,13 +7,30 @@ const emit = defineEmits(['back'])
 const PAIRS = [
   ['博学楼', '西 1 教'],
   ['博文楼', '西 2 教'],
+  ['博观楼', '西 3 教'],
   ['博知楼', '西 4 教'],
   ['博远楼', '西 5 教'],
   ['博逸楼', '西 6 教'],
-  ['静思楼 2 号', '东 10 教'],
+  ['博雅楼', '原基础医学楼'],
   ['行思楼', '东 4 教'],
-  ['德音楼', '北院教学楼']
+  ['睿思楼', '东 1 教'],
+  ['学思楼', '东 2 教'],
+  ['慎思楼', '东 3 教'],
+  ['诚思楼', '东 5 教'],
+  ['静思楼 1 号', '东 9 教'],
+  ['静思楼 2 号', '东 10 教'],
+  ['静思楼 3 号', '东 11 教'],
+  ['德音楼', '北院教学楼'],
+  ['德晖楼', '北院实验楼']
 ]
+
+const DIFFS = {
+  easy: { label: '简单', pairs: 6, cols: 4 },
+  normal: { label: '普通', pairs: 10, cols: 5 },
+  hard: { label: '挑战', pairs: 15, cols: 6 }
+}
+const diff = ref('easy')
+const activePairs = computed(() => PAIRS.slice(0, DIFFS[diff.value].pairs))
 
 function shuffle(arr) {
   const a = [...arr]
@@ -25,9 +42,9 @@ function shuffle(arr) {
 }
 
 function buildCards() {
-  const cards = PAIRS.flatMap(([a, b], pair) => [
-    { id: a + b + 'a', pair, label: a, newName: true },
-    { id: a + b + 'b', pair, label: b, newName: false }
+  const cards = activePairs.value.flatMap(([a, b], pair) => [
+    { id: a + b + 'a' + pair, pair, label: a, newName: true },
+    { id: a + b + 'b' + pair, pair, label: b, newName: false }
   ])
   return shuffle(cards)
 }
@@ -39,13 +56,19 @@ const moves = ref(0)
 const best = ref(Number(localStorage.getItem('qdu_bm_best')) || null)
 const done = ref(false)
 
-const finished = computed(() => matched.value.size === PAIRS.length)
+const finished = computed(() => matched.value.size === activePairs.value.length)
 const stars = computed(() => {
   if (!finished.value) return 0
-  if (moves.value <= 10) return 3
-  if (moves.value <= 14) return 2
+  const n = activePairs.value.length
+  if (moves.value <= n * 1.6) return 3
+  if (moves.value <= n * 2.2) return 2
   return 1
 })
+
+function pickDiff(d) {
+  diff.value = d
+  restart()
+}
 
 function flip(card) {
   if (done.value || matched.value.has(card.pair) || flipped.value.some((c) => c.id === card.id) || flipped.value.length >= 2) return
@@ -56,7 +79,7 @@ function flip(card) {
     if (next[0].pair === next[1].pair) {
       next.forEach((c) => matched.value.add(c.pair))
       flipped.value = []
-      if (matched.value.size === PAIRS.length) {
+      if (matched.value.size === activePairs.value.length) {
         done.value = true
         if (!best.value || moves.value < best.value) {
           best.value = moves.value
@@ -88,18 +111,24 @@ function restart() {
   <div class="panel" style="margin-bottom:16px;">
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
       <div class="stat-pill"><b>{{ moves }}</b><span>步数</span></div>
-      <div class="stat-pill"><b>{{ matched.size }}/{{ PAIRS.length }}</b><span>已配对</span></div>
+      <div class="stat-pill"><b>{{ matched.size }}/{{ activePairs.length }}</b><span>已配对</span></div>
       <div class="stat-pill" v-if="best"><b>{{ best }}</b><span>最佳</span></div>
       <button class="btn ghost" style="margin-left:auto;padding:7px 14px;" @click="restart">🔄 重新开始</button>
+    </div>
+
+    <div class="tab-row" style="margin-top:12px;">
+      <button v-for="(d, k) in DIFFS" :key="k" class="tab" :class="{ active: diff === k }" @click="pickDiff(k)">
+        {{ d.label }} · {{ d.pairs }} 对
+      </button>
     </div>
 
     <div v-if="finished" class="result-box" style="text-align:center;margin-top:12px;">
       <div style="font-size:26px;">🎉</div>
       <div style="font-weight:800;font-size:18px;">全部配对成功！</div>
-      <div style="margin-top:4px;">用了 {{ moves }} 步 · 获得 {{ stars }} 星</div>
+      <div style="margin-top:4px;">{{ DIFFS[diff].label }}难度 · 用了 {{ moves }} 步 · 获得 {{ stars }} 星</div>
     </div>
 
-    <div class="card-grid">
+    <div class="card-grid" :style="{ gridTemplateColumns: 'repeat(' + DIFFS[diff].cols + ', 1fr)' }">
       <button
         v-for="c in cards"
         :key="c.id"

@@ -11,6 +11,8 @@ const meta = ref(null)
 const snap = ref(null)
 const loading = ref(true)
 const opened = ref(null)
+const term = ref('')
+const weekFilter = ref('')
 
 const dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 const ROW = 46
@@ -20,14 +22,27 @@ const normRoom = (r) => (r || '').replace(/[（(]智慧[)）]/g, '').trim()
 onMounted(async () => {
   snap.value = await loadSnap()
   meta.value = await apiFetch('/courseTable')
+  term.value = snap.value?.courseTable?.semester || meta.value?.semester || ''
   loading.value = false
 })
 
 const semester = computed(() => snap.value?.courseTable?.semester || meta.value?.semester || '')
 
-const classes = computed(() => [...new Set((snap.value?.rows || []).map((r) => r.cls).filter(Boolean))])
-const rooms = computed(() => [...new Set((snap.value?.rows || []).map((r) => r.r && normRoom(r.r)).filter(Boolean))].sort())
-const teachers = computed(() => [...new Set((snap.value?.rows || []).map((r) => r.t).filter(Boolean))])
+const semesters = computed(() => {
+  const s = snap.value?.courseTables?.map((t) => t.semester) || []
+  return s.length ? s : [semester.value]
+})
+
+const curRows = computed(() => {
+  const rows = snap.value?.rows || []
+  const t = term.value
+  if (!t || t === semester.value) return rows.filter((r) => r.term === semester.value)
+  return rows.filter((r) => r.term === t)
+})
+
+const classes = computed(() => [...new Set(curRows.value.map((r) => r.cls).filter(Boolean))])
+const rooms = computed(() => [...new Set(curRows.value.map((r) => r.r && normRoom(r.r)).filter(Boolean))].sort())
+const teachers = computed(() => [...new Set(curRows.value.map((r) => r.t).filter(Boolean))])
 
 const sourceName = computed(() => (tab.value === 'class' ? '班级' : tab.value === 'room' ? '教室' : '教师'))
 
@@ -41,7 +56,7 @@ const result = computed(() => {
 })
 
 function coursesOf(obj) {
-  const rows = snap.value?.rows || []
+  const rows = curRows.value
   if (tab.value === 'class') return rows.filter((r) => r.cls === obj)
   if (tab.value === 'room') return rows.filter((r) => normRoom(r.r) === obj)
   return rows.filter((r) => r.t === obj)
@@ -55,7 +70,25 @@ function open(obj) {
     days[co.d].push(co)
   }
   opened.value = { name: obj, mode: tab.value, count: list.length, days }
+  weekFilter.value = ''
 }
+
+function parseWeeks(w) {
+  const out = new Set()
+  for (const m of (w || '').matchAll(/(\d+)(?:-(\d+))?/g)) {
+    const a = +m[1]
+    const b = m[2] ? +m[2] : a
+    for (let i = a; i <= b; i++) out.add(i)
+  }
+  return out
+}
+
+const weekOptions = computed(() => {
+  if (!opened.value) return []
+  const s = new Set()
+  for (const d of Object.values(opened.value.days)) for (const co of d) parseWeeks(co.w).forEach((n) => s.add(n))
+  return [...s].sort((a, b) => a - b)
+})
 
 function subOf(co) {
   if (opened.value.mode === 'room') return `${co.cls} · ${co.t}`
@@ -63,7 +96,11 @@ function subOf(co) {
   return co.r || co.cls
 }
 
-const dayCourses = (d) => (opened.value?.days?.[d] || []).slice().sort((a, b) => a.s - b.s)
+const dayCourses = (d) =>
+  (opened.value?.days?.[d] || [])
+    .slice()
+    .filter((co) => !weekFilter.value || parseWeeks(co.w).has(+weekFilter.value))
+    .sort((a, b) => a.s - b.s)
 
 const posStyle = (co) => ({
   left: 'calc(40px + (100% - 40px) * ' + (co.d - 1) + ' / 7)',
@@ -84,11 +121,11 @@ onMounted(loadCourses)
 </script>
 
 <template>
-  <div class="view-top">
-    <button class="back-btn" @click="emit('back')">← 返回首页</button>
-    <div class="view-title">课程表</div>
-    <div class="view-sub">真实课表 · 据教务处{{ semester }}《课程总表》解析，共 {{ snap?.rows?.length || 0 }} 条排课</div>
-  </div>
+<div class="view-top">
+      <button class="back-btn" @click="emit('back')">← 返回首页</button>
+      <div class="view-title">课程表</div>
+      <div class="view-sub">真实课表 · {{ term || semester }}《课程总表》，{{ curRows.length }} 条排课（含 {{ semesters.length }} 个学期并集）</div>
+    </div>
 
   <div v-if="loading" class="skeleton-list">
     <div v-for="i in 4" :key="i" class="skeleton-row"><div class="skeleton" style="width: 90%; height: 48px"></div></div>
@@ -98,7 +135,14 @@ onMounted(loadCourses)
     <div class="view-top" style="padding-top:0;">
       <button class="back-btn" @click="opened = null">← 返回查询</button>
       <div class="view-title">{{ opened.name }}</div>
-      <div class="view-sub">{{ sourceName }}课表 · {{ semester }} · 共 {{ opened.count }} 门</div>
+      <div class="view-sub">{{ sourceName }}课表 · {{ term || semester }} · 共 {{ opened.count }} 门</div>
+    </div>
+    <div class="panel" style="margin-bottom:12px;">
+      <div class="muted" style="font-size:12px;margin-bottom:6px;">按周次筛选（默认显示全部周次）</div>
+      <div class="tab-row" style="flex-wrap:wrap;gap:6px;">
+        <button class="tab" :class="{ active: weekFilter === '' }" @click="weekFilter = ''">全部</button>
+        <button v-for="w in weekOptions" :key="w" class="tab" :class="{ active: weekFilter === String(w) }" @click="weekFilter = String(w)">第{{ w }}周</button>
+      </div>
     </div>
     <div class="panel">
       <div class="week-grid">
@@ -126,9 +170,12 @@ onMounted(loadCourses)
     <div class="panel" style="margin-bottom:16px;">
       <div class="source-bar" style="flex-wrap:wrap;">
         <i class="dot live"></i>
-        {{ semester }} · {{ classes.length }} 个班级 · {{ rooms.length }} 间教室 · {{ teachers.length }} 位教师
+        {{ term || semester }} · {{ classes.length }} 个班级 · {{ rooms.length }} 间教室 · {{ teachers.length }} 位教师
         <span class="sep">·</span>
         <span>数据更新于 {{ snap?.updatedAt ? fmtTime(snap.updatedAt) : '—' }}</span>
+      </div>
+      <div v-if="semesters.length > 1" class="tab-row" style="margin-top:10px;">
+        <button v-for="t in semesters" :key="t" class="tab" :class="{ active: term === t }" @click="term = t; kw = ''; opened = null">{{ t }}</button>
       </div>
       <div class="tab-row" style="margin-top:10px;">
         <button class="tab" :class="{ active: tab === 'class' }" @click="tab = 'class'">班级课表</button>

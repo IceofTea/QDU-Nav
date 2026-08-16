@@ -90,7 +90,6 @@ const filtered = computed(() => {
         <div class="stat-value">{{ s.v }}</div>
         <div class="stat-label">{{ s.l }}</div>
       </div>
-      <div class="stats-note">{{ campusStats.statsNote }}</div>
     </section>
 
     <section class="section">

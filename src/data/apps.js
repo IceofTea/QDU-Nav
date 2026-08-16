@@ -19,6 +19,5 @@ export const campusStats = {
   campuses: 3,
   colleges: 28,
   majors: 90,
-  apps: apps.length,
-  statsNote: '数据来源：青岛大学官网《学校简介》 · 本页信息截至 2026 年整理，供校园生活参考，请以学校官方最新公布为准'
+  apps: apps.length
 }
