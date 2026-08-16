@@ -6,6 +6,11 @@ export const campuses = [
     postal: '266061',
     desc: '主校区（原中心校区），大部分学院在此报到',
     emoji: '🏢',
+    links: [
+      { label: '教学楼与教室', app: 'classroomNav' },
+      { label: '课程表', app: 'timetable' },
+      { label: '食堂', app: 'canteen' }
+    ],
     colleges: ['马克思主义学院', '历史学院', '教育科学学院', '体育学院', '数学与统计学院', '化学化工学院', '生命科学学院', '机电工程学院', '自动化学院', '电子信息学院', '纺织服装学院', '青岛医学院', '艺术学院', '德雷克联合学院']
   },
   {
@@ -15,6 +20,11 @@ export const campuses = [
     postal: '266061',
     desc: '原东校区，大一新生集中校区',
     emoji: '🎓',
+    links: [
+      { label: '教学楼与教室', app: 'classroomNav' },
+      { label: '食堂', app: 'canteen' },
+      { label: '今天吃什么', app: 'whatToEat' }
+    ],
     colleges: ['经济学院', '法学院', '政治与公共管理学院', '文学与新闻传播学院', '外语学院', '物理科学学院', '材料科学与工程学院', '电气工程学院', '计算机科学技术学院', '环境与地理科学学院', '商学院']
   },
   {
@@ -24,6 +34,7 @@ export const campuses = [
     postal: '266021',
     desc: '医学部校区',
     emoji: '🏥',
+    links: [{ label: '教学楼与教室', app: 'classroomNav' }],
     colleges: ['基础医学院', '口腔医学院', '公共卫生学院', '药学院', '护理学院']
   }
 ]

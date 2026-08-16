@@ -54,6 +54,67 @@ function yearResult(y) {
 
 const active = computed(() => yearResult(years[activeYear.value]))
 const filledNow = computed(() => active.value.filled)
+
+const activeTable = ref('bmi')
+
+const FIELD = { vitalCapacity: 'vital', sprint50: 'sprint', sitReach: 'sitReach', longJump: 'longJump', strength: 'strength' }
+
+function rawOf(y, key) {
+  if (key === 'bmi') {
+    const h = y.height && y.weight ? y.weight / Math.pow(y.height / 100, 2) : null
+    return h ? +h.toFixed(1) : null
+  }
+  if (key === 'endurance') {
+    return y.endurMin != null && y.endurSec != null ? y.endurMin * 60 + y.endurSec : null
+  }
+  return y[FIELD[key]]
+}
+
+function fmtVal(key, v) {
+  if (v == null) return '—'
+  if (key === 'endurance') return Math.floor(v / 60) + ':' + String(v % 60).padStart(2, '0')
+  return v
+}
+
+const tableChips = computed(() => [
+  { key: 'bmi', label: 'BMI' },
+  { key: 'vitalCapacity', label: '肺活量' },
+  { key: 'sprint50', label: '50 米' },
+  { key: 'sitReach', label: '体前屈' },
+  { key: 'longJump', label: '跳远' },
+  { key: 'strength', label: standards[gender.value].strength.label },
+  { key: 'endurance', label: standards[gender.value].endurance.label }
+])
+
+const activeTableData = computed(() => {
+  const g = gender.value
+  if (activeTable.value === 'bmi') {
+    const rule = standards[g].bmi
+    const [lo, hi] = rule.normal
+    const cur = rawOf(years[activeYear.value], 'bmi')
+    const score = cur != null ? bmiScore(g, cur) : null
+    const rows = [
+      { v: `${lo} ~ ${hi}`, s: 100 },
+      { v: `${rule.overweight} ~ ${rule.obese - 0.1}`, s: 80 },
+      { v: `低于 ${lo}`, s: 80 },
+      { v: `${rule.obese} 及以上`, s: 60 }
+    ]
+    return { key: 'bmi', unit: 'kg/m²', dir: '区间对应', cur: cur != null ? cur : null, score, rows }
+  }
+  const st = standards[g][activeTable.value]
+  if (!st || !st.table) return null
+  const cur = rawOf(years[activeYear.value], activeTable.value)
+  const score = cur != null ? itemScore(g, activeTable.value, cur) : null
+  const dir = st.higher ? '达到或超过' : '不超过'
+  return {
+    key: activeTable.value,
+    unit: st.unit,
+    dir,
+    cur: fmtVal(activeTable.value, cur),
+    score,
+    rows: st.table.map(([v, s]) => ({ v, s }))
+  }
+})
 </script>
 
 <template>
@@ -87,38 +148,38 @@ const filledNow = computed(() => active.value.filled)
     <div class="field-grid">
       <label class="field">
         <span class="field-label">身高（cm）</span>
-        <input v-model.number="years[activeYear].height" class="input" type="number" placeholder="如 175" />
+        <input v-model.number="years[activeYear].height" class="input" type="number" placeholder="如 175" @focus="activeTable = 'bmi'" />
       </label>
       <label class="field">
         <span class="field-label">体重（kg）</span>
-        <input v-model.number="years[activeYear].weight" class="input" type="number" placeholder="如 65" />
+        <input v-model.number="years[activeYear].weight" class="input" type="number" placeholder="如 65" @focus="activeTable = 'bmi'" />
       </label>
       <label class="field">
         <span class="field-label">肺活量（ml）</span>
-        <input v-model.number="years[activeYear].vital" class="input" type="number" placeholder="如 4200" />
+        <input v-model.number="years[activeYear].vital" class="input" type="number" placeholder="如 4200" @focus="activeTable = 'vitalCapacity'" />
       </label>
       <label class="field">
         <span class="field-label">50 米跑（秒）</span>
-        <input v-model.number="years[activeYear].sprint" class="input" type="number" step="0.1" placeholder="如 7.5" />
+        <input v-model.number="years[activeYear].sprint" class="input" type="number" step="0.1" placeholder="如 7.5" @focus="activeTable = 'sprint50'" />
       </label>
       <label class="field">
         <span class="field-label">坐位体前屈（cm）</span>
-        <input v-model.number="years[activeYear].sitReach" class="input" type="number" step="0.1" placeholder="如 18" />
+        <input v-model.number="years[activeYear].sitReach" class="input" type="number" step="0.1" placeholder="如 18" @focus="activeTable = 'sitReach'" />
       </label>
       <label class="field">
         <span class="field-label">立定跳远（cm）</span>
-        <input v-model.number="years[activeYear].longJump" class="input" type="number" placeholder="如 250" />
+        <input v-model.number="years[activeYear].longJump" class="input" type="number" placeholder="如 250" @focus="activeTable = 'longJump'" />
       </label>
       <label class="field">
         <span class="field-label">{{ standards[gender].strength.label }}（{{ gender === 'male' ? '个' : '个/分' }}）</span>
-        <input v-model.number="years[activeYear].strength" class="input" type="number" placeholder="如 15" />
+        <input v-model.number="years[activeYear].strength" class="input" type="number" placeholder="如 15" @focus="activeTable = 'strength'" />
       </label>
       <div class="field field-split">
         <span class="field-label">{{ standards[gender].endurance.label }}（分:秒）</span>
         <div class="split-row">
-          <input v-model.number="years[activeYear].endurMin" class="input" type="number" placeholder="分" />
+          <input v-model.number="years[activeYear].endurMin" class="input" type="number" placeholder="分" @focus="activeTable = 'endurance'" />
           <span class="split-colon">:</span>
-          <input v-model.number="years[activeYear].endurSec" class="input" type="number" placeholder="秒" />
+          <input v-model.number="years[activeYear].endurSec" class="input" type="number" placeholder="秒" @focus="activeTable = 'endurance'" />
         </div>
       </div>
     </div>
@@ -126,10 +187,71 @@ const filledNow = computed(() => active.value.filled)
     <div class="score-list">
       <div v-for="it in active.items" :key="it.key" class="score-row">
         <span class="score-name">{{ it.label }}</span>
+        <span class="score-raw" :class="{ dim: it.raw == null }">{{ it.raw != null ? it.raw + (it.unit ? ' ' + it.unit : '') : '未填' }}</span>
         <span class="score-bar"><i :style="{ width: (it.score ?? 0) + '%' }"></i></span>
-        <span class="score-val" :class="{ dim: it.score == null }">{{ it.score ?? '未填' }}分</span>
+        <span class="score-val" :class="{ dim: it.score == null }">{{ it.score ?? '—' }}分</span>
       </div>
     </div>
     <p class="muted">成绩已自动保存在本机浏览器中，下次打开自动恢复。</p>
   </div>
+
+  <div class="panel">
+    <div class="section-head" style="align-items:center;">
+      <h3 class="section-title">📊 一分一段表</h3>
+      <span class="section-sub">成绩 ↔ 分数对应（{{ standards[gender].genderText || (gender === 'male' ? '男生' : '女生') }}）</span>
+    </div>
+    <div class="tab-row" style="flex-wrap:wrap;gap:6px;">
+      <button
+        v-for="t in tableChips"
+        :key="t.key"
+        class="tab"
+        :class="{ active: activeTable === t.key }"
+        @click="activeTable = t.key"
+      >{{ t.label }}</button>
+    </div>
+
+    <div v-if="activeTableData" class="table-wrap" style="margin-top:10px;">
+      <div class="muted" style="font-size:12px;margin-bottom:6px;">
+        成绩单位：{{ activeTableData.unit }} · 评分规则：{{ activeTableData.dir }}
+        <template v-if="activeTableData.cur !== '—'">
+          当前成绩 {{ activeTableData.cur }}{{ activeTableData.unit }} → <b style="color:var(--primary)">{{ activeTableData.score }} 分</b>
+        </template>
+      </div>
+      <table class="mini-table">
+        <thead><tr><th>成绩（{{ activeTableData.unit }}）</th><th>得分</th><th>等级</th></tr></thead>
+        <tbody>
+          <tr v-for="row in activeTableData.rows" :key="row.v" :class="{ hit: activeTableData.score != null && row.s === activeTableData.score }">
+            <td>{{ row.v }}</td>
+            <td><b>{{ row.s }}</b></td>
+            <td class="muted">{{ row.s >= 90 ? '优秀' : row.s >= 80 ? '良好' : row.s >= 60 ? '及格' : '不及格' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </template>
+
+<style scoped>
+.score-raw {
+  font-size: 11px;
+  color: var(--text-light);
+  min-width: 64px;
+  text-align: right;
+}
+.score-raw.dim { color: #c2c9d6; }
+.score-bar { flex: 1; }
+.table-wrap { overflow-x: auto; }
+.mini-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.mini-table th, .mini-table td {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  text-align: left;
+}
+.mini-table th { background: var(--bg); font-weight: 700; }
+.mini-table tr.hit td { background: #e8f2ff; }
+.mini-table tr.hit td:first-child { font-weight: 800; color: var(--primary); }
+</style>

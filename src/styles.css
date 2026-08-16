@@ -468,18 +468,41 @@ body {
 .stat-value { font-size: 24px; font-weight: 800; color: var(--primary); }
 .stat-label { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
 
-.campus-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.campus-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
 .campus-card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 16px;
   box-shadow: var(--shadow);
+  font-family: inherit;
+  text-align: left;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
+.campus-card:hover { border-color: var(--primary); }
+.campus-card.open { border-color: var(--primary); box-shadow: 0 6px 20px rgba(27, 102, 201, 0.12); }
+.campus-head { display: flex; align-items: center; gap: 10px; }
+.campus-main { flex: 1; }
 .campus-emoji { font-size: 30px; }
-.campus-name { font-size: 16px; font-weight: 800; margin-top: 8px; }
+.campus-name { font-size: 16px; font-weight: 800; }
 .campus-alias { font-size: 12px; color: var(--primary); font-weight: 600; margin-top: 2px; }
-.campus-addr { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
+.campus-toggle { font-size: 12px; color: var(--text-light); }
+.campus-addr { font-size: 12px; color: var(--text-sub); margin-top: 6px; }
+.campus-detail { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.campus-desc { font-size: 12px; color: var(--text-sub); }
+.campus-colleges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.campus-tag {
+  font-size: 11px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #eef4fd;
+  color: var(--primary);
+  font-weight: 600;
+}
+.campus-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.btn.small { padding: 6px 12px; font-size: 12px; }
 
 /* ===== 通用组件 ===== */
 .view-top { margin-bottom: 18px; }

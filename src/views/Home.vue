@@ -21,6 +21,11 @@ const filtered = computed(() => {
   if (!kw) return apps
   return apps.filter((a) => (a.title + a.desc).toLowerCase().includes(kw))
 })
+
+const expanded = ref(null)
+function toggleCampus(name) {
+  expanded.value = expanded.value === name ? null : name
+}
 </script>
 
 <template>
@@ -95,12 +100,34 @@ const filtered = computed(() => {
     <section class="section">
       <h3 class="section-title">三大校区</h3>
       <div class="campus-cards">
-        <div v-for="c in campuses" :key="c.name" class="campus-card">
-          <div class="campus-emoji">{{ c.emoji }}</div>
-          <div class="campus-name">{{ c.name }}</div>
-          <div class="campus-alias">{{ c.alias }}</div>
+        <button
+          v-for="c in campuses"
+          :key="c.name"
+          class="campus-card"
+          :class="{ open: expanded === c.name }"
+          @click="toggleCampus(c.name)"
+        >
+          <div class="campus-head">
+            <div class="campus-emoji">{{ c.emoji }}</div>
+            <div class="campus-main">
+              <div class="campus-name">{{ c.name }}</div>
+              <div class="campus-alias">{{ c.alias }}</div>
+            </div>
+            <span class="campus-toggle">{{ expanded === c.name ? '收起 ▴' : '展开 ▾' }}</span>
+          </div>
           <div class="campus-addr">{{ c.address }}</div>
-        </div>
+          <div v-if="expanded === c.name" class="campus-detail">
+            <div class="campus-desc">{{ c.desc }}</div>
+            <div class="campus-colleges">
+              <span v-for="col in c.colleges" :key="col" class="campus-tag">{{ col }}</span>
+            </div>
+            <div class="campus-links">
+              <button v-for="l in c.links" :key="l.label" class="btn ghost small" @click.stop="emit('open', l.app)">
+                {{ l.label }} ›
+              </button>
+            </div>
+          </div>
+        </button>
       </div>
     </section>
   </div>
