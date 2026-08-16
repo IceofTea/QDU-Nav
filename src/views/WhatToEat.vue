@@ -17,8 +17,6 @@ const filtered = computed(() => {
   return foods.filter(f => f.tag === filter.value)
 })
 
-const totalKcal = computed(() => picks.value.reduce((a, f) => a + f.heat, 0))
-
 function roll() {
   picks.value = pickFoods(3)
   pickedCount.value += 1
@@ -51,14 +49,14 @@ onMounted(() => {
         <div style="font-size:26px;">🍽️</div>
         <div style="font-weight:700;margin:6px 0;">{{ f.name }}</div>
         <div class="tag">{{ f.tag }}</div>
-        <div class="muted" style="font-size:12px;margin-top:6px;">{{ f.hall }} · ¥{{ f.price }} · {{ f.heat }} kcal</div>
+        <div class="muted" style="font-size:12px;margin-top:6px;">{{ f.hall }} · {{ f.campus }} {{ f.zone }}</div>
       </div>
     </div>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
       <button class="btn" @click="roll">🔄 换个推荐</button>
       <button class="btn accent" @click="pickOne">🎯 就决定这个</button>
     </div>
-    <div class="muted" style="margin-top:12px;font-size:12px;">推荐合计约 {{ totalKcal }} kcal</div>
+    <div class="muted" style="margin-top:12px;font-size:12px;">菜品均为食堂真实档口/招牌（据后勤采购公告与公开报道），价格以食堂当日公示为准</div>
   </div>
 
   <div class="panel" style="margin-bottom:16px;">
@@ -66,15 +64,14 @@ onMounted(() => {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;">
       <div v-for="h in halls" :key="h.name" style="background:#f6f9ff;border-radius:12px;padding:12px;">
         <b>{{ h.name }}</b>
-        <div class="muted" style="font-size:12px;margin-top:4px;">{{ h.campus }}</div>
-        <div class="muted" style="font-size:12px;">{{ h.note }}</div>
+        <div class="muted" style="font-size:12px;margin-top:4px;">{{ h.campus }} · {{ h.zone }}</div>
       </div>
     </div>
   </div>
 
   <div class="panel">
     <div class="section-title" style="margin:0 0 12px;">
-      <span class="bar"></span>菜品库（<CountUp :value="foods.length" /> 种）
+      <span class="bar"></span>档口库（<CountUp :value="foods.length" /> 个真实档口/招牌）
       <button class="btn ghost" style="margin-left:auto;padding:6px 12px;" @click="showAll = !showAll">{{ showAll ? '收起' : '展开' }}</button>
     </div>
     <div class="tab-row">
@@ -88,14 +85,13 @@ onMounted(() => {
     </div>
     <div v-if="showAll" style="overflow-x:auto;">
       <table class="data">
-        <thead><tr><th>菜品</th><th>分类</th><th>推荐食堂</th><th>价格</th><th>热量</th></tr></thead>
+        <thead><tr><th>档口 / 招牌</th><th>所在餐厅</th><th>校区</th><th>类型</th></tr></thead>
         <tbody>
-          <tr v-for="f in filtered" :key="f.name">
+          <tr v-for="f in filtered" :key="f.hall + f.name">
             <td><b>{{ f.name }}</b></td>
-            <td>{{ f.tag }}</td>
             <td>{{ f.hall }}</td>
-            <td>¥{{ f.price }}</td>
-            <td>{{ f.heat }} kcal</td>
+            <td>{{ f.campus }} {{ f.zone }}</td>
+            <td>{{ f.tag }}</td>
           </tr>
         </tbody>
       </table>

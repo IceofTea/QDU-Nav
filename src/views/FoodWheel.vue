@@ -66,7 +66,7 @@ onMounted(() => {
     <div v-if="result" class="result-box" style="text-align:center;">
       <div class="muted" style="font-size:13px;">恭喜抽中</div>
       <div style="font-size:22px;font-weight:800;margin:4px 0;">🍽️ {{ result.name }}</div>
-      <div class="muted" style="font-size:13px;">{{ result.hall }} · ¥{{ result.price }} · {{ result.heat }} kcal</div>
+      <div class="muted" style="font-size:13px;">{{ result.hall }} · {{ result.campus }} {{ result.zone }}</div>
     </div>
     <div v-else class="muted" style="margin:10px 0;">点击「开始抽奖」，指针停下指向的美食就是今天的答案</div>
 

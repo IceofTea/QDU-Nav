@@ -13,6 +13,8 @@ import QuizGame from './views/QuizGame.vue'
 import FoodWheel from './views/FoodWheel.vue'
 import OfficialSites from './views/OfficialSites.vue'
 import Canteen from './views/Canteen.vue'
+import Categories from './views/Categories.vue'
+import BuildingMatch from './views/BuildingMatch.vue'
 
 const viewMap = {
   campusNews: CampusNews,
@@ -25,7 +27,9 @@ const viewMap = {
   canteen: Canteen,
   quiz: QuizGame,
   foodWheel: FoodWheel,
-  officialSites: OfficialSites
+  officialSites: OfficialSites,
+  categories: Categories,
+  buildingMatch: BuildingMatch
 }
 
 const stage = ref(localStorage.getItem('qdu_welcome_seen') ? 'main' : 'welcome')
@@ -88,9 +92,9 @@ const navApps = ['campusNews', 'timetable', 'classroomNav', 'studentId', 'physic
 
     <footer class="footer">
       <div class="footer-legend">
-        <span class="legend-item"><i class="dot live"></i>官方实时：校园动态 · 校历 · 课程总表（抓自 jwc.qdu.edu.cn）</span>
-        <span class="legend-item"><i class="dot demo"></i>演示数据：课程表（个人） · 学号查询（需登录教务/招办，附官方入口）</span>
-        <span class="legend-item"><i class="dot tool"></i>本地工具：体测 · 吃什么 · 问答 · 轮盘 · 教室导航（参考）</span>
+        <span class="legend-item"><i class="dot live"></i>官方实时：校园动态 · 校历 · 课程总表 · 教室排课（抓自 jwc.qdu.edu.cn）</span>
+        <span class="legend-item"><i class="dot demo"></i>官方通道：学号查询 · 体测成绩 · 个人课表（需统一身份认证，附官方入口）</span>
+        <span class="legend-item"><i class="dot tool"></i>校园工具：食堂 · 空教室 · 吃什么 · 问答 · 轮盘 · 速配 · 教室导航</span>
       </div>
       <div class="footer-copy">QDU 校园导航 · 非官方校园服务聚合演示站，数据仅供学习交流</div>
     </footer>

@@ -1,12 +1,11 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { apps, appGroups, campusStats } from '../data/apps'
+import { apps, campusStats } from '../data/apps'
 import { campuses } from '../data/campus'
 
 const emit = defineEmits(['open'])
 
 const keyword = ref('')
-const showAll = ref(false)
 
 function greeting() {
   const h = new Date().getHours()
@@ -21,12 +20,6 @@ const filtered = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
   if (!kw) return apps
   return apps.filter((a) => (a.title + a.desc).toLowerCase().includes(kw))
-})
-
-const grouped = computed(() => {
-  return appGroups
-    .map((g) => ({ group: g, items: filtered.value.filter((a) => a.group === g) }))
-    .filter((x) => x.items.length)
 })
 </script>
 
@@ -82,20 +75,9 @@ const grouped = computed(() => {
     <section class="section">
       <div class="section-head">
         <h3 class="section-title">应用分类</h3>
-        <button class="section-link" @click="showAll = !showAll">{{ showAll ? '收起分类 ▲' : '查看全部分类 ▼' }}</button>
+        <button class="section-link" @click="emit('open', 'categories')">查看全部分类 ›</button>
       </div>
-      <div v-if="showAll" class="group-list">
-        <div v-for="g in grouped" :key="g.group" class="group-block">
-          <h4 class="group-name">{{ g.group }}</h4>
-          <div class="mini-grid">
-            <button v-for="a in g.items" :key="a.id" class="mini-tile" @click="emit('open', a.id)">
-              <span class="mini-icon" :style="{ background: a.color + '1a', color: a.color }">{{ a.icon }}</span>
-              <span class="mini-title">{{ a.title }}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-      <div v-else class="hint">点击「查看全部分类」按学习、生活、游戏等分组浏览全部应用</div>
+      <div class="hint">按学习、生活、游戏等分组浏览全部 {{ apps.length }} 个应用</div>
     </section>
 
     <section class="section stats">
