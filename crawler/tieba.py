@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """QDU 校园导航 · 青岛大学吧舆情分析（Python 版）
 
-尽力抓取百度贴吧「青岛大学吧」公开列表页，解析帖子标题 / 作者 / 回复数 / 日期，
-做热帖榜、关键词、话题分布、发帖趋势等轻量舆情分析，输出
+尽力抓取百度贴吧「青岛大学吧」公开列表页（手机版 threadlist 接口，
+iPhone UA 可直连，规避桌面版 WAF 403），解析帖子标题 / 作者 / 回复数 /
+日期，做热帖榜、关键词、话题分布、发帖趋势等轻量舆情分析，输出
 `public/data/tieba_stats.json`。
 
 贴吧反爬较严（常见 403 / 验证码）：本脚本为「尽力而为」，任何失败都不会
@@ -10,21 +11,19 @@
 
 用法：
     python crawler/tieba.py                # 抓取并分析，写入 public/data/
-    python crawler/tieba.py --pages 3      # 抓取前 3 页（默认 4 页）
+    python crawler/tieba.py --pages 3      # 抓取前 3 页（默认 4 页，每页 30 帖）
 """
 import html
 import json
 import os
 import random
 import re
-import string
 import sys
 import tempfile
 import time
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
-from html.parser import HTMLParser
 from pathlib import Path
 
 sys.stdout.reconfigure(encoding='utf-8')
@@ -32,23 +31,24 @@ ROOT = Path(__file__).resolve().parent.parent
 
 BAR_NAME = '青岛大学'
 BAR_URL = 'https://tieba.baidu.com/f?kw=' + urllib.parse.quote(BAR_NAME)
+LIST_URL = 'https://tieba.baidu.com/mo/q/threadlist?kw=%s&pn=%d'
 OUT_FILE = ROOT / 'public' / 'data' / 'tieba_stats.json'
 PAGES = int(next((a.split('=')[1] for a in sys.argv if a.startswith('--pages=')), '4'))
-PAGE_SIZE = 50
+PAGE_SIZE = 30
 RETRIES = 3
 
-# 反爬对抗：随机 UA 池 + 每次请求随机延迟 + 指数退避重试（尽力而为）
+# 手机版接口走 iPhone / Android 移动 UA（桌面版 UA 会被 WAF 拦成 403）
 UA_POOL = [
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-    '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-    '(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 '
-    '(KHTML, like Gecko) Version/17.3 Safari/605.1.15',
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 '
-    '(KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_3 like Mac OS X) AppleWebKit/605.1.15 '
+    '(KHTML, like Gecko) Version/17.3 Mobile/15E148 Safari/604.1',
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 '
+    '(KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
+    'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 '
+    '(KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+    'Mozilla/5.0 (Linux; Android 12; SM-G991B) AppleWebKit/537.36 '
+    '(KHTML, like Gecko) Chrome/118.0.0.0 Mobile Safari/537.36',
 ]
-BAIDUID = ''.join(random.choices(string.hexdigits, k=32))
+BAIDUID = ''.join(random.choices('abcdef0123456789', k=32))
 
 
 def _headers():
@@ -57,15 +57,13 @@ def _headers():
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'zh-CN,zh;q=0.9',
         'Referer': BAR_URL,
-        'Cookie': 'BAIDUID=%s; __bid=%s' % (
-            BAIDUID,
-            ''.join(random.choices(string.ascii_lowercase + string.digits, k=16))),
+        'Cookie': 'BAIDUID=%s' % BAIDUID,
     }
 
 
 def fetch_list_html(page_index: int) -> str:
     """抓取一页贴吧列表 HTML（随机 UA / cookie / 延迟，指数退避重试）。"""
-    url = '%s&ie=utf-8&pn=%d' % (BAR_URL, page_index * PAGE_SIZE)
+    url = LIST_URL % (urllib.parse.quote(BAR_NAME), page_index * PAGE_SIZE)
     last_err = None
     for attempt in range(RETRIES):
         try:
@@ -73,7 +71,7 @@ def fetch_list_html(page_index: int) -> str:
             req = urllib.request.Request(url, headers=_headers())
             with urllib.request.urlopen(req, timeout=20) as resp:
                 data = resp.read().decode('utf-8', 'replace')
-            if len(data) < 5000 or 'j_thread_list' not in data:
+            if len(data) < 5000 or 'j_common ti_item' not in data:
                 raise RuntimeError('页面无帖子列表（疑似被反爬拦截）')
             return data
         except Exception as exc:  # noqa: BLE001
@@ -82,76 +80,50 @@ def fetch_list_html(page_index: int) -> str:
     raise RuntimeError('贴吧抓取失败: %s' % last_err)
 
 
-class _ThreadParser(HTMLParser):
-    """提取贴吧列表页中的帖子条目（标题/链接/作者/回复数/日期）。"""
+# 手机版 threadlist 的帖子条目：置顶帖 <li class="tl_top..."> / 普通帖 <li class="tl_shadow...">
+THREAD_LI_RE = re.compile(
+    r'<li class="(?:tl_shadow[^"]*|tl_top[^"]*)"[^>]*data-tid="(\d+)"[^>]*>([\s\S]*?)</li>'
+)
 
-    def __init__(self):
-        super().__init__(convert_charrefs=True)
-        self.threads = []
-        self._cur = None
-        self._buf = []
-        self._field = None
 
-    def _clazz(self, attrs):
-        return dict(attrs).get('class', '')
+def _span_text(block: str, cls: str) -> str:
+    m = re.search(r'class="%s">\s*([^<]{1,200}?)\s*</' % cls, block)
+    return m.group(1).strip() if m else ''
 
-    def _is_thread_li(self, cls):
-        return 'j_thread_list' in cls or 'threadlist' in cls
 
-    def handle_starttag(self, tag, attrs):
-        cls = self._clazz(attrs)
-        if tag == 'li' and self._is_thread_li(cls):
-            self._cur = {'title': '', 'author': '', 'replies': 0, 'date': '', 'url': ''}
-            self._field = None
-            return
-        if self._cur is None:
-            return
-        if tag == 'a':
-            if 'j_th_tit' in cls:
-                self._field = 'title'
-                href = dict(attrs).get('href', '')
-                m = re.search(r'/p/(\d+)', href)
-                if m:
-                    self._cur['url'] = 'https://tieba.baidu.com/p/' + m.group(1)
-                self._buf = []
-            elif 'frs-author-name' in cls:
-                self._field = 'author'
-                self._buf = []
-        elif tag == 'span' and 'threadlist_reply_num' in cls:
-            self._field = 'replies'
-            self._buf = []
-        elif tag == 'div' and 'threadlist_date' in cls:
-            self._field = 'date'
-            self._buf = []
+def _extract_thread(block: str, tid: str) -> dict:
+    """从单个帖子 li 块提取标题 / 作者 / 时间 / 回复数。"""
+    title = ''
+    tm = re.search(r'class="ti_title"[^>]*>([\s\S]*?)</div>', block)
+    if tm:
+        spans = re.findall(r'<span(?![^>]*class=)[^>]*>\s*([^<]{1,200}?)\s*</span>', tm.group(1))
+        title = ''.join(spans).strip()
+    replies = 0
+    rm = re.search(r'btn_reply[^>]*>[\s\S]*?<span[^>]*>\s*(\d+)\s*</span>', block)
+    if rm:
+        replies = int(rm.group(1))
+    return {
+        'title': title,
+        'author': _span_text(block, 'ti_author'),
+        'replies': replies,
+        'date': _span_text(block, 'ti_time'),
+        'url': 'https://tieba.baidu.com/p/' + tid,
+    }
 
-    def handle_data(self, data):
-        if self._cur is not None and self._field and data.strip():
-            self._buf.append(data.strip())
 
-    def handle_endtag(self, tag):
-        if self._cur is None:
-            return
-        if tag == 'li':
-            if self._cur.get('title'):
-                self.threads.append(self._cur)
-            self._cur = None
-            self._field = None
-        elif self._field == 'title' and tag == 'a':
-            self._cur['title'] = ''.join(self._buf).strip()
-            self._field = None
-        elif self._field == 'author' and tag == 'a':
-            self._cur['author'] = ''.join(self._buf).strip()
-            self._field = None
-        elif self._field == 'replies' and tag == 'span':
-            self._cur['replies'] = parse_replies(''.join(self._buf))
-            self._field = None
-        elif self._field == 'date' and tag == 'div':
-            self._cur['date'] = ''.join(self._buf).strip()
-            self._field = None
+def parse_threads(page_html: str):
+    """解析一页手机版贴吧 HTML，返回帖子列表。"""
+    threads = []
+    for m in THREAD_LI_RE.finditer(page_html or ''):
+        tid, block = m.group(1), m.group(2)
+        t = _extract_thread(block, tid)
+        if t['title']:
+            threads.append(t)
+    return threads
 
 
 def parse_replies(text: str) -> int:
-    """把回复数字符串转成整数，支持「1.2万」。"""
+    """把回复数字符串转成整数，支持「1.2万」。（保留兼容旧数据）"""
     text = html.unescape(text or '').strip().replace(',', '')
     if not text:
         return 0
@@ -162,20 +134,13 @@ def parse_replies(text: str) -> int:
     return int(m.group(1)) if m else 0
 
 
-def parse_threads(page_html: str):
-    """解析一页贴吧 HTML，返回帖子列表。"""
-    parser = _ThreadParser()
-    parser.feed(page_html or '')
-    return parser.threads
-
-
 def norm_date(raw: str, today=None):
-    """把「今天/昨天/MM-DD/YYYY-MM-DD」归一化为 YYYY-MM-DD。"""
+    """把「HH:MM/今天/昨天/MM-DD/YYYY-MM-DD」归一化为 YYYY-MM-DD。"""
     raw = (raw or '').strip()
     if not raw:
         return ''
     today = today or datetime.now().date()
-    if raw in ('今天', '刚刚', '1分钟前'):
+    if raw in ('今天', '刚刚', '1分钟前') or re.match(r'^\d{1,2}:\d{2}$', raw):
         return today.isoformat()
     if raw in ('昨天',):
         return (today - timedelta(days=1)).isoformat()

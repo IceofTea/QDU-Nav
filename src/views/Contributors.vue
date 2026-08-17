@@ -72,15 +72,15 @@ function hueOf(i) {
     <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>社区贡献记录</div>
     <ul class="changelog">
       <li>
+        <b>v1.1.0</b> — 数据链路附带列、贴吧舆情、官网分类等多项功能迭代。
+      </li>
+      <li>
         <b>v1.1.1</b> — 社区 PR #1（huanuyn）：修复本地网关课程接口解析路径、
         美食轮盘指针停靠偏差，已合入并致谢。
       </li>
       <li>
         <b>v1.2.0</b> — 课程表班级分页、数据洞察分布科学化、奖学金金额校准、
         贴吧舆情降级修复与贡献者墙上线。
-      </li>
-      <li>
-        <b>v1.1.0</b> — 数据链路附带列、贴吧舆情、官网分类等多项功能迭代。
       </li>
     </ul>
     <p class="muted" style="font-size:12px;margin-top:10px;">
