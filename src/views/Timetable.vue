@@ -495,7 +495,7 @@ onMounted(loadCourses)
   position: absolute;
   width: calc((100% - var(--tc,40px)) / 7 - 5px);
   box-sizing: border-box;
-  background: #eef4fd;
+  background: var(--soft-blue);
   border-left: 3px solid #1b66c9;
   border-radius: 6px;
   padding: 3px 5px;
@@ -520,7 +520,7 @@ onMounted(loadCourses)
   border: 1px solid var(--border);
   border-left: 3px solid #1b66c9;
   border-radius: 10px;
-  background: #fafcff;
+  background: var(--soft);
   padding: 10px 12px;
   font-family: inherit;
   cursor: pointer;
@@ -531,7 +531,7 @@ onMounted(loadCourses)
 .wg-li-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .wg-li-main b { font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wg-li-sub { font-size: 12px; color: var(--text-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wg-li-cls { font-size: 11px; color: #92400e; background: #fff8e6; border-radius: 6px; padding: 1px 6px; align-self: flex-start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.wg-li-cls { font-size: 11px; color: #92400e; background: var(--soft-yellow); border-radius: 6px; padding: 1px 6px; align-self: flex-start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .wg-li-go { color: var(--text-light); font-size: 16px; }
 
 /* 课程详情弹窗 */
@@ -546,7 +546,7 @@ onMounted(loadCourses)
   z-index: 60;
 }
 .overlay-card {
-  background: #fff;
+  background: var(--card);
   border-radius: 16px;
   padding: 18px;
   width: 100%;

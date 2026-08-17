@@ -336,7 +336,7 @@ function restart() {
   margin-top: 12px;
   padding: 8px 12px;
   border-radius: 10px;
-  background: #fff8e6;
+  background: var(--soft-yellow);
   border: 1px solid #f5c34c;
   color: #8a5b00;
   font-size: 13px;
@@ -356,7 +356,7 @@ function restart() {
   padding: 20px;
 }
 .overlay-card {
-  background: #fff;
+  background: var(--card);
   border-radius: 18px;
   padding: 22px;
   max-width: 380px;

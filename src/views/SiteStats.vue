@@ -162,23 +162,23 @@ onMounted(async () => {
 .bar-wrap { display: flex; align-items: flex-end; gap: 8px; height: 150px; }
 .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%; }
 .bar-val { font-size: 10px; color: var(--text-sub); min-height: 13px; }
-.bar-box { width: 100%; height: 100px; display: flex; align-items: flex-end; background: #eef3fb; border-radius: 7px; overflow: hidden; }
+.bar-box { width: 100%; height: 100px; display: flex; align-items: flex-end; background: var(--bar); border-radius: 7px; overflow: hidden; }
 .bar-box i { width: 100%; background: linear-gradient(180deg, #0891b2, #06b6d4); border-radius: 7px; }
 .bar-label { font-size: 11px; color: var(--text-sub); }
 .mini-bars { display: flex; align-items: flex-end; gap: 3px; height: 110px; overflow-x: auto; }
 .mini-col { flex: 1; min-width: 14px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; }
-.mini-bar { width: 100%; height: 90px; display: flex; align-items: flex-end; background: #eef3fb; border-radius: 4px; overflow: hidden; }
+.mini-bar { width: 100%; height: 90px; display: flex; align-items: flex-end; background: var(--bar); border-radius: 4px; overflow: hidden; }
 .mini-bar i { width: 100%; background: linear-gradient(180deg, #7c3aed, #a78bfa); border-radius: 4px; }
 .mini-label { font-size: 9px; color: var(--text-sub); }
 .row-list { display: flex; flex-direction: column; gap: 8px; }
 .row-item { display: flex; align-items: center; gap: 8px; }
-.row-bar { flex: 1; height: 10px; border-radius: 6px; background: #eef3fb; overflow: hidden; }
+.row-bar { flex: 1; height: 10px; border-radius: 6px; background: var(--bar); overflow: hidden; }
 .row-bar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #0891b2, #22d3ee); }
 .app-top { display: flex; flex-direction: column; }
 .app-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
 .app-rank { flex: 0 0 20px; text-align: center; font-weight: 800; color: var(--muted); font-size: 13px; }
 .app-rank.top { color: #eab308; }
 .app-name { flex: 0 0 96px; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.app-bar { flex: 1; height: 10px; border-radius: 6px; background: #eef3fb; overflow: hidden; }
+.app-bar { flex: 1; height: 10px; border-radius: 6px; background: var(--bar); overflow: hidden; }
 .app-bar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #d97706, #f59e0b); }
 </style>

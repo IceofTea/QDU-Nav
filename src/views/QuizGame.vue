@@ -344,7 +344,7 @@ onMounted(() => {
   width: 24px;
   height: 24px;
   border-radius: 6px;
-  background: #eef3fb;
+  background: var(--bar);
   color: var(--text-sub);
   font-size: 12px;
   font-weight: 800;

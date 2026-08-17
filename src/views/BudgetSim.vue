@@ -128,7 +128,7 @@ const PARTTIME = [
         <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
           <span>{{ b.name }}</span><span class="muted">¥{{ b.v }} · {{ b.pct }}%</span>
         </div>
-        <div style="background:#eef3fb;border-radius:8px;overflow:hidden;">
+        <div style="background:var(--bar);border-radius:8px;overflow:hidden;">
           <div style="height:12px;background:linear-gradient(90deg,#0d9488,#2dd4bf);border-radius:8px;" :style="{ width: b.pct * 2 + '%' }"></div>
         </div>
       </div>
@@ -180,7 +180,7 @@ const PARTTIME = [
   font-size: 11px;
   font-weight: 700;
   color: #0f766e;
-  background: #e6f7f4;
+  background: var(--soft-green);
   border-radius: 8px;
   padding: 2px 8px;
 }

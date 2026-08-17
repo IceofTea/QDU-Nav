@@ -26,29 +26,36 @@ function choose(optionIndex) {
     if (i >= 0) arr.splice(i, 1)
     else if (arr.length < (q.max || 2)) arr.push(optionIndex)
     answers.value = { ...answers.value, [q.id]: arr }
-    if (arr.length >= (q.max || 2)) setTimeout(next, 180)
     return
   }
   answers.value = { ...answers.value, [q.id]: optionIndex }
-  setTimeout(next, 180)
 }
 function chooseLikert(level) {
-  const q = current.value
-  answers.value = { ...answers.value, [q.id]: level }
-  setTimeout(next, 180)
+  answers.value = { ...answers.value, [current.value.id]: level }
 }
-function next() {
-  if (step.value < totalQ - 1) {
-    step.value++
-  } else {
-    finish()
-  }
-}
-
 function start() {
   step.value = 0
   answers.value = {}
   phase.value = 'quiz'
+}
+
+/** 当前题是否已答（用于「下一题 / 提交」按钮可用性） */
+const answered = computed(() => {
+  const q = current.value
+  if (!q) return false
+  const ans = answers.value[q.id]
+  if (q.type === 'multi') return Array.isArray(ans) && ans.length > 0
+  return ans !== undefined && ans !== null
+})
+
+/** 上一题 / 下一题 / 提交 */
+function goPrev() {
+  if (step.value > 0) step.value--
+}
+function goNext() {
+  if (!answered.value) return
+  if (step.value < totalQ - 1) step.value++
+  else finish()
 }
 
 /** 用户 9 维得分（含每题权重、多选主/次权重） */
@@ -171,7 +178,7 @@ const initial = (name) => name.charAt(0)
     <div style="font-size:17px;font-weight:800;margin:10px 0 4px;">{{ current.title }}</div>
     <div class="muted" style="font-size:12px;margin-bottom:14px;">{{ current.desc }}</div>
 
-    <div v-if="current.type === 'likert'" class="likert">
+      <div v-if="current.type === 'likert'" class="likert">
       <button v-for="(l, i) in LIKERT" :key="l" class="likert-btn" :class="{ active: selected === i }" @click="chooseLikert(i)">{{ l }}</button>
     </div>
     <div v-else-if="current.type === 'multi'" class="opt-list">
@@ -179,13 +186,18 @@ const initial = (name) => name.charAt(0)
         <span class="opt-tag">{{ (selected || []).indexOf(i) >= 0 ? (selected || []).indexOf(i) + 1 : String.fromCharCode(65 + i) }}</span>
         <span>{{ o.label }}</span>
       </button>
-      <div class="muted" style="font-size:11px;margin-top:6px;">已选 {{ (selected || []).length }}/{{ current.max || 2 }} · 选满自动进入下一题</div>
+      <div class="muted" style="font-size:11px;margin-top:6px;">已选 {{ (selected || []).length }}/{{ current.max || 2 }} · 选好点下方「下一题」</div>
     </div>
     <div v-else class="opt-list">
       <button v-for="(o, i) in current.options" :key="i" class="opt-btn" :class="{ active: selected === i }" @click="choose(i)">
         <span class="opt-tag">{{ String.fromCharCode(65 + i) }}</span>
         <span>{{ o.label }}</span>
       </button>
+    </div>
+
+    <div class="quiz-nav">
+      <button class="btn ghost" :disabled="step === 0" @click="goPrev">‹ 上一题</button>
+      <button class="btn accent" :disabled="!answered" @click="goNext">{{ step === totalQ - 1 ? '提交结果 ✓' : '下一题 ›' }}</button>
     </div>
   </div>
 
@@ -260,8 +272,10 @@ const initial = (name) => name.charAt(0)
 </template>
 
 <style scoped>
-.quiz-progress { height: 6px; border-radius: 4px; background: #eef3fb; overflow: hidden; }
+.quiz-progress { height: 6px; border-radius: 4px; background: var(--bar); overflow: hidden; }
 .quiz-progress i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #1b66c9, #3b82f6); transition: width 0.2s; }
+.quiz-nav { display: flex; gap: 10px; margin-top: 16px; }
+.quiz-nav .btn { flex: 1; }
 .opt-list { display: flex; flex-direction: column; gap: 8px; }
 .opt-btn {
   display: flex; align-items: center; gap: 10px; text-align: left;
@@ -293,7 +307,7 @@ const initial = (name) => name.charAt(0)
 .dim-name { color: var(--text); }
 .dim-nums { color: var(--text-sub); }
 .dim-nums b { color: var(--primary); }
-.dim-track { position: relative; height: 14px; border-radius: 7px; background: #eef3fb; overflow: hidden; }
+.dim-track { position: relative; height: 14px; border-radius: 7px; background: var(--bar); overflow: hidden; }
 .dim-you { position: absolute; left: 0; top: 0; height: 100%; border-radius: 7px 0 0 7px; background: linear-gradient(90deg, #1b66c9, #3b82f6); }
 .dim-proto { position: absolute; left: 0; top: 0; height: 4px; margin-top: 5px; border-radius: 2px; background: #f59e0b; }
 .near-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--border); }

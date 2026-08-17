@@ -47,7 +47,7 @@ const grouped = computed(() => {
 .cat-search {
   position: relative;
   margin-bottom: 16px;
-  background: #fff;
+  background: var(--card);
   border-radius: 14px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   padding: 10px 14px;
@@ -68,7 +68,7 @@ const grouped = computed(() => {
   align-items: center;
   gap: 6px;
   padding: 16px 10px 14px;
-  background: #fff;
+  background: var(--card);
   border: 1px solid #f0f2f5;
   border-radius: 14px;
   cursor: pointer;

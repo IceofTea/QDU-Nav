@@ -91,7 +91,7 @@ const insights = computed(() => {
   <div v-else-if="!stats.periods" class="muted" style="text-align:center;padding:40px;">暂无统计数据</div>
 
   <template v-else>
-    <div v-if="!hasDist" class="panel" style="margin-bottom:16px;background:#fff8ec;border-color:#f5d79a;">
+    <div v-if="!hasDist" class="panel" style="margin-bottom:16px;background: var(--soft-yellow);border-color:#f5d79a;">
       <div style="font-size:13px;font-weight:700;color:#92400e;">📌 课程性质 / 校区 / 学院分布数据将在下一次定时抓取后自动补充</div>
       <p class="muted" style="font-size:12px;margin:6px 0 0;">历史快照未包含这些字段，重新抓取（每 6 小时一次）后本页会展示真实分布。</p>
     </div>
@@ -119,7 +119,7 @@ const insights = computed(() => {
       </div>
     </div>
 
-    <div v-if="insights.length" class="panel" style="margin-bottom:16px;background:#eef6ff;border-color:#bcd6f5;">
+    <div v-if="insights.length" class="panel" style="margin-bottom:16px;background:var(--soft-blue);border-color:#bcd6f5;">
       <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>一眼看懂这些数据</div>
       <ul style="margin:0;padding-left:18px;font-size:13px;line-height:2;color:var(--text);">
         <li v-for="s in insights" :key="s">{{ s }}</li>
@@ -130,7 +130,7 @@ const insights = computed(() => {
       <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>学期趋势（近 {{ stats.terms.length }} 个学期）</div>
       <div v-for="t in stats.terms" :key="t.semester" style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
         <div style="width:130px;font-size:12px;flex-shrink:0;">{{ t.semester }}</div>
-        <div style="flex:1;background:#eef3fb;border-radius:8px;overflow:hidden;">
+        <div style="flex:1;background:var(--bar);border-radius:8px;overflow:hidden;">
           <div style="height:20px;background:linear-gradient(90deg,#1b66c9,#3b82f6);border-radius:8px;" :style="{ width: pct(t.count, maxTerm) + '%' }"></div>
         </div>
         <div class="muted" style="width:64px;text-align:right;font-size:12px;flex-shrink:0;">{{ t.count }}</div>
@@ -145,7 +145,7 @@ const insights = computed(() => {
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
             <span>{{ r.name }}</span><span class="muted">{{ r.periods }} 节次 · {{ share(r.periods) }}%</span>
           </div>
-          <div style="background:#eef3fb;border-radius:8px;overflow:hidden;">
+          <div style="background:var(--bar);border-radius:8px;overflow:hidden;">
             <div style="height:12px;background:linear-gradient(90deg,#0f766e,#14b8a6);border-radius:8px;" :style="{ width: pct(r.periods, maxRoom) + '%' }"></div>
           </div>
         </div>
@@ -158,7 +158,7 @@ const insights = computed(() => {
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
             <span>{{ r.name }}</span><span class="muted">{{ r.periods }} 节次</span>
           </div>
-          <div style="background:#eef3fb;border-radius:8px;overflow:hidden;">
+          <div style="background:var(--bar);border-radius:8px;overflow:hidden;">
             <div style="height:12px;background:linear-gradient(90deg,#b63a46,#e76f51);border-radius:8px;" :style="{ width: pct(r.periods, maxTeacher) + '%' }"></div>
           </div>
         </div>
@@ -173,7 +173,7 @@ const insights = computed(() => {
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
             <span>{{ r.name }}</span><span class="muted">{{ r.sections }} 段</span>
           </div>
-          <div style="background:#eef3fb;border-radius:8px;overflow:hidden;">
+          <div style="background:var(--bar);border-radius:8px;overflow:hidden;">
             <div style="height:12px;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:8px;" :style="{ width: pct(r.sections, maxCourse) + '%' }"></div>
           </div>
         </div>
@@ -186,7 +186,7 @@ const insights = computed(() => {
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
             <span>{{ r.day }}</span><span class="muted">{{ r.count }} 节</span>
           </div>
-          <div style="background:#eef3fb;border-radius:8px;overflow:hidden;">
+          <div style="background:var(--bar);border-radius:8px;overflow:hidden;">
             <div style="height:12px;background:linear-gradient(90deg,#d97706,#f59e0b);border-radius:8px;" :style="{ width: pct(r.count, maxDay) + '%' }"></div>
           </div>
         </div>
@@ -199,7 +199,7 @@ const insights = computed(() => {
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
             <span>{{ periodLabel(r.start) }}</span><span class="muted">{{ r.count }} 节 · {{ share(r.count) }}%</span>
           </div>
-          <div style="background:#eef3fb;border-radius:8px;overflow:hidden;">
+          <div style="background:var(--bar);border-radius:8px;overflow:hidden;">
             <div style="height:12px;background:linear-gradient(90deg,#4d7c0f,#84cc16);border-radius:8px;" :style="{ width: pct(r.count, maxPeriod) + '%' }"></div>
           </div>
         </div>
@@ -214,7 +214,7 @@ const insights = computed(() => {
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
             <span>{{ k.name }}</span><span class="muted">{{ k.count }} 条 · {{ distShare(stats.kindDist)(k.count) }}%</span>
           </div>
-          <div style="background:#eef3fb;border-radius:8px;overflow:hidden;">
+          <div style="background:var(--bar);border-radius:8px;overflow:hidden;">
             <div style="height:12px;background:linear-gradient(90deg,#0d9488,#2dd4bf);border-radius:8px;" :style="{ width: pct(k.count, maxKind) + '%' }"></div>
           </div>
         </div>
@@ -227,7 +227,7 @@ const insights = computed(() => {
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
             <span>{{ k.name }}</span><span class="muted">{{ k.count }} 条 · {{ distShare(stats.campusDist)(k.count) }}%</span>
           </div>
-          <div style="background:#eef3fb;border-radius:8px;overflow:hidden;">
+          <div style="background:var(--bar);border-radius:8px;overflow:hidden;">
             <div style="height:12px;background:linear-gradient(90deg,#2563eb,#60a5fa);border-radius:8px;" :style="{ width: pct(k.count, maxCampus) + '%' }"></div>
           </div>
         </div>
@@ -241,7 +241,7 @@ const insights = computed(() => {
         <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
           <span>{{ k.name }}</span><span class="muted">{{ k.count }} 条 · {{ distShare(stats.colDist)(k.count) }}%</span>
         </div>
-        <div style="background:#eef3fb;border-radius:8px;overflow:hidden;">
+        <div style="background:var(--bar);border-radius:8px;overflow:hidden;">
           <div style="height:12px;background:linear-gradient(90deg,#be185d,#ec4899);border-radius:8px;" :style="{ width: pct(k.count, maxCol) + '%' }"></div>
         </div>
       </div>

@@ -102,7 +102,7 @@ onMounted(refresh)
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background: linear-gradient(135deg, #eef6ff, #f8fbff);
+  background: linear-gradient(135deg, var(--soft-blue), var(--soft));
   border: 1px solid #cfe3fb;
   border-radius: 12px;
   padding: 10px 14px;
@@ -118,7 +118,7 @@ onMounted(refresh)
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  background: #fff;
+  background: var(--card);
   border: 1px solid #dbeafe;
   border-radius: 10px;
 }

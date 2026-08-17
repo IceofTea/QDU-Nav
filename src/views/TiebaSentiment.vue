@@ -136,7 +136,7 @@ const insights = computed(() => {
         <div class="muted" style="font-size:12px;">日均约 {{ Math.round(weekSum / 14) }} 条</div>
       </div>
     </div>
-    <div v-if="insights.length" class="panel" style="margin-bottom:16px;background:#eef6ff;border-color:#bcd6f5;">
+    <div v-if="insights.length" class="panel" style="margin-bottom:16px;background:var(--soft-blue);border-color:#bcd6f5;">
       <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>一眼看懂这些数据</div>
       <ul style="margin:0;padding-left:18px;font-size:13px;line-height:2;color:var(--text);">
         <li v-for="s in insights" :key="s">{{ s }}</li>
@@ -215,7 +215,7 @@ const insights = computed(() => {
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  background: #fff;
+  background: var(--card);
   color: #2f5fb8;
   font-weight: 800;
   font-size: 20px;

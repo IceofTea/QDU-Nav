@@ -466,7 +466,7 @@ const monthLabel = computed(() => {
         <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
           <span>{{ c.name }}</span><span class="muted">¥{{ fmt(c.v) }}</span>
         </div>
-        <div style="background:#eef3fb;border-radius:8px;overflow:hidden;">
+        <div style="background:var(--bar);border-radius:8px;overflow:hidden;">
           <div style="height:12px;background:linear-gradient(90deg,#b63a46,#e76f51);border-radius:8px;" :style="{ width: Math.round(c.v / maxCat * 100) + '%' }"></div>
         </div>
       </div>
@@ -585,7 +585,7 @@ const monthLabel = computed(() => {
   margin-top: 10px;
   font-size: 12px;
   padding: 10px;
-  background: #eefaf3;
+  background: var(--soft-green);
   border: 1px solid #bfe6cf;
   border-radius: 10px;
   color: #0f5c3d;
@@ -614,7 +614,7 @@ const monthLabel = computed(() => {
   height: 90px;
   display: flex;
   align-items: flex-end;
-  background: #eef3fb;
+  background: var(--bar);
   border-radius: 7px;
   overflow: hidden;
 }
