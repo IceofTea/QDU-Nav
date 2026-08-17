@@ -4,7 +4,8 @@ export const officialGroups = [
     icon: '📚',
     sites: [
       { name: '青大 Wiki（GitHub）', url: 'https://github.com/IceofTea/QDU-Wiki', desc: '课程笔记 / 考研复试 / 经验文档' },
-      { name: '青大 Wiki（Gitee 镜像）', url: 'https://gitee.com/iceoftea/QDU-Wiki', desc: '国内访问更快的镜像仓库' }
+      { name: '青大 Wiki（Gitee 镜像）', url: 'https://gitee.com/iceoftea/QDU-Wiki', desc: '国内访问更快的镜像仓库' },
+      { name: '青岛大学吧', url: 'https://tieba.baidu.com/f?kw=%E9%9D%92%E5%B2%9B%E5%A4%A7%E5%AD%A6', desc: '百度贴吧 · 学生社区交流' }
     ]
   },
   {
@@ -60,40 +61,49 @@ export const officialGroups = [
   }
 ]
 
+/**
+ * 学院官网清单
+ * 依据青岛大学本科招生信息网「学院专业」整理；category 用于官网页按学科分类展示。
+ */
 export const colleges = [
-  { name: '材料科学与工程学院', url: 'https://clxy.qdu.edu.cn' },
-  { name: '电气工程学院', url: 'https://ee.qdu.edu.cn' },
-  { name: '电子信息学院', url: 'https://dzxxxy.qdu.edu.cn' },
-  { name: '法学院', url: 'https://law.qdu.edu.cn' },
-  { name: '纺织服装学院', url: 'https://ctc.qdu.edu.cn' },
-  { name: '公共卫生学院', url: 'https://ggwsxy.qdu.edu.cn' },
-  { name: '护理学院', url: 'https://nursing.qdu.edu.cn' },
-  { name: '化学化工学院', url: 'https://hxhg.qdu.edu.cn' },
-  { name: '环境科学与工程学院', url: 'https://env.qdu.edu.cn' },
-  { name: '基础医学院', url: 'https://qdbms.qdu.edu.cn' },
-  { name: '机电工程学院', url: 'https://jdxy.qdu.edu.cn' },
-  { name: '计算机科学技术学院', url: 'https://cst.qdu.edu.cn' },
-  { name: '经济学院', url: 'https://quec.qdu.edu.cn' },
-  { name: '口腔医学院', url: 'https://dent.qdu.edu.cn' },
-  { name: '历史学院', url: 'https://zxls.qdu.edu.cn' },
-  { name: '旅游与地理科学学院', url: 'https://tourism.qdu.edu.cn' },
-  { name: '马克思主义学院', url: 'https://szhb.qdu.edu.cn' },
-  { name: '美术学院', url: 'https://msxy.qdu.edu.cn' },
-  { name: '商学院', url: 'https://ibc.qdu.edu.cn' },
-  { name: '师范学院、教师教育学院', url: 'https://sf.qdu.edu.cn' },
-  { name: '生命科学学院', url: 'https://smkx.qdu.edu.cn' },
-  { name: '数学与统计学院', url: 'https://maths.qdu.edu.cn' },
-  { name: '体育学院', url: 'https://ty.qdu.edu.cn' },
-  { name: '文学与新闻传播学院', url: 'https://ljc.qdu.edu.cn' },
-  { name: '物理科学学院', url: 'https://physics.qdu.edu.cn' },
-  { name: '外语学院', url: 'https://cfl.qdu.edu.cn' },
-  { name: '药学院', url: 'https://pharma.qdu.edu.cn' },
-  { name: '医学部（青岛医学院）', url: 'https://qmc.qdu.edu.cn' },
-  { name: '音乐学院', url: 'https://yyxy.qdu.edu.cn' },
-  { name: '政治与公共管理学院', url: 'https://qdzgxy.qdu.edu.cn' },
-  { name: '质量与标准化学院', url: 'https://bzh.qdu.edu.cn' },
-  { name: '自动化学院', url: 'https://zdh.qdu.edu.cn' },
-  { name: '德雷克联合学院', url: 'https://drake.qdu.edu.cn' }
+  // 理工
+  { name: '材料科学与工程学院', url: 'https://clxy.qdu.edu.cn', category: '理工' },
+  { name: '电气工程学院', url: 'https://ee.qdu.edu.cn', category: '理工' },
+  { name: '电子信息学院', url: 'https://dzxxxy.qdu.edu.cn', category: '理工' },
+  { name: '纺织服装学院', url: 'https://ctc.qdu.edu.cn', category: '理工' },
+  { name: '化学化工学院', url: 'https://hxhg.qdu.edu.cn', category: '理工' },
+  { name: '环境科学与工程学院', url: 'https://env.qdu.edu.cn', category: '理工' },
+  { name: '机电工程学院', url: 'https://jdxy.qdu.edu.cn', category: '理工' },
+  { name: '计算机科学技术学院', url: 'https://cst.qdu.edu.cn', category: '理工' },
+  { name: '生命科学学院', url: 'https://smkx.qdu.edu.cn', category: '理工' },
+  { name: '数学与统计学院', url: 'https://maths.qdu.edu.cn', category: '理工' },
+  { name: '物理科学学院', url: 'https://physics.qdu.edu.cn', category: '理工' },
+  { name: '自动化学院', url: 'https://zdh.qdu.edu.cn', category: '理工' },
+  // 人文社科
+  { name: '马克思主义学院', url: 'https://szhb.qdu.edu.cn', category: '人文社科' },
+  { name: '历史学院', url: 'https://zxls.qdu.edu.cn', category: '人文社科' },
+  { name: '法学院', url: 'https://law.qdu.edu.cn', category: '人文社科' },
+  { name: '政治与公共管理学院', url: 'https://qdzgxy.qdu.edu.cn', category: '人文社科' },
+  { name: '文学与新闻传播学院', url: 'https://ljc.qdu.edu.cn', category: '人文社科' },
+  { name: '外语学院', url: 'https://cfl.qdu.edu.cn', category: '人文社科' },
+  { name: '经济学院', url: 'https://quec.qdu.edu.cn', category: '人文社科' },
+  { name: '商学院', url: 'https://ibc.qdu.edu.cn', category: '人文社科' },
+  { name: '师范学院、教师教育学院', url: 'https://sf.qdu.edu.cn', category: '人文社科' },
+  { name: '旅游与地理科学学院', url: 'https://tourism.qdu.edu.cn', category: '人文社科' },
+  { name: '质量与标准化学院', url: 'https://bzh.qdu.edu.cn', category: '人文社科' },
+  // 医学
+  { name: '公共卫生学院', url: 'https://ggwsxy.qdu.edu.cn', category: '医学' },
+  { name: '护理学院', url: 'https://nursing.qdu.edu.cn', category: '医学' },
+  { name: '基础医学院', url: 'https://qdbms.qdu.edu.cn', category: '医学' },
+  { name: '口腔医学院', url: 'https://dent.qdu.edu.cn', category: '医学' },
+  { name: '药学院', url: 'https://pharma.qdu.edu.cn', category: '医学' },
+  { name: '医学部（青岛医学院）', url: 'https://qmc.qdu.edu.cn', category: '医学' },
+  // 艺术与体育
+  { name: '美术学院', url: 'https://msxy.qdu.edu.cn', category: '艺术与体育' },
+  { name: '音乐学院', url: 'https://yyxy.qdu.edu.cn', category: '艺术与体育' },
+  { name: '体育学院', url: 'https://ty.qdu.edu.cn', category: '艺术与体育' },
+  // 合作办学
+  { name: '德雷克联合学院', url: 'https://drake.qdu.edu.cn', category: '合作办学' }
 ]
 
 export const emergency = {
