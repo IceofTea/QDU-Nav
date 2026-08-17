@@ -26,6 +26,7 @@ import BuildingMatch from './views/BuildingMatch.vue'
 import CourseStats from './views/CourseStats.vue'
 import Budget from './views/Budget.vue'
 import TiebaSentiment from './views/TiebaSentiment.vue'
+import Contributors from './views/Contributors.vue'
 
 /** 应用 id → 视图组件注册表 */
 export const VIEWS = {
@@ -44,7 +45,8 @@ export const VIEWS = {
   buildingMatch: BuildingMatch,
   courseStats: CourseStats,
   budget: Budget,
-  tiebaSentiment: TiebaSentiment
+  tiebaSentiment: TiebaSentiment,
+  contributors: Contributors
 }
 
 /** 底部快捷导航（首页 + 高频应用） */

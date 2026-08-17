@@ -35,25 +35,42 @@ BAR_URL = 'https://tieba.baidu.com/f?kw=' + urllib.parse.quote(BAR_NAME)
 OUT_FILE = ROOT / 'public' / 'data' / 'tieba_stats.json'
 PAGES = int(next((a.split('=')[1] for a in sys.argv if a.startswith('--pages=')), '4'))
 PAGE_SIZE = 50
-RETRIES = 2
+RETRIES = 3
 
-UA = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-      '(KHTML, like Gecko) Chrome/120.0 Safari/537.36')
+# 反爬对抗：随机 UA 池 + 每次请求随机延迟 + 指数退避重试（尽力而为）
+UA_POOL = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+    '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+    '(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 '
+    '(KHTML, like Gecko) Version/17.3 Safari/605.1.15',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 '
+    '(KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+]
 BAIDUID = ''.join(random.choices(string.hexdigits, k=32))
-HEADERS = {
-    'User-Agent': UA,
-    'Accept-Language': 'zh-CN,zh;q=0.9',
-    'Cookie': 'BAIDUID=%s' % BAIDUID,
-}
+
+
+def _headers():
+    return {
+        'User-Agent': random.choice(UA_POOL),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9',
+        'Referer': BAR_URL,
+        'Cookie': 'BAIDUID=%s; __bid=%s' % (
+            BAIDUID,
+            ''.join(random.choices(string.ascii_lowercase + string.digits, k=16))),
+    }
 
 
 def fetch_list_html(page_index: int) -> str:
-    """抓取一页贴吧列表 HTML（带 UA / cookie / 重试）。"""
+    """抓取一页贴吧列表 HTML（随机 UA / cookie / 延迟，指数退避重试）。"""
     url = '%s&ie=utf-8&pn=%d' % (BAR_URL, page_index * PAGE_SIZE)
     last_err = None
-    for _ in range(RETRIES):
+    for attempt in range(RETRIES):
         try:
-            req = urllib.request.Request(url, headers=HEADERS)
+            time.sleep(random.uniform(0.6, 1.8))
+            req = urllib.request.Request(url, headers=_headers())
             with urllib.request.urlopen(req, timeout=20) as resp:
                 data = resp.read().decode('utf-8', 'replace')
             if len(data) < 5000 or 'j_thread_list' not in data:
@@ -61,7 +78,7 @@ def fetch_list_html(page_index: int) -> str:
             return data
         except Exception as exc:  # noqa: BLE001
             last_err = exc
-            time.sleep(1)
+            time.sleep(1.5 * (attempt + 1))
     raise RuntimeError('贴吧抓取失败: %s' % last_err)
 
 

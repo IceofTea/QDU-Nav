@@ -1,7 +1,7 @@
 <script setup>
 /** 课程表：班级/教室/教师课表查询 + 官方课程总表入口
  *  数据来自本地快照（loadSnap），网关可用时用网关补充元信息 */
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { apiFetch } from '../api/index'
 import { loadSnap } from '../api/localCourse'
 import { normRoom, clsSplit, profOf, parseWeeks } from '../utils/course'
@@ -85,10 +85,29 @@ const result = computed(() => {
 
 const resultItems = computed(() => result.value.map((name) => ({ name, count: countOf(name) })))
 
+const PAGE_SIZE = 50
+const page = ref(1)
+const expandAll = ref(false)
+const pageCount = computed(() => Math.max(1, Math.ceil(resultItems.value.length / PAGE_SIZE)))
+const shown = computed(() =>
+  expandAll.value
+    ? resultItems.value
+    : resultItems.value.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE)
+)
+function toggleExpand() {
+  expandAll.value = !expandAll.value
+}
+watch([kw, gradeFilter, profFilter, tab, term], () => {
+  page.value = 1
+  expandAll.value = false
+})
+
 function switchTab(t) {
   tab.value = t
   gradeFilter.value = ''
   profFilter.value = ''
+  page.value = 1
+  expandAll.value = false
 }
 
 function switchTerm(t) {
@@ -97,6 +116,8 @@ function switchTerm(t) {
   gradeFilter.value = ''
   profFilter.value = ''
   opened.value = null
+  page.value = 1
+  expandAll.value = false
 }
 
 function countOf(obj) {
@@ -242,15 +263,27 @@ onMounted(loadCourses)
 
     <div class="panel">
       <div class="muted" style="font-size:12px;margin-bottom:8px;">
-        共 {{ resultItems.length }} 个{{ sourceName }}（{{ tab === 'class' ? '默认按年级排序，含合班课拆分' : '按名称排序' }}），点击查看周课表
+        共 {{ resultItems.length }} 个{{ sourceName }}（{{ tab === 'class' ? '默认按年级排序，含合班课拆分' : '按名称排序' }}），点击查看周课表{{ resultItems.length > PAGE_SIZE ? ' · 每页 ' + PAGE_SIZE + ' 条' : '' }}
       </div>
       <div class="cal-list">
-        <button v-for="it in resultItems" :key="it.name" class="cal-item" style="width:100%;text-align:left;cursor:pointer;border:none;background:none;font-family:inherit;" @click="open(it.name)">
+        <button v-for="it in shown" :key="it.name" class="cal-item" style="width:100%;text-align:left;cursor:pointer;border:none;background:none;font-family:inherit;" @click="open(it.name)">
           <span class="cal-title">{{ it.name }}</span>
           <span class="cal-count">{{ it.count }} 门课</span>
           <span class="cal-go">查看课表 ›</span>
         </button>
         <div v-if="!resultItems.length" class="muted" style="padding:16px;text-align:center;">没有匹配的{{ sourceName }}，换个关键字或筛选试试</div>
+      </div>
+      <div v-if="resultItems.length > PAGE_SIZE" class="pager">
+        <button class="tab" :class="{ disabled: page <= 1 || expandAll }" @click="page = Math.max(1, page - 1)">‹ 上一页</button>
+        <button
+          v-for="p in pageCount"
+          :key="p"
+          class="tab"
+          :class="{ active: page === p && !expandAll }"
+          @click="page = p"
+        >{{ p }}</button>
+        <button class="tab" :class="{ disabled: page >= pageCount || expandAll }" @click="page = Math.min(pageCount, page + 1)">下一页 ›</button>
+        <button class="tab accent" :class="{ active: expandAll }" @click="toggleExpand">{{ expandAll ? '收起分页' : '展开全部' }}</button>
       </div>
     </div>
   </template>
@@ -289,6 +322,17 @@ onMounted(loadCourses)
 </template>
 
 <style scoped>
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+  align-items: center;
+}
+.pager .tab.disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
 .week-grid { position: relative; --row: 46px; --tc: 40px; }
 .wg-head-row { display: grid; grid-template-columns: var(--tc,40px) repeat(7, 1fr); }
 .wg-head { text-align: center; font-size: 12px; font-weight: 700; padding: 4px 0; box-sizing: border-box; }

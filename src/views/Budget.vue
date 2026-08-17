@@ -30,16 +30,22 @@ const CATS = {
   ]
 }
 
-/** 青大常见奖学金 / 助学金预设（仅为快捷勾选参考，实际以学校通知为准） */
+/** 青大常见奖学金 / 助学金 / 竞赛奖励预设（金额参照青岛大学本科生奖助文件：
+ *  优秀奖学金 1000/600/400 ·每学期；国家助学金三档 2300/3300/4300 ·每学年；
+ *  竞赛奖励参照《博学奖学金评审办法》；实际发放以学校最新通知为准） */
 const SCHOLARS = [
   { name: '国家奖学金', amount: 8000 },
   { name: '国家励志奖学金', amount: 5000 },
   { name: '省政府奖学金', amount: 6000 },
-  { name: '校级一等奖学金', amount: 1500 },
-  { name: '校级二等奖学金', amount: 1000 },
-  { name: '校级三等奖学金', amount: 500 },
-  { name: '国家助学金（一档）', amount: 4400 },
-  { name: '国家助学金（二档）', amount: 3300 }
+  { name: '优秀奖学金（一等）', amount: 1000 },
+  { name: '优秀奖学金（二等）', amount: 600 },
+  { name: '优秀奖学金（三等）', amount: 400 },
+  { name: '国家助学金（一档）', amount: 2300 },
+  { name: '国家助学金（二档）', amount: 3300 },
+  { name: '国家助学金（三档）', amount: 4300 },
+  { name: '竞赛奖学金（挑战杯·国特）', amount: 30000 },
+  { name: '竞赛奖学金（A类·国一）', amount: 5000 },
+  { name: '博学奖学金（发明专利）', amount: 5000 }
 ]
 
 /** 导入账单时按商品名关键词猜测类别 */
@@ -334,6 +340,7 @@ const monthLabel = computed(() => {
     <template v-if="mode === 'income' && cat === 'scholarship'">
       <div class="scholar-box">
         <div class="scholar-label">🏅 奖学金 / 助学金预设（点击自动带出金额）</div>
+        <div class="muted" style="font-size:11px;margin:2px 0 8px;">优秀奖学金 1000/600/400 ·每学期；国家助学金三档 2300/3300/4300 ·每学年；竞赛奖励参照博学奖学金办法。以学校最新通知为准。</div>
         <div class="scholar-grid">
           <button v-for="s in SCHOLARS" :key="s.name" class="scholar-chip" @click="pickScholar(s)">
             {{ s.name }} <b>¥{{ s.amount }}</b>

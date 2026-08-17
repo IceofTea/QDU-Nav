@@ -33,9 +33,9 @@ onMounted(async () => {
   maxCourse.value = s.topCourses.reduce((m, r) => Math.max(m, r.sections), 1)
   maxDay.value = s.dayDist.reduce((m, r) => Math.max(m, r.count), 1)
   maxTerm.value = s.terms.reduce((m, r) => Math.max(m, r.count), 1)
-  maxKind.value = s.kindDist.reduce((m, r) => Math.max(m, r.count), 1)
-  maxCampus.value = s.campusDist.reduce((m, r) => Math.max(m, r.count), 1)
-  maxCol.value = s.colDist.reduce((m, r) => Math.max(m, r.count), 1)
+  maxKind.value = labeledDist(s.kindDist).reduce((m, r) => Math.max(m, r.count), 1)
+  maxCampus.value = labeledDist(s.campusDist).reduce((m, r) => Math.max(m, r.count), 1)
+  maxCol.value = labeledDist(s.colDist).reduce((m, r) => Math.max(m, r.count), 1)
   loading.value = false
 })
 
@@ -47,6 +47,15 @@ const hasDist = computed(() =>
 
 const total = computed(() => stats.value.periods || 1)
 const share = (v) => Math.round((v / total.value) * 1000) / 10
+
+/** 过滤「未标注」项：历史快照无附带列时不应展示 100% 未标注的无效分布 */
+const labeledDist = (arr) => (arr || []).filter((k) => k.name !== '未标注')
+
+/** 分布占比基于该分布自身的「已标注样本数」计算，避免未标注拉低真实占比 */
+const distShare = (arr) => {
+  const tot = labeledDist(arr).reduce((s, k) => s + k.count, 0)
+  return (v) => (tot ? Math.round((v / tot) * 1000) / 10 : 0)
+}
 </script>
 
 <template>
@@ -134,11 +143,11 @@ const share = (v) => Math.round((v / total.value) * 1000) / 10
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:16px;">
-      <div class="panel">
+      <div v-if="labeledDist(stats.kindDist).length" class="panel">
         <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>课程性质分布</div>
-        <div v-for="k in stats.kindDist" :key="k.name" style="margin-bottom:8px;">
+        <div v-for="k in labeledDist(stats.kindDist)" :key="k.name" style="margin-bottom:8px;">
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
-            <span>{{ k.name }}</span><span class="muted">{{ k.count }} 条 · {{ share(k.count) }}%</span>
+            <span>{{ k.name }}</span><span class="muted">{{ k.count }} 条 · {{ distShare(stats.kindDist)(k.count) }}%</span>
           </div>
           <div style="background:#eef3fb;border-radius:8px;overflow:hidden;">
             <div style="height:12px;background:linear-gradient(90deg,#0d9488,#2dd4bf);border-radius:8px;" :style="{ width: pct(k.count, maxKind) + '%' }"></div>
@@ -147,11 +156,11 @@ const share = (v) => Math.round((v / total.value) * 1000) / 10
         <p class="muted" style="font-size:12px;margin-top:8px;">来自课程总表「课程性质」列：专业课 / 美育课 / 实践环节等构成。</p>
       </div>
 
-      <div class="panel">
+      <div v-if="labeledDist(stats.campusDist).length" class="panel">
         <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>校区分布</div>
-        <div v-for="k in stats.campusDist" :key="k.name" style="margin-bottom:8px;">
+        <div v-for="k in labeledDist(stats.campusDist)" :key="k.name" style="margin-bottom:8px;">
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
-            <span>{{ k.name }}</span><span class="muted">{{ k.count }} 条 · {{ share(k.count) }}%</span>
+            <span>{{ k.name }}</span><span class="muted">{{ k.count }} 条 · {{ distShare(stats.campusDist)(k.count) }}%</span>
           </div>
           <div style="background:#eef3fb;border-radius:8px;overflow:hidden;">
             <div style="height:12px;background:linear-gradient(90deg,#2563eb,#60a5fa);border-radius:8px;" :style="{ width: pct(k.count, maxCampus) + '%' }"></div>
@@ -161,11 +170,11 @@ const share = (v) => Math.round((v / total.value) * 1000) / 10
       </div>
     </div>
 
-    <div v-if="stats.colDist.length" class="panel" style="margin-bottom:16px;">
+    <div v-if="labeledDist(stats.colDist).length" class="panel" style="margin-bottom:16px;">
       <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>学院开课分布 Top 12</div>
-      <div v-for="k in stats.colDist" :key="k.name" style="margin-bottom:8px;">
+      <div v-for="k in labeledDist(stats.colDist)" :key="k.name" style="margin-bottom:8px;">
         <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
-          <span>{{ k.name }}</span><span class="muted">{{ k.count }} 条 · {{ share(k.count) }}%</span>
+          <span>{{ k.name }}</span><span class="muted">{{ k.count }} 条 · {{ distShare(stats.colDist)(k.count) }}%</span>
         </div>
         <div style="background:#eef3fb;border-radius:8px;overflow:hidden;">
           <div style="height:12px;background:linear-gradient(90deg,#be185d,#ec4899);border-radius:8px;" :style="{ width: pct(k.count, maxCol) + '%' }"></div>
