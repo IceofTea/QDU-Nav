@@ -1,57 +1,44 @@
-# QDU-Nav 爬虫适配器
+# QDU-Nav 爬虫（Python）
 
-本目录提供将「QDU 校园导航」对接青岛大学各官方系统的数据获取方案（示例框架）。
+本目录提供将「QDU 校园导航」数据对接青岛大学**公开页面**的爬虫工具，**仅使用 Python 标准库**，零第三方依赖、零安装成本，CI 与本地均可直接运行。
 
-## 目标数据源与接口来源
+## 模块职责
 
-| 数据 | 官方系统 | 地址 | 获取方式 |
-| --- | --- | --- | --- |
-| 班级/教师/教室课表、成绩、考试安排 | 教务管理系统（正方） | `http://jw.qdu.edu.cn/academic/` | 模拟登录 + 抓取（需账号） |
-| 本研教学管理 | 本研教学管理与服务一体化平台 | `https://xjw.qdu.edu.cn/` | 模拟登录 + 抓取（需账号） |
-| 校历、课表、办事指南 | 教务处官网 | `https://jwc.qdu.edu.cn/` | 公开页面抓取 |
-| 校历图片（2026~2027） | 教务处 | `https://jwc.qdu.edu.cn/info/1005/6515.htm` | 公开页面抓取图片 |
-| 新生学号查询 | 正方教务 / 招生系统 | `jw.qdu.edu.cn` | 模拟查询（带验证码，需人工/OCR） |
-| 录取查询公告 | 本科招生网 | `https://zs.qdu.edu.cn/` | 公开页面抓取 |
-| 校园网认证 | 校园网自助服务 | `https://accounts.qdunet.com:8800/` | 深澜认证计费系统（一般不用） |
+| 文件 | 职责 |
+| --- | --- |
+| `config.py` | 数据源地址、抓取参数、输出路径 |
+| `fetcher.py` | 通用抓取（文本/二进制），带超时与重试 |
+| `parsers.py` | 页面结构解析：教务通知、首页动态、通知多页合并去重 |
+| `build_snapshot.py` | **快照构建器（主入口）**：抓取课程总表（xlsx 下载+解析）、通知、动态、校历，生成 `public/data/snapshot.json` |
+| `validate.py` | 快照质量校验（schema/数量/一致性），CI 质量门禁 |
+| `analysis.py` | 课程数据洞察：从快照聚合统计，生成 `public/data/course_stats.json` |
+| `diff.py` | 快照差异摘要：对比上次快照，输出变更（通知增减等） |
+| `qdu_crawler.py` | 公开公告 / 校历大图抓取（工具，演示用法） |
 
-## 说明与合规提醒
-
-- **自行爬取**：学校官方系统多为厂商内部 Web 系统（正方等），**不提供开放 API**，只能通过模拟登录网页抓取。
-- 请**低频访问**、限制频率与并发，避免对官方系统造成压力。
-- 使用前请确认符合**校规校纪与法律法规**；涉及个人数据（学号、成绩）请仅用于本人场景并妥善保管。
-- 验证码：本框架支持人工输入与 PIL 预处理；不建议高频自动打码。
-
-## 使用方式
-
-### 1. 安装依赖
+## 使用
 
 ```bash
-pip install -r requirements.txt
+# 构建快照（定时任务首选入口）
+python crawler/build_snapshot.py
+
+# 校验快照（非零退出码 = 有质量问题）
+python crawler/validate.py
+
+# 课程数据洞察
+python crawler/analysis.py
+
+# 单元测试（解析器 / schema / xlsx 解析 / 公开抓取）
+python -m unittest discover -s tests
+
+# 公告抓取工具
+python crawler/qdu_crawler.py --source jwc --out output/announcements.json
+python crawler/qdu_crawler.py --calendar
 ```
 
-### 2. 演示模式（无需账号，返回内置示例数据）
+## 与 Node 版的关系
 
-```bash
-python qdu_crawler.py --mock
-```
+`scripts/snapshot.mjs` 为等价实现，输出格式完全一致。CI 优先使用 Python 版，失败自动回退 Node 版。
 
-### 3. 真实模式（需提供学号与密码）
+## 数据来源
 
-```bash
-python qdu_crawler.py --username 2026xxxxxx --password 你的密码
-```
-
-会依次尝试登录正方教务并抓取课表；验证码请在终端人工输入。
-
-### 4. 输出 JSON 对接前端
-
-脚本输出 JSON 与 `output/` 目录，前端 `src/api/` 可将其作为数据源替换内置示例数据。
-
-## 目录
-
-```
-crawler/
-├── qdu_crawler.py        # 主脚本（演示 + 真实模式）
-├── requirements.txt
-└── README.md
-```
+全部来自青岛大学官网公开页面（`https://jwc.qdu.edu.cn` 教务处、`https://zs.qdu.edu.cn` 招生网）。本站**不抓取任何需要账号的个人数据**；早期「正方教务模拟登录」示例因合规与安全原因已移除。

@@ -1,11 +1,24 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { apps, campusStats } from '../data/apps'
 import { campuses } from '../data/campus'
+import { getCourseStats, EMPTY_STATS } from '../api/courseStats'
 
 const emit = defineEmits(['open'])
 
 const keyword = ref('')
+
+const stats = ref(EMPTY_STATS)
+const maxTerm = ref(1)
+
+function barH(v, m) {
+  return m ? Math.max(6, Math.round((v / m) * 100)) : 6
+}
+
+onMounted(async () => {
+  stats.value = await getCourseStats()
+  maxTerm.value = stats.value.terms.reduce((m, t) => Math.max(m, t.count), 1)
+})
 
 function greeting() {
   const h = new Date().getHours()
@@ -96,6 +109,29 @@ function toggleCampus(name) {
       ]" :key="s.l">
         <div class="stat-value">{{ s.v }}</div>
         <div class="stat-label">{{ s.l }}</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h3 class="section-title">数据洞察</h3>
+        <button class="section-link" @click="emit('open', 'courseStats')">查看完整统计 ›</button>
+      </div>
+      <div class="insight-card">
+        <div class="insight-main">
+          <div class="insight-title">📊 校园热度 · 课程数据洞察</div>
+          <div v-if="stats.periods" class="insight-desc">
+            近 {{ stats.terms.length }} 个学期共 <b>{{ stats.periods }}</b> 条排课：最热教室
+            <b>{{ stats.hotRooms[0] && stats.hotRooms[0].name }}</b>（{{ stats.hotRooms[0] && stats.hotRooms[0].periods }} 节次）、
+            最热教师 <b>{{ stats.hotTeachers[0] && stats.hotTeachers[0].name }}</b>
+          </div>
+          <div v-else class="insight-desc muted">统计加载中…</div>
+        </div>
+        <div class="insight-bars">
+          <div v-for="t in stats.terms.slice(0, 5)" :key="t.semester" class="insight-bar" :title="t.semester + ' · ' + t.count">
+            <div class="insight-bar-fill" :style="{ height: barH(t.count, maxTerm) + '%' }"></div>
+          </div>
+        </div>
       </div>
     </section>
 

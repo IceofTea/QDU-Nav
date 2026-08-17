@@ -14,14 +14,29 @@
 | 📅 校历 | 官方校历入口 + 学期时间线 |
 | 🍽️ 食堂空座率 | 官方食堂名单 + 营业时段实时判定 + 真实档口/招牌菜 |
 | 🪪 新生学号查询 | 官方录取查询入口与流程引导（录取系统需校内环境，不做代查） |
+| 📊 数据洞察 | 基于近 7 学期 5 万条排课的统计：热门教室 / 教师 / 课程、学期趋势、周节次分布（Python 聚合） |
 | 💪 体测计算器 · 🍜 今天吃什么 · 🎡 美食轮盘 · 🎯 青大知多少 · 🧩 教学楼速配 | 校园工具与游戏 |
 
 ## 技术栈
 
 - **前端**：Vue 3 + Vite，静态资源部署，支持 Hash 路由分享
 - **网关**：原生 Node HTTP（`server/index.mjs`，端口 8787），抓取并解析教务数据
-- **爬虫**：`crawler/`（Python，仅标准库）与 `scripts/snapshot.mjs`（Node）**双实现**，输出格式一致、可互换
-- **数据层**：`scripts/snapshot.mjs` / `crawler/build_snapshot.py` 将官网数据落盘为 `public/data/snapshot.json`（含最近 7 个学期课程总表全量排课，前端 API 请求失败时自动回退快照，保证纯静态托管可用）
+- **Python 数据侧**：`crawler/`（仅标准库）承担**爬取 → 校验 → 测试 → 分析 → 差异**整条数据链路，与 Node 版双实现互为保障
+- **数据层**：快照 `public/data/snapshot.json`（含最近 7 个学期课程总表全量排课，前端 API 请求失败时自动回退快照，保证纯静态托管可用）+ 洞察 `public/data/course_stats.json`
+
+### Python 数据链路（`crawler/`）
+
+| 模块 | 职责 | 入口 |
+| --- | --- | --- |
+| `build_snapshot.py` | 抓取课程总表（xlsx 下载+解析）、通知、动态、校历 → 生成快照 | `python crawler/build_snapshot.py` |
+| `validate.py` | 快照质量门禁（schema / 数量 / 一致性），CI 提交前强制运行 | `python crawler/validate.py` |
+| `analysis.py` | 聚合课程数据 → 数据洞察页数据 | `python crawler/analysis.py` |
+| `diff.py` | 对比上次快照输出变更摘要，写入 CI 提交信息 | `python crawler/diff.py` |
+| `fetcher.py` / `parsers.py` / `config.py` | 通用抓取 / 页面解析 / 配置 | — |
+| `qdu_crawler.py` | 公开公告与校历图片抓取（工具演示） | `python crawler/qdu_crawler.py --calendar` |
+| `server/parse_kcb.py` | 课程总表 xlsx 解析（纯标准库） | — |
+
+**质量保障**：`tests/` 含 14 个单元测试（解析器 / 快照 schema / xlsx 解析 / 公开抓取），CI 与本地 `python -m unittest discover -s tests` 均会运行；快照在任何提交前都必须通过 `validate.py`，防止学校改版导致数据静默退化。
 
 ## 数据来源与爬取原理
 
@@ -40,7 +55,7 @@
 
 网站数据不是「部署时的一次性快照」，而是**持续定时爬取**：
 
-- GitHub Actions `refresh-snapshot` 工作流**每 6 小时**（北京时间 08:23 / 14:23 / 20:23 / 02:23）自动运行爬虫，**优先使用 Python 版**（`crawler/build_snapshot.py`），失败时自动回退 Node 版（`node scripts/snapshot.mjs`）；重新抓取全部学期课程总表、通知（前 4 页约 60 条）、动态、校历，并在数据有变化时提交推送到 main 分支
+- GitHub Actions `refresh-snapshot` 工作流**每 6 小时**（北京时间 08:23 / 14:23 / 20:23 / 02:23）自动运行：**Python 版爬虫**（`crawler/build_snapshot.py`，失败自动回退 Node 版 `scripts/snapshot.mjs`）→ 重新抓取全部学期课程总表、通知（前 4 页约 60 条）、动态、校历 → 生成洞察数据（`analysis.py`）→ **质量校验**（`validate.py` + 单元测试）→ 计算差异摘要（`diff.py`）→ 有变化时提交推送 main 分支
 - 推送自动触发 `deploy` 工作流重新构建并部署 GitHub Pages，因此线上站点始终反映**最近一次抓取**的数据
 
 ### 手动更新（随时触发）
@@ -53,6 +68,8 @@
 **方式二：本地命令行**
 ```bash
 python crawler/build_snapshot.py   # Python 版（首选）
+python crawler/analysis.py         # 生成数据洞察统计
+python crawler/validate.py         # 质量校验（可选，CI 会自动跑）
 # 或
 node scripts/snapshot.mjs          # Node 版（等价）
 git add -A && git commit -m "data: refresh snapshot" && git push origin main
@@ -83,14 +100,20 @@ QDU-Nav/
 ├── server/
 │   ├── index.mjs           # 原生 Node 网关（8787）
 │   └── parse_kcb.py        # 课程总表 xlsx 解析（仅 Python 标准库）
-├── crawler/                # Python 版爬虫（仅标准库，与 Node 版等价）
+├── crawler/                # Python 数据侧（仅标准库）
 │   ├── config.py           # 数据源 / 抓取参数 / 输出路径
 │   ├── fetcher.py          # 通用抓取（超时 / 重试）
 │   ├── parsers.py          # 页面结构解析（通知 / 动态 / 多页合并）
-│   └── build_snapshot.py   # 快照构建器（定时任务首选入口）
+│   ├── build_snapshot.py   # 快照构建器（定时任务首选入口）
+│   ├── validate.py         # 快照质量校验（CI 质量门禁）
+│   ├── analysis.py         # 课程数据洞察聚合
+│   ├── diff.py             # 快照差异摘要
+│   └── qdu_crawler.py      # 公开公告 / 校历图片抓取（工具）
+├── tests/                  # Python 单元测试（解析器 / schema / xlsx / 公开抓取）
 ├── scripts/
-│   └── snapshot.mjs        # Node 版快照抓取脚本（等价实现）
-├── public/data/snapshot.json  # 定时更新的数据快照
+│   └── snapshot.mjs        # Node 版快照抓取脚本（等价实现，回退用）
+├── public/data/snapshot.json     # 定时更新的数据快照
+├── public/data/course_stats.json # 定时更新的数据洞察统计
 └── .github/workflows/      # snapshot.yml 定时爬取 / deploy.yml 构建部署
 ```
 

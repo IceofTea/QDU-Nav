@@ -23,6 +23,10 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - name: Python quality gates (unit tests + snapshot validate)
+        run: |
+          python3 -m unittest discover -s tests
+          python3 crawler/validate.py
       - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

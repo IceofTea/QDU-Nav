@@ -396,6 +396,42 @@ body {
   gap: 6px;
 }
 .about-card b { color: var(--text); font-weight: 600; }
+.insight-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, #0f3d33, #155e54);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  color: #fff;
+  box-shadow: 0 10px 26px rgba(15, 102, 94, 0.25);
+}
+.insight-main { flex: 1; min-width: 220px; }
+.insight-title { font-size: 16px; font-weight: 800; }
+.insight-desc { font-size: 12px; opacity: 0.9; margin-top: 6px; line-height: 1.7; }
+.insight-desc b { color: #7ee2c4; }
+.insight-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 64px;
+  padding: 0 4px;
+}
+.insight-bar {
+  width: 16px;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.insight-bar-fill {
+  width: 100%;
+  background: linear-gradient(180deg, #7ee2c4, #2dd4bf);
+  border-radius: 6px;
+}
 .section-sub { font-size: 12px; color: var(--text-sub); }
 .section-link {
   margin-left: auto;

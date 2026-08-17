@@ -31,15 +31,30 @@ jobs:
         if: failure()
         run: node scripts/snapshot.mjs
 
+      - name: Build course stats (Python)
+        run: python3 crawler/analysis.py
+
+      - name: Validate snapshot (Python)
+        run: python3 crawler/validate.py
+
+      - name: Unit tests (Python)
+        run: python3 -m unittest discover -s tests
+
+      - name: Compute data diff
+        id: diff
+        run: |
+          python3 crawler/diff.py > data_diff.txt
+          echo "summary=$(cat data_diff.txt)" >> "$GITHUB_OUTPUT"
+
       - name: Commit and push if changed
         run: |
           git config user.name "qdu-nav-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/snapshot.json
+          git add public/data/snapshot.json public/data/course_stats.json
           if git diff --cached --quiet; then
             echo "snapshot unchanged, skip commit"
           else
-            git commit -m "data: refresh snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git commit -m "data: refresh snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)" -m "${{ steps.diff.outputs.summary }}"
             git push
             echo "snapshot refreshed and pushed (deploy workflow will rebuild the site)"
           fi
