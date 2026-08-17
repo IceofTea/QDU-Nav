@@ -222,11 +222,31 @@ function showCourse(co) {
 }
 const dayLabel = (d) => dayNames[d - 1] || ('周' + d)
 
-const dayCourses = (d) =>
-  (opened.value?.days?.[d] || [])
+const dayCourses = (d) => {
+  const list = (opened.value?.days?.[d] || [])
     .slice()
     .filter((co) => !weekFilter.value || parseWeeks(co.w).has(+weekFilter.value))
-    .sort((a, b) => a.s - b.s)
+    .sort((a, b) => a.s - b.s || (a.c < b.c ? -1 : a.c > b.c ? 1 : 0))
+  // 同一课程·同一节次多位教师（分段授课，如大学英语读写译 4 位老师）合并为一条
+  const map = new Map()
+  for (const co of list) {
+    const k = co.c + '|' + co.s + '|' + co.e
+    if (!map.has(k)) map.set(k, { ...co, tList: [], wList: [] })
+    const g = map.get(k)
+    if (!g.tList.includes(co.t)) g.tList.push(co.t)
+    if (!g.wList.includes(co.w)) g.wList.push(co.w)
+  }
+  return [...map.values()].map((g) => ({ ...g, t: g.tList.join('、'), w: g.wList.join('、') }))
+}
+
+/** 合班备注：该课面向哪些班（与当前查看对象不同或含范围时提示） */
+function clsNote(co) {
+  const raw = co.cls
+  if (!raw) return ''
+  if (opened.value?.mode !== 'class') return raw
+  if (raw === opened.value.name) return ''
+  return '合班 ' + raw
+}
 
 const posStyle = (co) => ({
   left: 'calc(var(--tc,40px) + (100% - var(--tc,40px)) * ' + (co.d - 1) + ' / 7)',
@@ -302,6 +322,7 @@ onMounted(loadCourses)
             <span class="wg-li-main">
               <b>{{ co.c }}</b>
               <span class="wg-li-sub">{{ subOf(co) }}</span>
+              <span v-if="clsNote(co)" class="wg-li-cls">📌 {{ clsNote(co) }}</span>
             </span>
             <span class="wg-li-go">›</span>
           </button>
@@ -510,6 +531,7 @@ onMounted(loadCourses)
 .wg-li-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .wg-li-main b { font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wg-li-sub { font-size: 12px; color: var(--text-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wg-li-cls { font-size: 11px; color: #92400e; background: #fff8e6; border-radius: 6px; padding: 1px 6px; align-self: flex-start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .wg-li-go { color: var(--text-light); font-size: 16px; }
 
 /* 课程详情弹窗 */

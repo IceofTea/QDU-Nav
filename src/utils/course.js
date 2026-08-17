@@ -14,13 +14,29 @@
 export const normRoom = (r) => (r || '').replace(/[（(]智慧[)）]/g, '').trim()
 
 /**
- * 拆分「多班合上」的班级串。
+ * 拆分「多班合上」的班级串，并把「[01-04]班」这类范围展开成单班。
  * 课程总表的「上课班级」列常为合并串，如
- * 「24临床（5+3）[01-05]班,25体育[01-02]班」，需要拆成单个班级。
+ * 「24临床（5+3）[01-05]班,25体育[01-02]班,25软件03班」。
+ * 范围班（如「25软件[01-04]班」）展开为 25软件01班…25软件04班，
+ * 使班级列表只出现单班、合班课自动落到每个单班的课表里。
  * @param {string} cls 原始班级串
- * @returns {string[]} 拆分后的单个班级名数组
+ * @returns {string[]} 拆分/展开后的单个班级名数组
  */
-export const clsSplit = (cls) => (cls || '').split(/[,，、]/).map((s) => s.trim()).filter(Boolean)
+export const clsSplit = (cls) => {
+  const out = []
+  for (const s of (cls || '').split(/[,，、]/)) {
+    const t = s.trim()
+    if (!t) continue
+    const m = t.match(/^(.+?)\[(\d{1,2})\s*[-–]\s*(\d{1,2})\](班)?$/)
+    if (m) {
+      const [, pre, a, b] = m
+      for (let n = +a; n <= +b; n++) out.push(`${pre}${String(n).padStart(2, '0')}班`)
+    } else {
+      out.push(t)
+    }
+  }
+  return out
+}
 
 /**
  * 从班级名提取「专业」关键字（用于分类浏览）。
