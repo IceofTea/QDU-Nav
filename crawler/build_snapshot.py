@@ -112,7 +112,10 @@ def build():
                 'c': row.get('c', ''), 't': row.get('t', ''), 'cls': row.get('cls', ''),
                 'd': row.get('d'), 's': row.get('s'), 'e': row.get('e'),
                 'w': row.get('w', ''), 'r': row.get('r', ''), 'term': t['semester'],
-
+                # 附带列：供「数据洞察」等做课程性质 / 校区 / 学院等分布统计
+                'col': row.get('col', ''), 'campus': row.get('campus', ''),
+                'kind': row.get('kind', ''), 'cat': row.get('cat', ''),
+                'credit': row.get('credit', ''), 'weeks': row.get('weeks', ''),
             })
     all_rooms = len({norm_room(r['r']) for r in merged_rows if r['r']})
 

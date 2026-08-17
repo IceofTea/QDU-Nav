@@ -1,9 +1,20 @@
 <script setup>
 /** 贡献者墙：词云式展示项目贡献者，点击跳转 GitHub 主页
  *  社区代码贡献（含已合入的 Pull Request）都会在此致谢。 */
+import { reactive } from 'vue'
 import { contributors } from '../data/contributors'
 
 const emit = defineEmits(['back'])
+
+/** GitHub 头像直链（公开头像无需 API key），避免 github.com 302 链路波动 */
+function avatarOf(c) {
+  return `https://avatars.githubusercontent.com/${c.login}?size=96`
+}
+
+const broken = reactive(new Set())
+function markBroken(c) {
+  broken.add(c.login)
+}
 
 function fontOf(w) {
   return 18 + Math.round(w * 14)
@@ -43,7 +54,15 @@ function hueOf(i) {
       rel="noopener"
       :style="{ fontSize: fontOf(c.weight) + 'px', '--hue': hueOf(i) }"
     >
-      <span class="cloud-emoji">{{ c.emoji }}</span>
+      <img
+        v-if="c.login && !broken.has(c.login)"
+        class="cloud-avatar"
+        :src="avatarOf(c)"
+        alt=""
+        referrerpolicy="no-referrer"
+        @error="markBroken(c)"
+      />
+      <span v-else class="cloud-emoji">{{ c.emoji }}</span>
       <span class="cloud-name">{{ c.name }}</span>
       <span class="cloud-role">{{ c.role }}</span>
     </a>
@@ -97,6 +116,14 @@ function hueOf(i) {
 .cloud-item:hover {
   transform: translateY(-4px) scale(1.05);
   box-shadow: 0 12px 26px rgba(0, 0, 0, 0.2);
+}
+.cloud-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  object-fit: cover;
+  flex: none;
 }
 .cloud-name {
   font-weight: 800;
