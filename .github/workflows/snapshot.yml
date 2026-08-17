@@ -21,7 +21,14 @@ jobs:
         with:
           node-version: 20
 
-      - name: Crawl jwc.qdu.edu.cn and rebuild snapshot
+      - name: Setup Python
+        run: python3 --version
+
+      - name: Crawl and rebuild snapshot (Python 首选)
+        run: python3 crawler/build_snapshot.py
+
+      - name: Crawl and rebuild snapshot (Node 回退)
+        if: failure()
         run: node scripts/snapshot.mjs
 
       - name: Commit and push if changed

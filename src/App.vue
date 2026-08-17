@@ -97,6 +97,7 @@ const navApps = ['campusNews', 'timetable', 'classroomNav', 'studentId', 'physic
         <span class="legend-item"><i class="dot tool"></i>校园工具：食堂 · 空教室 · 吃什么 · 问答 · 轮盘 · 速配 · 教室导航</span>
       </div>
       <div class="footer-copy">QDU 校园导航 · 非官方校园服务聚合演示站，数据仅供学习交流</div>
+      <div class="footer-dev">网站开发者：炎黄YH · 数据抓取自青岛大学公开页面（教务通知 · 教学动态 · 校历 · 课程总表），版权归学校及相关方所有，本站仅作学习与生活实用，不做任何商业用途</div>
     </footer>
 
     <nav class="bottom-nav">

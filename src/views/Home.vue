@@ -132,5 +132,15 @@ function toggleCampus(name) {
         </button>
       </div>
     </section>
+
+    <section class="section">
+      <h3 class="section-title">关于本站</h3>
+      <div class="about-card">
+        <div class="about-line"><b>网站开发者：</b>炎黄YH</div>
+        <div class="about-line"><b>数据来源：</b>青岛大学教务处公开栏目 —— 教务通知（jwc.qdu.edu.cn/jwtz）、教学动态与校历、课程总表（本科，xlsx 附件）。所有数据均抓取自学校官网公开页面，版权归青岛大学及相关版权方所有。</div>
+        <div class="about-line"><b>抓取方式：</b>GitHub Actions 每 6 小时自动运行爬虫（Python 与 Node 双实现），抓取 → 解析 → 生成静态数据快照 → 站点自动重新构建并部署；也可在仓库手动触发工作流，或在本地运行脚本即时更新。</div>
+        <div class="about-line"><b>用途与版权：</b>本站仅聚合学校已公开的信息，方便学习与校园生活；数据以学校官网为准，本站不对其真实性负责。所有内容仅供学习交流与生活实用，无任何商业目的。</div>
+      </div>
+    </section>
   </div>
 </template>
