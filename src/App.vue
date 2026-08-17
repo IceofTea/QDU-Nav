@@ -74,7 +74,7 @@ const navApps = ['campusNews', 'timetable', 'classroomNav', 'studentId', 'physic
     <header class="header">
       <div class="header-inner">
         <div class="brand" @click="goHome">
-          <div class="brand-logo">青</div>
+          <div class="brand-logo"><span>QDU-Nav</span></div>
           <div>
             <div class="brand-name">QDU 校园导航</div>
             <div class="brand-sub">青岛大学 · 校园服务聚合入口</div>

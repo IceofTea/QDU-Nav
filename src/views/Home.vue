@@ -49,8 +49,10 @@ function toggleCampus(name) {
           </div>
         </div>
         <div class="wiki-links">
+          <a class="wiki-link" href="https://iceoftea.github.io/QDU-Wiki/" target="_blank" rel="noopener">网站 ↗</a>
           <a class="wiki-link" href="https://github.com/IceofTea/QDU-Wiki" target="_blank" rel="noopener">GitHub ↗</a>
           <a class="wiki-link" href="https://gitee.com/iceoftea/QDU-Wiki" target="_blank" rel="noopener">Gitee ↗</a>
+          <a class="wiki-link" href="https://docs.qq.com/aio/DVFJnbFR3TWdzbFVn" target="_blank" rel="noopener">腾讯文档 ↗</a>
         </div>
       </div>
     </section>

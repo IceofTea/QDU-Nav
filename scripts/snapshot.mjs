@@ -66,6 +66,28 @@ function parseNews(html) {
   return out
 }
 
+// 教务处通知列表页 jwtz.htm（每页 15 条，共约 89 页）。首页 + 分页 jwtz/N.htm 合并去重。
+async function fetchNoticePages(pageCount = 4) {
+  const first = (await fetchText(JWC + '/jwtz.htm')).text
+  const items = parseList(first, JWC + '/jwtz.htm')
+  const seen = new Set(items.map((i) => i.url))
+  const pager = [...first.matchAll(/href="(jwtz\/(\d+)\.htm)"/g)]
+    .map((m) => ({ href: m[1], n: Number(m[2]) }))
+    .filter((p) => p.n > 1)
+    .sort((a, b) => b.n - a.n)
+    .filter((p, i, arr) => arr.findIndex((x) => x.n === p.n) === i)
+  for (const p of pager.slice(0, pageCount - 1)) {
+    const html = (await fetchText(JWC + '/' + p.href)).text
+    for (const it of parseList(html, JWC + '/jwtz.htm')) {
+      if (!seen.has(it.url)) {
+        seen.add(it.url)
+        items.push(it)
+      }
+    }
+  }
+  return items
+}
+
 const normRoom = (r) => (r || '').replace(/[（(]智慧[)）]/g, '').trim()
 
 async function getCourses() {
@@ -106,7 +128,7 @@ async function getCourses() {
 
 const [courses, notices, news, calendar, courseTables] = await Promise.all([
   fetchText(JWC + '/xxgk/kcap.htm').then(({ text }) => ({ items: parseList(text, JWC + '/xxgk/kcap.htm') })),
-  fetchText(JWC + '/index.htm').then(({ text }) => ({ items: parseHomeNotices(text) })),
+  fetchNoticePages().then((items) => ({ items })),
   fetchText(JWC + '/index.htm').then(({ text }) => ({ items: parseNews(text) })),
   fetchText(JWC + '/xl.htm').then(({ text }) => ({ items: parseList(text, JWC + '/xl.htm') })),
   getCourses()

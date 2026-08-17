@@ -117,9 +117,12 @@ function open(url) {
       </div>
     </div>
 
-    <div v-if="!loading && tab === 'notice'" class="panel" style="text-align:center;padding:16px;">
-      <div class="muted" style="font-size:13px;">共 {{ notices.length }} 条通知（抓取自教务处通知列表页）</div>
-      <a class="btn ghost" style="margin-top:10px;text-decoration:none;" href="https://jwc.qdu.edu.cn/jwtz.htm" target="_blank" rel="noopener">查看完整通知列表 ↗</a>
+    <div v-if="!loading && tab === 'notice'" class="panel" style="padding:12px 16px;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;">
+        <span class="muted" style="font-size:13px;">共 {{ notices.length }} 条通知（抓取自教务处通知列表页前 4 页）</span>
+        <span class="sep" style="opacity:.4;">·</span>
+        <a class="btn ghost" style="text-decoration:none;" href="https://jwc.qdu.edu.cn/jwtz.htm" target="_blank" rel="noopener">查看完整通知列表 ↗</a>
+      </div>
     </div>
 
     <div class="muted" style="font-size:12px;">

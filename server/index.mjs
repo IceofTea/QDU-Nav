@@ -76,6 +76,27 @@ function parseNews(html) {
   return out
 }
 
+async function fetchNoticePages(force, pageCount = 4) {
+  const first = (await fetchText(JWC + '/jwtz.htm', force)).text
+  const items = parseList(first, JWC + '/jwtz.htm')
+  const seen = new Set(items.map((i) => i.url))
+  const pager = [...first.matchAll(/href="(jwtz\/(\d+)\.htm)"/g)]
+    .map((m) => ({ href: m[1], n: Number(m[2]) }))
+    .filter((p) => p.n > 1)
+    .sort((a, b) => b.n - a.n)
+    .filter((p, i, arr) => arr.findIndex((x) => x.n === p.n) === i)
+  for (const p of pager.slice(0, pageCount - 1)) {
+    const html = (await fetchText(JWC + '/' + p.href, force)).text
+    for (const it of parseList(html, JWC + '/jwtz.htm')) {
+      if (!seen.has(it.url)) {
+        seen.add(it.url)
+        items.push(it)
+      }
+    }
+  }
+  return items
+}
+
 function parseNoticeDetail(html) {
   const titleRaw = /<title>([^<]*)<\/title>/.exec(html)?.[1] || ''
   const title = titleRaw.split('-')[0].trim()
@@ -153,8 +174,8 @@ const routes = {
     const force = q.get('force') === '1'
     const all = q.get('all') === '1'
     if (all) {
-      const { text, cached, ageMs, costMs } = await fetchText(JWC + '/jwtz.htm', force)
-      return { source: JWC, fetchedAt: nowIso(), cached, ageMs, costMs, ttl: TTL, items: parseList(text, JWC + '/jwtz.htm') }
+      const items = await fetchNoticePages(force)
+      return { source: JWC, fetchedAt: nowIso(), cached: false, costMs: 0, ttl: TTL, items }
     }
     const { text, cached, ageMs, costMs } = await fetchText(JWC + '/index.htm', force)
     return { source: JWC, fetchedAt: nowIso(), cached, ageMs, costMs, ttl: TTL, items: parseHomeNotices(text) }

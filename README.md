@@ -26,11 +26,24 @@
 
 网站数据不是「部署时的一次性快照」，而是**持续定时爬取**：
 
-- GitHub Actions `refresh-snapshot` 工作流**每 6 小时**（北京时间 08:23 / 14:23 / 20:23 / 02:23）自动运行 `node scripts/snapshot.mjs`，重新抓取教务处官网的**全部学期课程总表**（xlsx 下载并解析）、通知、动态、校历，并在数据有变化时提交推送到 main 分支
+- GitHub Actions `refresh-snapshot` 工作流**每 6 小时**（北京时间 08:23 / 14:23 / 20:23 / 02:23）自动运行 `node scripts/snapshot.mjs`，重新抓取教务处官网的**全部学期课程总表**（xlsx 下载并解析）、通知（列表前 4 页约 60 条）、动态、校历，并在数据有变化时提交推送到 main 分支
 - 推送自动触发 `deploy` 工作流重新构建并部署 GitHub Pages，因此线上站点始终反映**最近一次抓取**的数据
-- 也可手动触发：仓库 → Actions → `refresh-snapshot` → Run workflow；或本地执行 `node scripts/snapshot.mjs` 后提交
 
-> 课程总表为学校定期发布的公开文件（通常每学期更新一次）；通知、动态、校历则随官网实时变化，每 6 小时抓取足够及时。
+### 手动更新（随时触发）
+
+**方式一：网页一键触发（推荐）**
+1. 打开仓库 **Actions** 页签
+2. 选中左侧 **refresh-snapshot** 工作流
+3. 点 **Run workflow** → 绿色按钮，立即在 GitHub 云端重跑抓取并自动部署
+
+**方式二：本地命令行**
+```bash
+node scripts/snapshot.mjs        # 重新抓取全部数据，写入 public/data/snapshot.json
+git add -A && git commit -m "data: refresh snapshot" && git push origin main
+```
+推送到 main 后 `deploy` 工作流会自动构建部署，线上即更新。
+
+> 课程总表为学校定期发布的公开文件（通常每学期更新一次）；通知、动态、校历则随官网实时变化，每 6 小时抓取足够及时。若遇官网临时维护导致抓取失败，工作流会自动跳过本次、保留上次快照，不影响线上可用性。
 
 ## 本地运行
 
