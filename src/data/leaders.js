@@ -1,7 +1,7 @@
 /**
  * 校领导风格测试 · 数据
- * 参考 leadertest.site 的多维原型比对机制，改造为青岛大学校领导画像与校园管理场景。
  * 维度 9 项：决策魄力 / 规划理性 / 改革锐气 / 情怀感召 / 制度规范 / 育人理念 / 师生动员 / 执行强度 / 发展导向
+ * 题目：直接搬用 leadertest.site 原题（政治/治理场景，一字未改）+ 青大校园特色题，共 25 题。
  * 原型 vec：0-10 各维强度；weight：各维匹配权重。
  */
 
@@ -117,23 +117,160 @@ export const leaders = [
 ]
 
 export const questions = [
+  /* ===== 参考站原题（leadertest.site，一字未改；axis 已映射到本站维度） ===== */
   {
-    id: 'q1',
-    type: 'binary',
-    kicker: '判断题',
-    title: '小组作业组队，你更倾向哪种方式？',
-    desc: '请选择更接近你真实倾向的一项。',
+    id: 'r1', type: 'single', kicker: '单选题', title: '当一个团队陷入混乱时，你更倾向：',
+    desc: '请选择更接近你真实倾向的一项。', weight: 1.0,
+    options: [
+      { label: '先由一个人迅速拍板，把局面稳住', score: { power: 2 } },
+      { label: '尽快明确规则分工，让大家按机制协作', score: { order: 2 } }
+    ]
+  },
+  {
+    id: 'r2', type: 'single', kicker: '单选题', title: '你觉得推动一件大事最可靠的是：',
+    desc: '请选择更接近你真实倾向的一项。', weight: 1.0,
+    options: [
+      { label: '有人带头，把大家情绪和行动都调动起来', score: { mobilization: 2, emotion: 1 } },
+      { label: '把流程、规则和节奏设计好，让系统自己运转', score: { order: 2, logic: 1 } }
+    ]
+  },
+  {
+    id: 'r3', type: 'single', kicker: '单选题', title: '当外部环境突然变得不稳定时，你更可能：',
+    desc: '请选择最符合你第一反应的一项。', weight: 1.0,
+    options: [
+      { label: '果断集中决策权，先把局面压住', score: { power: 2 } },
+      { label: '调整规则和资源配置，让系统重新恢复平衡', score: { logic: 2, order: 1 } },
+      { label: '迅速统一口径和情绪，让所有人朝一个方向行动', score: { mobilization: 2, emotion: 1 } },
+      { label: '尽量减少过度干预，先观察再决定', score: { logic: 2 } }
+    ]
+  },
+  {
+    id: 'r4', type: 'binary', kicker: '判断题', title: '危机时刻，你更倾向哪种处理方式？',
+    desc: '请选择更接近你真实倾向的一项。', weight: 1.4,
+    options: [
+      { label: '快速决策，即使不完美', score: { power: 2, conflict: 1 } },
+      { label: '慎重判断，即使错失机会', score: { logic: 2, order: 1 } }
+    ]
+  },
+  {
+    id: 'r5', type: 'binary', kicker: '判断题', title: '对权力的看法，你更接近？',
+    desc: '请选择更接近你真实倾向的一项。', weight: 1.4,
+    options: [
+      { label: '权力必须集中', score: { power: 2, order: 1 } },
+      { label: '权力应分散并受约束', score: { logic: 1, order: 2, power: -1 } }
+    ]
+  },
+  {
+    id: 'r6', type: 'binary', kicker: '判断题', title: '你如何看待冲突？',
+    desc: '请选择更接近你真实倾向的一项。', weight: 1.4,
+    options: [
+      { label: '冲突是推进局势的工具', score: { conflict: 2, power: 1 } },
+      { label: '稳定比冲突更重要', score: { order: 2, conflict: -1 } }
+    ]
+  },
+  {
+    id: 'r7', type: 'single', kicker: '单选题', title: '面对公开反对者，你更可能：',
+    desc: '四个选项都代表不同策略。', weight: 1.0,
+    options: [
+      { label: '强硬压制', score: { power: 2, conflict: 2 } },
+      { label: '试图说服', score: { emotion: 2, mobilization: 1 } },
+      { label: '暂时回避', score: { logic: 1, conflict: -1 } },
+      { label: '转化利用', score: { logic: 2, power: 1 } }
+    ]
+  },
+  {
+    id: 'r8', type: 'single', kicker: '单选题', title: '当团队低效时，你更愿意：',
+    desc: '四个选项都代表不同治理方式。', weight: 1.0,
+    options: [
+      { label: '强力整顿', score: { power: 2, order: 1 } },
+      { label: '优化结构和流程', score: { logic: 2, order: 2 } },
+      { label: '激励沟通', score: { emotion: 2, mobilization: 1 } },
+      { label: '替换关键人', score: { power: 1, conflict: 1 } }
+    ]
+  },
+  {
+    id: 'r9', type: 'multi', kicker: '多选题', title: '你认为有效的领导方式包括哪些？',
+    desc: '最多选 2 个。第一个更像主倾向，第二个是副倾向。', weight: 1.0, max: 2, mainWeight: 1.0, secondWeight: 0.5,
+    options: [
+      { label: '强势推进', score: { power: 2, conflict: 1 } },
+      { label: '制度管理', score: { order: 2, logic: 1 } },
+      { label: '群众动员', score: { emotion: 2, mobilization: 2 } },
+      { label: '长期规划', score: { logic: 2, order: 1 } }
+    ]
+  },
+  {
+    id: 'r10', type: 'multi', kicker: '多选题', title: '你更看重哪些结果？',
+    desc: '最多选 2 个。', weight: 1.0, max: 2, mainWeight: 1.0, secondWeight: 0.5,
+    options: [
+      { label: '稳定', score: { order: 2 } },
+      { label: '发展', score: { development: 2, order: 1 } },
+      { label: '控制', score: { power: 2 } },
+      { label: '影响力', score: { emotion: 1, mobilization: 2 } }
+    ]
+  },
+  {
+    id: 'r11', type: 'likert', kicker: '场景题', title: '“我倾向于掌控局势。”',
+    desc: '请选择符合程度。', weight: 1.2,
+    scores: [{ power: -2 }, { power: -1 }, {}, { power: 1 }, { power: 2 }]
+  },
+  {
+    id: 'r12', type: 'likert', kicker: '场景题', title: '“我愿意承担高风险换结果。”',
+    desc: '请选择符合程度。', weight: 1.2,
+    scores: [{ conflict: -2, logic: 1 }, { conflict: -1 }, {}, { conflict: 1, power: 1 }, { conflict: 2, force: 1 }]
+  },
+  {
+    id: 'r13', type: 'likert', kicker: '场景题', title: '“我更依赖群众支持，而不是纯体制运转。”',
+    desc: '请选择符合程度。', weight: 1.2,
+    scores: [{ mobilization: -2, order: 1 }, { mobilization: -1 }, {}, { mobilization: 1, emotion: 1 }, { mobilization: 2, emotion: 2 }]
+  },
+  {
+    id: 'r14', type: 'likert', kicker: '场景题', title: '“规则应该被严格执行。”',
+    desc: '请选择符合程度。', weight: 1.2,
+    scores: [{ order: -2 }, { order: -1 }, {}, { order: 1 }, { order: 2 }]
+  },
+  {
+    id: 'r15', type: 'policy', kicker: '政策题', title: '局面不稳时，你更愿意优先用什么手段？',
+    desc: '这题区分度很高。', weight: 1.6,
+    options: [
+      { label: '强调共同信仰与价值体系', score: { ideology: 2, mobilization: 2, emotion: 1 } },
+      { label: '转移矛盾，明确对立对象', score: { conflict: 2, power: 1, mobilization: 1 } },
+      { label: '用减税、福利或经济政策缓解压力', score: { order: 2, development: 2 } },
+      { label: '强化强制力维持秩序', score: { force: 2, power: 2, order: 1 } }
+    ]
+  },
+  {
+    id: 'r16', type: 'policy', kicker: '政策题', title: '当支持率下降时，你更倾向：',
+    desc: '这题区分度很高。', weight: 1.6,
+    options: [
+      { label: '构建愿景与叙事，重新鼓舞公众', score: { emotion: 2, mobilization: 2, ideology: 1 } },
+      { label: '制造更强的争议议题，转移焦点', score: { conflict: 2, mobilization: 1 } },
+      { label: '推出短期见效的经济措施', score: { order: 2, development: 2 } },
+      { label: '展示强硬姿态与执行力', score: { power: 2, force: 1, conflict: 1 } }
+    ]
+  },
+  {
+    id: 'r17', type: 'policy', kicker: '政策题', title: '长期路线，你更愿意押注：',
+    desc: '这题区分度很高。', weight: 1.6,
+    options: [
+      { label: '文化与信仰体系', score: { ideology: 2, emotion: 1, mobilization: 1 } },
+      { label: '权力与控制能力', score: { power: 2, force: 1 } },
+      { label: '经济发展与工业基础', score: { development: 2, order: 1 } },
+      { label: '科技创新与结构升级', score: { development: 3, logic: 1 } }
+    ]
+  },
+
+  /* ===== 青大校园特色题 ===== */
+  {
+    id: 'q1', type: 'binary', kicker: '判断题', title: '小组作业组队，你更倾向哪种方式？',
+    desc: '请选择更接近你真实倾向的一项。', weight: 1.0,
     options: [
       { label: '我直接拍板分工，效率第一', score: { power: 2, force: 1 } },
       { label: '先定好规则和节点，按流程走', score: { logic: 2, order: 1 } }
     ]
   },
   {
-    id: 'q2',
-    type: 'single',
-    kicker: '单选题',
-    title: '社团活动遇到分歧，你更可能：',
-    desc: '四个选项代表不同处理策略。',
+    id: 'q2', type: 'single', kicker: '单选题', title: '社团活动遇到分歧，你更可能：',
+    desc: '四个选项代表不同处理策略。', weight: 1.0,
     options: [
       { label: '力排众议，定了就执行', score: { power: 2, conflict: 2 } },
       { label: '逐个谈心，争取大家理解', score: { emotion: 2, mobilization: 1 } },
@@ -142,11 +279,8 @@ export const questions = [
     ]
   },
   {
-    id: 'q3',
-    type: 'single',
-    kicker: '单选题',
-    title: '对「早八」和作息管理，你的态度更接近：',
-    desc: '请选择更接近你真实倾向的一项。',
+    id: 'q3', type: 'single', kicker: '单选题', title: '对「早八」和作息管理，你的态度更接近：',
+    desc: '请选择更接近你真实倾向的一项。', weight: 1.0,
     options: [
       { label: '规则就该严格执行，该起就得起', score: { order: 2, force: 1 } },
       { label: '因人而异，尊重每个人的节奏', score: { emotion: 2 } },
@@ -155,22 +289,8 @@ export const questions = [
     ]
   },
   {
-    id: 'q4',
-    type: 'binary',
-    kicker: '判断题',
-    title: '期末复习，你更相信哪种打法？',
-    desc: '请选择更接近你真实倾向的一项。',
-    options: [
-      { label: '提前两周做计划表，稳步推进', score: { logic: 2, order: 1 } },
-      { label: '考前集中冲刺，高效爆发', score: { force: 2, development: 1 } }
-    ]
-  },
-  {
-    id: 'q5',
-    type: 'single',
-    kicker: '单选题',
-    title: '面对「内卷」，你更倾向于：',
-    desc: '请选择更接近你真实倾向的一项。',
+    id: 'q4', type: 'single', kicker: '单选题', title: '面对「内卷」，你更倾向于：',
+    desc: '请选择更接近你真实倾向的一项。', weight: 1.0,
     options: [
       { label: '卷就卷，靠效率卷赢', score: { development: 2, force: 1 } },
       { label: '调整心态，守住自己的节奏', score: { emotion: 2, order: 1 } },
@@ -179,11 +299,8 @@ export const questions = [
     ]
   },
   {
-    id: 'q6',
-    type: 'single',
-    kicker: '单选题',
-    title: '宿舍出现矛盾，你的第一反应是：',
-    desc: '请选择最接近你真实倾向的一项。',
+    id: 'q5', type: 'single', kicker: '单选题', title: '宿舍出现矛盾，你的第一反应是：',
+    desc: '请选择最接近你真实倾向的一项。', weight: 1.0,
     options: [
       { label: '定个宿舍公约，按规矩来', score: { order: 2 } },
       { label: '拉着大家开个夜谈会，敞开心扉', score: { emotion: 2, mobilization: 1 } },
@@ -192,22 +309,16 @@ export const questions = [
     ]
   },
   {
-    id: 'q7',
-    type: 'binary',
-    kicker: '判断题',
-    title: '保研加分，创新创业大赛 vs 传统奖学金，你更看重？',
-    desc: '请选择更接近你真实倾向的一项。',
+    id: 'q6', type: 'binary', kicker: '判断题', title: '保研加分，创新创业大赛 vs 传统奖学金，你更看重？',
+    desc: '请选择更接近你真实倾向的一项。', weight: 1.0,
     options: [
       { label: '创新创业大赛：跑起来才有机会', score: { development: 2, conflict: 1 } },
       { label: '传统奖学金：扎实积累更稳妥', score: { order: 2, ideology: 1 } }
     ]
   },
   {
-    id: 'q8',
-    type: 'policy',
-    kicker: '政策题',
-    title: '如果让你当一任校领导，优先推动哪件事？',
-    desc: '这题区分度很高。',
+    id: 'q7', type: 'policy', kicker: '政策题', title: '如果让你当一任校领导，优先推动哪件事？',
+    desc: '这题区分度很高。', weight: 1.6,
     options: [
       { label: '冲刺双一流与 A 类学科，立军令状', score: { development: 2, force: 1, conflict: 1 } },
       { label: '推进本研贯通培养，抓学术指标', score: { logic: 2, order: 1, development: 1 } },
@@ -216,43 +327,13 @@ export const questions = [
     ]
   },
   {
-    id: 'q9',
-    type: 'single',
-    kicker: '单选题',
-    title: '你怎么看待「第二课堂」和德育分？',
-    desc: '请选择更接近你真实倾向的一项。',
+    id: 'q8', type: 'single', kicker: '单选题', title: '你怎么看待「第二课堂」和德育分？',
+    desc: '请选择更接近你真实倾向的一项。', weight: 1.0,
     options: [
       { label: '要有制度，量化考核才公平', score: { order: 2 } },
       { label: '本质是育人，立德树人才是核心', score: { ideology: 2, emotion: 1 } },
       { label: '别搞形式主义，务实点', score: { conflict: 2, logic: 1 } },
       { label: '给足自主空间，让学生自己长', score: { logic: 2, mobilization: 1 } }
-    ]
-  },
-  {
-    id: 'q10',
-    type: 'single',
-    kicker: '单选题',
-    title: '组织一次校庆活动，你更看重：',
-    desc: '请选择更接近你真实倾向的一项。',
-    options: [
-      { label: '执行到位、场面震撼', score: { force: 2, order: 1 } },
-      { label: '全员参与，把师生调动起来', score: { mobilization: 2, emotion: 1 } },
-      { label: '有创意、有话题，出圈传播', score: { conflict: 2, development: 1 } },
-      { label: '流程规范、不出差错', score: { order: 2, logic: 1 } }
-    ]
-  },
-  {
-    id: 'q11',
-    type: 'likert',
-    kicker: '场景题',
-    title: '「我愿意为集体目标承担高强度任务。」',
-    desc: '请选择符合程度。',
-    scores: [
-      { force: -2, emotion: 1 },
-      { force: -1 },
-      {},
-      { force: 1, development: 1 },
-      { force: 2, development: 2 }
     ]
   }
 ]

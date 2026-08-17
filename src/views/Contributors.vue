@@ -105,43 +105,48 @@ function hueOf(i) {
   min-height: 220px;
 }
 .cloud-item {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  max-width: 100%;
-  padding: 10px 18px;
-  border-radius: 999px;
+  gap: 5px;
+  max-width: 250px;
+  padding: 14px 16px 12px;
+  border-radius: 16px;
   color: #fff;
   text-decoration: none;
   background: linear-gradient(135deg, hsl(var(--hue) 65% 45%), hsl(calc(var(--hue) + 30) 65% 60%));
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
+  text-align: center;
 }
 .cloud-item:hover {
   transform: translateY(-4px) scale(1.05);
   box-shadow: 0 12px 26px rgba(0, 0, 0, 0.2);
 }
 .cloud-avatar {
-  width: 46px;
-  height: 46px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.75);
   object-fit: cover;
   flex: none;
 }
+.cloud-emoji { font-size: 26px; }
 .cloud-name {
   font-weight: 800;
+  font-size: 15px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 100%;
 }
 .cloud-role {
   font-size: 11px;
-  opacity: 0.92;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 180px;
+  opacity: 0.95;
+  line-height: 1.5;
+  white-space: normal;
+  max-width: 220px;
+  word-break: break-word;
 }
 .changelog {
   margin: 0;

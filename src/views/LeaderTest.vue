@@ -20,8 +20,16 @@ const LIKERT = ['很不符合', '较不符合', '一般', '较符合', '很符�
 
 function choose(optionIndex) {
   const q = current.value
-  const val = optionIndex
-  answers.value = { ...answers.value, [q.id]: val }
+  if (q.type === 'multi') {
+    const arr = Array.isArray(answers.value[q.id]) ? [...answers.value[q.id]] : []
+    const i = arr.indexOf(optionIndex)
+    if (i >= 0) arr.splice(i, 1)
+    else if (arr.length < (q.max || 2)) arr.push(optionIndex)
+    answers.value = { ...answers.value, [q.id]: arr }
+    if (arr.length >= (q.max || 2)) setTimeout(next, 180)
+    return
+  }
+  answers.value = { ...answers.value, [q.id]: optionIndex }
   setTimeout(next, 180)
 }
 function chooseLikert(level) {
@@ -43,18 +51,27 @@ function start() {
   phase.value = 'quiz'
 }
 
-/** 用户 9 维得分 */
+/** 用户 9 维得分（含每题权重、多选主/次权重） */
 function userScores() {
   const u = { power: 0, logic: 0, conflict: 0, emotion: 0, order: 0, ideology: 0, mobilization: 0, force: 0, development: 0 }
   for (const q of questions) {
     const ans = answers.value[q.id]
     if (ans === undefined || ans === null) continue
+    const w = q.weight || 1
     if (q.type === 'likert') {
       const s = q.scores[ans] || {}
-      for (const [k, v] of Object.entries(s)) u[k] = (u[k] || 0) + v
+      for (const [k, v] of Object.entries(s)) u[k] = (u[k] || 0) + v * w
+    } else if (q.type === 'multi') {
+      const arr = Array.isArray(ans) ? ans : []
+      arr.forEach((optIdx, order) => {
+        const opt = q.options[optIdx]
+        if (!opt || !opt.score) return
+        const mw = order === 0 ? (q.mainWeight ?? 1) : (q.secondWeight ?? 0.5)
+        for (const [k, v] of Object.entries(opt.score)) u[k] = (u[k] || 0) + v * w * mw
+      })
     } else {
       const opt = q.options[ans]
-      if (opt && opt.score) for (const [k, v] of Object.entries(opt.score)) u[k] = (u[k] || 0) + v
+      if (opt && opt.score) for (const [k, v] of Object.entries(opt.score)) u[k] = (u[k] || 0) + v * w
     }
   }
   return u
@@ -140,6 +157,13 @@ const initial = (name) => name.charAt(0)
 
     <div v-if="current.type === 'likert'" class="likert">
       <button v-for="(l, i) in LIKERT" :key="l" class="likert-btn" :class="{ active: selected === i }" @click="chooseLikert(i)">{{ l }}</button>
+    </div>
+    <div v-else-if="current.type === 'multi'" class="opt-list">
+      <button v-for="(o, i) in current.options" :key="i" class="opt-btn" :class="{ active: (selected || []).includes(i) }" @click="choose(i)">
+        <span class="opt-tag">{{ (selected || []).indexOf(i) >= 0 ? (selected || []).indexOf(i) + 1 : String.fromCharCode(65 + i) }}</span>
+        <span>{{ o.label }}</span>
+      </button>
+      <div class="muted" style="font-size:11px;margin-top:6px;">已选 {{ (selected || []).length }}/{{ current.max || 2 }} · 选满自动进入下一题</div>
     </div>
     <div v-else class="opt-list">
       <button v-for="(o, i) in current.options" :key="i" class="opt-btn" :class="{ active: selected === i }" @click="choose(i)">
