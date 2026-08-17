@@ -112,6 +112,7 @@ def build():
                 'c': row.get('c', ''), 't': row.get('t', ''), 'cls': row.get('cls', ''),
                 'd': row.get('d'), 's': row.get('s'), 'e': row.get('e'),
                 'w': row.get('w', ''), 'r': row.get('r', ''), 'term': t['semester'],
+                'kind': row.get('kind', ''), 'campus': row.get('campus', ''),
             })
     all_rooms = len({norm_room(r['r']) for r in merged_rows if r['r']})
 
