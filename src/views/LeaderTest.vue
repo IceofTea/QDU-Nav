@@ -18,6 +18,9 @@ const progress = computed(() => Math.round((step.value / totalQ) * 100))
 const selected = computed(() => answers.value[current.value?.id])
 const LIKERT = ['很不符合', '较不符合', '一般', '较符合', '很符合']
 
+function next() {
+  if (step.value < totalQ - 1) step.value++
+}
 function choose(optionIndex) {
   const q = current.value
   if (q.type === 'multi') {
@@ -26,12 +29,17 @@ function choose(optionIndex) {
     if (i >= 0) arr.splice(i, 1)
     else if (arr.length < (q.max || 2)) arr.push(optionIndex)
     answers.value = { ...answers.value, [q.id]: arr }
+    // 多选选满自动进下一题（最后一题不跳，等提交）
+    if (arr.length >= (q.max || 2) && step.value < totalQ - 1) setTimeout(next, 160)
     return
   }
   answers.value = { ...answers.value, [q.id]: optionIndex }
+  // 点选项即进下一题（最后一题不跳，等提交）
+  if (step.value < totalQ - 1) setTimeout(next, 160)
 }
 function chooseLikert(level) {
   answers.value = { ...answers.value, [current.value.id]: level }
+  if (step.value < totalQ - 1) setTimeout(next, 160)
 }
 function start() {
   step.value = 0
