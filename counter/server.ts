@@ -35,6 +35,10 @@ async function getStats(): Promise<Stats> {
 }
 
 const pad = (n: number) => String(n).padStart(2, '0')
+/** 北京时间（UTC+8，无夏令时）：日期/小时/星期均按中国时区统计，避免「今日」跨日错位 */
+function cnNow() {
+  return new Date(Date.now() + 8 * 3600 * 1000)
+}
 function dayKey(d: Date) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
@@ -64,11 +68,11 @@ function parseRef(ref: string) {
 }
 
 function overview(s: Stats) {
-  const todayKey = dayKey(new Date())
+  const todayKey = dayKey(cnNow())
   const today = s.byDay[todayKey] ?? { pv: 0, uv: 0 }
   const week: { label: string; pv: number; uv: number }[] = []
   for (let i = 6; i >= 0; i--) {
-    const d = new Date()
+    const d = cnNow()
     d.setDate(d.getDate() - i)
     const k = dayKey(d)
     const v = s.byDay[k] ?? { pv: 0, uv: 0 }
@@ -113,7 +117,7 @@ Deno.serve(async (req) => {
       const isNew = u.searchParams.get('isNewUv') !== '0'
       s.pv++
       if (isNew) s.uv++
-      const now = new Date()
+      const now = cnNow()
       const dk = dayKey(now)
       const day = s.byDay[dk] ?? { pv: 0, uv: 0 }
       day.pv++

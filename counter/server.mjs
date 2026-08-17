@@ -36,6 +36,7 @@ async function save() {
 }
 
 const pad = (n) => String(n).padStart(2, '0')
+const cnNow = () => new Date(Date.now() + 8 * 3600 * 1000)
 const dayKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 const bump = (obj, k) => { obj[k] = (obj[k] || 0) + 1 }
 const parseDevice = (ua) => (/iPad|Tablet|PlayBook/i.test(ua) ? '平板' : /Mobile|Android|iPhone|iOS/i.test(ua) ? '手机' : '桌面')
@@ -49,11 +50,11 @@ const parseRef = (ref) => {
 }
 
 function overview() {
-  const todayKey = dayKey(new Date())
+  const todayKey = dayKey(cnNow())
   const today = state.byDay[todayKey] || { pv: 0, uv: 0 }
   const week = []
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(); d.setDate(d.getDate() - i)
+    const d = cnNow(); d.setDate(d.getDate() - i)
     const k = dayKey(d)
     const v = state.byDay[k] || { pv: 0, uv: 0 }
     week.push({ label: k.slice(5), pv: v.pv, uv: v.uv })
@@ -82,7 +83,7 @@ const server = http.createServer((req, res) => {
       const isNew = u.searchParams.get('isNewUv') !== '0'
       state.pv++
       if (isNew) state.uv++
-      const now = new Date()
+      const now = cnNow()
       const dk = dayKey(now)
       const day = state.byDay[dk] || { pv: 0, uv: 0 }
       day.pv++
