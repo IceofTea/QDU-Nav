@@ -27,7 +27,7 @@ export const leaders = [
     bio: '学术深耕、专注治学。',
     summary:
       '航天力学专家，长期担任名誉校长，是我国著名航天力学专家与学术带头人。淡泊行政权力、沉潜基础研究，以专业造诣和学术声望引领学校发展，属于典型的学者型领导。',
-    vec: { power: 3, logic: 9, conflict: 1, emotion: 3, order: 7, ideology: 6, mobilization: 2, force: 2, development: 4 },
+    vec: { power: 4, logic: 9, conflict: 3, emotion: 4, order: 7, ideology: 6, mobilization: 3, force: 2, development: 4 },
     weight: { power: 1.0, logic: 1.5, conflict: 0.7, emotion: 0.8, order: 1.0, ideology: 0.9, mobilization: 0.7, force: 0.7, development: 0.9 },
     photo: 'leader/竺苗龙.png'
   },
@@ -224,13 +224,13 @@ export const questions = [
     ]
   },
   {
-    id: 'r10', type: 'multi', kicker: '多选题', title: '你更看重哪些结果？',
+    id: 'r10', type: 'multi', kicker: '多选题', title: '办一场活动，你更看重哪个结果？',
     desc: '最多选 2 个。', weight: 1.0, max: 2, mainWeight: 1.0, secondWeight: 0.5,
     options: [
-      { label: '稳定', score: { order: 2 } },
-      { label: '发展', score: { development: 2, order: 1 } },
-      { label: '控制', score: { power: 2 } },
-      { label: '影响力', score: { emotion: 1, mobilization: 2 } }
+      { label: '办得稳当、不出乱子', score: { order: 2 } },
+      { label: '办出成果、大家有收获', score: { development: 2, order: 1 } },
+      { label: '全程掌控、说到做到', score: { power: 2 } },
+      { label: '引起关注、扩大影响', score: { emotion: 1, mobilization: 2 } }
     ]
   },
   {
@@ -254,33 +254,33 @@ export const questions = [
     scores: [{ order: -2 }, { order: -1 }, {}, { order: 1 }, { order: 2 }]
   },
   {
-    id: 'r15', type: 'policy', kicker: '政策题', title: '局面不稳时，你更愿意优先用什么手段？',
+    id: 'r15', type: 'policy', kicker: '政策题', title: '班级人心有点散、活动总是冷场，你更愿意优先：',
     desc: '这题区分度很高。', weight: 1.6,
     options: [
-      { label: '强调共同信仰与价值体系', score: { ideology: 2, mobilization: 2, emotion: 1 } },
-      { label: '转移矛盾，明确对立对象', score: { conflict: 2, power: 1, mobilization: 1 } },
-      { label: '用减税、福利或经济政策缓解压力', score: { order: 2, development: 2 } },
-      { label: '强化强制力维持秩序', score: { force: 2, power: 2, order: 1 } }
+      { label: '讲清班级的集体目标与荣誉感', score: { ideology: 2, mobilization: 2, emotion: 1 } },
+      { label: '立个外部目标（比如跟兄弟班比一场）', score: { conflict: 2, power: 1, mobilization: 1 } },
+      { label: '多办福利活动，改善大家体验', score: { order: 2, development: 2 } },
+      { label: '立规矩、严执行，先恢复秩序', score: { force: 2, power: 2, order: 1 } }
     ]
   },
   {
-    id: 'r16', type: 'policy', kicker: '政策题', title: '当支持率下降时，你更倾向：',
+    id: 'r16', type: 'policy', kicker: '政策题', title: '你组织的活动大家不太来捧场，你更倾向：',
     desc: '这题区分度很高。', weight: 1.6,
     options: [
-      { label: '构建愿景与叙事，重新鼓舞公众', score: { emotion: 2, mobilization: 2, ideology: 1 } },
-      { label: '制造更强的争议议题，转移焦点', score: { conflict: 2, mobilization: 1 } },
-      { label: '推出短期见效的经济措施', score: { order: 2, development: 2 } },
-      { label: '展示强硬姿态与执行力', score: { power: 2, force: 1, conflict: 1 } }
+      { label: '讲个振奋人心的故事，重新鼓劲', score: { emotion: 2, mobilization: 2, ideology: 1 } },
+      { label: '搞点有话题性的新意，把焦点拉回来', score: { conflict: 2, mobilization: 1 } },
+      { label: '加福利、发小奖品救场', score: { order: 2, development: 2 } },
+      { label: '自己带头干出效果，展示执行力', score: { power: 2, force: 1, conflict: 1 } }
     ]
   },
   {
-    id: 'r17', type: 'policy', kicker: '政策题', title: '长期路线，你更愿意押注：',
+    id: 'r17', type: 'policy', kicker: '政策题', title: '社团 / 学生会要走得远，你更愿意押注：',
     desc: '这题区分度很高。', weight: 1.6,
     options: [
-      { label: '文化与信仰体系', score: { ideology: 2, emotion: 1, mobilization: 1 } },
-      { label: '权力与控制能力', score: { power: 2, force: 1 } },
-      { label: '经济发展与工业基础', score: { development: 2, order: 1 } },
-      { label: '科技创新与结构升级', score: { development: 3, logic: 1 } }
+      { label: '建设社团文化与代代传承', score: { ideology: 2, emotion: 1, mobilization: 1 } },
+      { label: '把管理权抓稳、令行禁止', score: { power: 2, force: 1 } },
+      { label: '多拉资源、办有收益的活动', score: { development: 2, order: 1 } },
+      { label: '数字化创新与流程升级', score: { development: 3, logic: 1 } }
     ]
   },
 
@@ -398,7 +398,61 @@ export const questions = [
     id: 'q13', type: 'likert', kicker: '场景题', title: '“我喜欢制定清晰的长期计划，并按部就班推进。”',
     desc: '请选择符合程度。', weight: 1.0,
     scores: [{ logic: -2, order: -1 }, { logic: -1 }, {}, { logic: 1, order: 1 }, { logic: 2, order: 2 }]
+  },
+  {
+    id: 'q14', type: 'single', kicker: '单选题', title: '舍友半夜 emo 找你倾诉，你会：',
+    desc: '请选择更接近你真实倾向的一项。', weight: 1.2,
+    options: [
+      { label: '先耐心听，共情TA的情绪', score: { emotion: 2, mobilization: 1 } },
+      { label: '听完理性给建议，帮TA分析', score: { logic: 2 } },
+      { label: '给TA些实际帮助，做点实事', score: { order: 1, development: 1 } },
+      { label: '拉上别的舍友一起陪TA', score: { mobilization: 2, emotion: 1 } }
+    ]
+  },
+  {
+    id: 'q15', type: 'single', kicker: '单选题', title: '你觉得大学最该把人培养成什么样？',
+    desc: '请选择最接近你真实倾向的一项。', weight: 1.2,
+    options: [
+      { label: '能立身做人的合格公民', score: { ideology: 2, emotion: 1 } },
+      { label: '有竞争力、能独立生活的毕业生', score: { development: 2, order: 1 } },
+      { label: '有独立思考与批判精神的人', score: { logic: 2 } },
+      { label: '心怀家国、愿意服务社会的人', score: { ideology: 2, mobilization: 1 } }
+    ]
+  },
+  {
+    id: 'q16', type: 'single', kicker: '单选题', title: '组织一次班级活动，你更看重：',
+    desc: '请选择最接近你真实倾向的一项。', weight: 1.0,
+    options: [
+      { label: '大家玩得开心、人人参与', score: { mobilization: 2, emotion: 1 } },
+      { label: '流程规范、安全不出岔子', score: { order: 2, logic: 1 } },
+      { label: '办出影响力，最好出圈', score: { development: 2, conflict: 1 } },
+      { label: '自己牵头，办得漂亮利落', score: { power: 2, force: 1 } }
+    ]
+  },
+  {
+    id: 'q17', type: 'single', kicker: '单选题', title: '想让一群人愿意跟着你干一件事，你更信哪招？',
+    desc: '请选择最接近你真实倾向的一项。', weight: 1.2,
+    options: [
+      { label: '把大家情绪点燃，一起冲', score: { mobilization: 2, emotion: 1 } },
+      { label: '把目标、分工、奖励定清楚', score: { order: 2, development: 1 } },
+      { label: '自己先干出成绩，用结果带人', score: { force: 2, power: 1 } },
+      { label: '讲清楚这件事的意义和价值', score: { ideology: 2, emotion: 1 } }
+    ]
+  },
+  {
+    id: 'q18', type: 'single', kicker: '单选题', title: '社团招新，你觉得最有效的是：',
+    desc: '请选择最接近你真实倾向的一项。', weight: 1.0,
+    options: [
+      { label: '靠有创意的活动把人吸引来', score: { mobilization: 2, emotion: 1 } },
+      { label: '靠人脉和资源把场子撑起来', score: { power: 2 } },
+      { label: '靠清晰的分工和招新计划', score: { logic: 2, order: 1 } },
+      { label: '靠口碑和氛围慢慢积累', score: { order: 1, ideology: 2 } }
+    ]
   }
 ]
 
 export const shareLine = (leader) => `我测出来最像${leader.name} —— ${leader.bio} 你也来测测看？`
+
+/** 出场偏移（与 leaders 顺序一一对应）：中心化加权距离 - bias 后取最小者胜，
+ *  用于让 10 位原型在随机答题下出现概率接近（见 /counter 同款校准思路）。 */
+export const BIAS = [1.0523, -0.1361, 0.4643, -0.5259, -0.4065, -0.0058, -0.4023, 0.0427, 0.0967, -0.1794]

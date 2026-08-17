@@ -13,10 +13,26 @@
   --card: #ffffff;
   --text: #1c2430;
   --text-sub: #6b7686;
+  --text-light: #98a4b5;
   --border: #e4ebf5;
   --shadow: 0 6px 24px rgba(27, 102, 201, 0.08);
   --radius: 16px;
   --nav-h: 60px;
+}
+
+/* 深色模式：随 <html data-theme="dark"> 切换（App 顶部按钮 + localStorage 持久化） */
+[data-theme="dark"] {
+  --primary: #5b9cf0;
+  --primary-dark: #8ab8ff;
+  --primary-soft: #1d2c44;
+  --accent: #fbbf24;
+  --bg: #10141b;
+  --card: #1a212b;
+  --text: #e7edf5;
+  --text-sub: #9aa8bb;
+  --text-light: #79879b;
+  --border: #2b3645;
+  --shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
 }
 
 * { box-sizing: border-box; }

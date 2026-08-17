@@ -3,7 +3,7 @@
  *  参考 leadertest.site 的多维原型比对：回答校园管理场景题 → 9 维画像 → 与
  *  青岛大学历任/现任校领导原型做加权距离匹配。结果仅供娱乐。 */
 import { ref, computed } from 'vue'
-import { DIMS, leaders, questions, shareLine } from '../data/leaders'
+import { DIMS, leaders, questions, shareLine, BIAS } from '../data/leaders'
 
 const emit = defineEmits(['back'])
 
@@ -80,14 +80,11 @@ function userScores() {
 const user = ref(null)
 const ranked = ref([])
 
-/** 用户向量归一化到 0-10（与原型 vec 同标尺，按用户自身轮廓拉伸），避免低分维原型常胜 */
+/** 用户向量中心化缩放（-1..1，0=居中），与原型 vec 中心化（vec/5-1）同标尺匹配 */
 function normalizedUser(raw) {
-  const vals = DIMS.map((d) => raw[d.key])
-  const mn = Math.min(...vals, 0)
-  const mx = Math.max(...vals, 10)
-  const span = mx - mn || 1
+  const maxAbs = Math.max(...DIMS.map((d) => Math.abs(raw[d.key])), 1)
   const n = {}
-  for (const d of DIMS) n[d.key] = Math.max(0, Math.min(10, ((raw[d.key] - mn) / span) * 10))
+  for (const d of DIMS) n[d.key] = raw[d.key] / maxAbs
   return n
 }
 
@@ -95,7 +92,10 @@ function finish() {
   const nu = normalizedUser(userScores())
   user.value = nu
   const list = [...leaders]
-    .map((l) => ({ ...l, dist: DIMS.reduce((s, d) => s + l.weight[d.key] * Math.abs(nu[d.key] - l.vec[d.key]), 0) }))
+    .map((l, i) => ({
+      ...l,
+      dist: DIMS.reduce((s, d) => s + l.weight[d.key] * Math.abs(nu[d.key] - (l.vec[d.key] / 5 - 1)), 0) - (BIAS[i] || 0)
+    }))
     .sort((a, b) => a.dist - b.dist)
   const worst = list[list.length - 1].dist || 1
   ranked.value = list.map((r) => ({ ...r, match: Math.max(5, Math.round(100 - (r.dist / worst) * 100)) }))
@@ -117,8 +117,8 @@ const whyText = computed(() => {
   return `最终你最接近 ${best.value.name}，主要因为你在 ${nearest.map((n) => n.label).join('、')} 这几项上与该原型距离最近。整体看，你更偏向 ${topDims.map((t) => t.label).join('、')} 这类风格。`
 })
 
-/** 结果条：用户得分归一（0-10 截断，与原型同量纲） */
-const norm = (v) => Math.max(0, Math.min(10, Math.round(v || 0)))
+/** 结果条：用户向量中心化（-1..1）映射回 0-10，与原型 vec 同量纲 */
+const norm = (v) => Math.max(0, Math.min(10, Math.round((v + 1) * 5)))
 const pct = (v) => Math.round((v / 10) * 100)
 /** 维度对齐度：用户与原型该维越接近越满 */
 const dimAlign = (d) =>

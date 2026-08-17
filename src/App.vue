@@ -5,7 +5,7 @@
  * 视图注册、路由解析、导航逻辑集中在 src/router.js；
  * 品牌、版权、文案集中在 src/config/site.js。此处只做组装。
  */
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import Welcome from './views/Welcome.vue'
 import { SITE } from './config/site'
 import { NAV_APPS, useViewState } from './router'
@@ -16,6 +16,34 @@ function enter() {
   sessionStorage.setItem('qdu_welcome_seen', '1')
   stage.value = 'main'
 }
+
+/* 深色模式：localStorage 记忆 + 跟随系统偏好，<html data-theme> 驱动 */
+const THEME_KEY = 'qdu_theme'
+const theme = ref('light')
+function applyTheme(t) {
+  theme.value = t
+  document.documentElement.setAttribute('data-theme', t)
+  try {
+    localStorage.setItem(THEME_KEY, t)
+  } catch {
+    /* noop */
+  }
+}
+function toggleTheme() {
+  applyTheme(theme.value === 'dark' ? 'light' : 'dark')
+}
+onMounted(() => {
+  let t = 'light'
+  try {
+    t = localStorage.getItem(THEME_KEY) || ''
+  } catch {
+    /* noop */
+  }
+  if (!t) {
+    t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  }
+  applyTheme(t)
+})
 
 const { current, currentComp, openApp, goHome } = useViewState()
 </script>
@@ -34,6 +62,7 @@ const { current, currentComp, openApp, goHome } = useViewState()
           </div>
         </div>
         <div class="header-right">
+          <button class="ghost-btn" :title="theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'" @click="toggleTheme">{{ theme === 'dark' ? '☀️' : '🌙' }}</button>
           <button class="ghost-btn" @click="goHome">🏠 首页</button>
         </div>
       </div>
