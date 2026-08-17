@@ -1,3 +1,4 @@
+/** 体测评分标准静态数据：权重 / 单项评分表 / 等级区间（来源《国家学生体质健康标准》） */
 export const itemWeights = {
   bmi: 0.15,
   vitalCapacity: 0.15,

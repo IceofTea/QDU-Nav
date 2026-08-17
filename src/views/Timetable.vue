@@ -1,7 +1,11 @@
 <script setup>
+/** 课程表：班级/教室/教师课表查询 + 官方课程总表入口
+ *  数据来自本地快照（loadSnap），网关可用时用网关补充元信息 */
 import { ref, computed, onMounted } from 'vue'
 import { apiFetch } from '../api/index'
 import { loadSnap } from '../api/localCourse'
+import { normRoom, clsSplit, profOf, parseWeeks } from '../utils/course'
+import { fmtTime } from '../utils/format'
 
 const emit = defineEmits(['back'])
 
@@ -16,7 +20,6 @@ const weekFilter = ref('')
 
 const dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 const PERIOD = 12
-const normRoom = (r) => (r || '').replace(/[（(]智慧[)）]/g, '').trim()
 
 onMounted(async () => {
   snap.value = await loadSnap()
@@ -39,14 +42,11 @@ const curRows = computed(() => {
   return rows.filter((r) => r.term === t)
 })
 
-const classes = computed(() => [...new Set(curRows.value.map((r) => r.cls).filter(Boolean))])
 const rooms = computed(() => [...new Set(curRows.value.map((r) => r.r && normRoom(r.r)).filter(Boolean))].sort())
 const teachers = computed(() => [...new Set(curRows.value.map((r) => r.t).filter(Boolean))])
 
 const sourceName = computed(() => (tab.value === 'class' ? '班级' : tab.value === 'room' ? '教室' : '教师'))
 
-// 上课班级常为「多班合上」串（如 24临床（5+3）[01-05]班,25体育[01-02]班），拆分为单个班级
-const clsSplit = (cls) => (cls || '').split(/[,，、]/).map((s) => s.trim()).filter(Boolean)
 const singleClasses = computed(() => {
   const set = new Set()
   for (const r of curRows.value) clsSplit(r.cls).forEach((c) => set.add(c))
@@ -55,8 +55,6 @@ const singleClasses = computed(() => {
     return y(b) - y(a) || a.localeCompare(b, 'zh')
   })
 })
-const profOf = (cls) =>
-  cls.replace(/^2\d/, '').replace(/（[^）]*）/g, '').replace(/\[[^\]]*\]/g, '').replace(/\d+班$/, '').replace(/班$/, '').trim()
 const years = computed(() => [...new Set(singleClasses.value.map((c) => (c.match(/^2\d/) || [])[0]).filter(Boolean))].sort().reverse())
 const profs = computed(() => {
   const m = {}
@@ -127,16 +125,6 @@ function open(obj) {
   weekFilter.value = ''
 }
 
-function parseWeeks(w) {
-  const out = new Set()
-  for (const m of (w || '').matchAll(/(\d+)(?:-(\d+))?/g)) {
-    const a = +m[1]
-    const b = m[2] ? +m[2] : a
-    for (let i = a; i <= b; i++) out.add(i)
-  }
-  return out
-}
-
 const weekOptions = computed(() => {
   if (!opened.value) return []
   const s = new Set()
@@ -165,7 +153,6 @@ const posStyle = (co) => ({
 // 官方课程总表
 const courses = ref(null)
 const coursesLoading = ref(true)
-const fmtTime = (iso) => new Date(iso).toLocaleString('zh-CN', { hour12: false })
 async function loadCourses(force) {
   coursesLoading.value = true
   courses.value = await apiFetch('/courses' + (force ? '?force=1' : ''))

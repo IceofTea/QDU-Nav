@@ -1,3 +1,13 @@
+/**
+ * 应用注册表（单一数据源）
+ * ---------------------------------------------------------------------------
+ * 首页应用网格与「应用分类」面板都从本数组渲染。
+ * 新增一个应用页面：
+ *   1. 在 src/views/ 新建视图组件（接收 @open / @back 事件）
+ *   2. 在本文件追加一项 { id, title, desc, icon, color, group, link }
+ *   3. 在 src/router.js 的 VIEWS 注册表中登记 id → 组件
+ * 详见 README「二次开发：新增应用」。
+ */
 export const apps = [
   { id: 'campusNews', title: '校园动态', desc: '教务处官方通知与动态实时同步', icon: '📢', color: '#e11d48', group: '学习', link: '#/app/campusNews' },
   { id: 'timetable', title: '课程表', desc: '查看班级、教室与教师课表，支持预览下学期', icon: '🗓️', color: '#1b66c9', group: '学习', link: '#/app/timetable' },

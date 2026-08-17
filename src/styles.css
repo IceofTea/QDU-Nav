@@ -1,3 +1,9 @@
+/* ==========================================================================
+   QDU 校园导航 全局样式
+   分区顺序：变量与基础 → 欢迎页 → 顶栏 → 首页(hero/应用网格/洞察/校区/关于)
+   → 通用组件(按钮/输入/面板/列表/tab/骨架屏) → 各应用页补充 → 页脚 → 底部导航
+   修改主色调只需调整 :root 中的 CSS 变量。
+   ========================================================================== */
 :root {
   --primary: #1b66c9;
   --primary-dark: #144e9c;
@@ -383,6 +389,7 @@ body {
 .footer-legend { display: flex; flex-wrap: wrap; gap: 10px 20px; margin-bottom: 8px; }
 .legend-item { display: inline-flex; align-items: center; gap: 6px; }
 .footer-copy { opacity: 0.75; }
+.footer-ver { font-weight: 700; color: var(--primary); margin-left: 4px; }
 .footer-dev { opacity: 0.55; margin-top: 2px; }
 .about-card {
   background: var(--card-bg, #fff);

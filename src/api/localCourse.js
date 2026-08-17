@@ -1,8 +1,13 @@
-// 静态快照回退层：GitHub Pages 等纯静态托管没有网关，apiFetch 失败时用 /data/snapshot.json 在浏览器本地查询。
+/**
+ * 静态快照回退层
+ * ---------------------------------------------------------------------------
+ * GitHub Pages 等纯静态托管没有网关，apiFetch 失败时用 /data/snapshot.json
+ * 在浏览器本地完成同样的查询，保证站点在任何静态托管上功能完整。
+ */
+import { normRoom, clsSplit } from '../utils/course'
+
 let snap = null
 let loading = null
-
-const normRoom = (r) => (r || '').replace(/[（(]智慧[)）]/g, '').trim()
 
 const rowsOf = (d, term) => (term && term !== 'all' ? d.rows.filter((r) => r.term === term) : d.rows)
 const allRoomsOf = (d) => [...new Set(d.rows.map((r) => r.r && normRoom(r.r)).filter(Boolean))]
@@ -90,7 +95,6 @@ export async function staticCourseQuery(q, term) {
   const d = await loadSnap()
   if (!d) return null
   const cur = term && term !== 'all' ? term : d.courseTable.semester
-  const clsSplit = (cls) => (cls || '').split(/[,，、]/).map((s) => s.trim()).filter(Boolean)
   const hits = rowsOf(d, cur).filter((r) => clsSplit(r.cls).includes(q) || r.c.includes(q) || r.t.includes(q))
   return { semester: cur, q, count: hits.length, rows: hits.slice(0, 200), static: true }
 }

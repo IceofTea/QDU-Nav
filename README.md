@@ -1,8 +1,10 @@
 # QDU 校园导航
 
 > **🌐 在线访问：<https://IceofTea.github.io/QDU-Nav/>**（由 GitHub Actions 自动构建并部署到 GitHub Pages，见下方「部署」）
+>
+> **🏷️ 当前版本：v1.0.0**（初始模板版。版本号在 `src/config/site.js` 中维护，页脚与「关于本站」面板同步展示）
 
-面向青岛大学的校园服务聚合入口（非官方演示站），受福师大社区项目 NextFStar 启发，亮色清新、移动端优先。
+面向青岛大学的校园服务聚合入口（非官方演示站），受福师大社区项目 NextFStar 启发，亮色清新、移动端优先。**本站同时是一套可直接复用的「学习导航站」工程模板**：品牌、文案、配色、应用注册、数据源均已模块化，参考本仓库改造为其他学校 / 其他主题的导航站成本极低（见「二次开发：移植与扩展」）。
 
 ## 功能
 
@@ -23,6 +25,19 @@
 - **网关**：原生 Node HTTP（`server/index.mjs`，端口 8787），抓取并解析教务数据
 - **Python 数据侧**：`crawler/`（仅标准库）承担**爬取 → 校验 → 测试 → 分析 → 差异**整条数据链路，与 Node 版双实现互为保障
 - **数据层**：快照 `public/data/snapshot.json`（含最近 7 个学期课程总表全量排课，前端 API 请求失败时自动回退快照，保证纯静态托管可用）+ 洞察 `public/data/course_stats.json`
+
+### 前端模块划分（`src/`）
+
+| 目录 / 文件 | 职责 | 移植时 |
+| --- | --- | --- |
+| `config/site.js` | **站点唯一配置**：名称、品牌、版本、版权、来源说明、外部链接 | ✅ 改这里即可换品牌与文案 |
+| `router.js` | 视图注册表（`VIEWS`）+ 底部导航（`NAV_APPS`）+ Hash 路由解析 | ✅ 新增/调整应用入口 |
+| `data/` | 全部静态数据（应用注册表、校区、食堂、教室、题库等） | ✅ 换成本校数据 |
+| `api/` | 网关优先 + 快照兜底的数据访问层 | 一般不动 |
+| `utils/` | 公共工具（课程解析 / 格式化） | 一般不动 |
+| `views/` | 各应用页面（每个 `.vue` 一个应用） | ✅ 增删应用 |
+| `components/` | 可复用组件（如 `CountUp` 数字滚动） | 一般不动 |
+| `styles.css` | 全局样式，`:root` CSS 变量控制主色调 | ✅ 换配色只改变量 |
 
 ### Python 数据链路（`crawler/`）
 
@@ -96,7 +111,16 @@ node server/index.mjs   # 数据网关 8787（可选，前端无网关时回退�
 
 ```
 QDU-Nav/
-├── src/                    # Vue 前端（views 视图 / api 数据层 / data 静态数据）
+├── src/                    # Vue 前端
+│   ├── config/site.js      #   ★ 站点唯一配置（品牌/版本/文案/版权，移植入口）
+│   ├── router.js           #   ★ 视图注册表 + 底部导航 + Hash 路由
+│   ├── main.js / App.vue   #   应用入口 / 根组件（组装 Welcome + 顶栏 + 视图 + 页脚）
+│   ├── styles.css          #   全局样式（:root CSS 变量控制主色调）
+│   ├── api/                #   数据访问层（网关优先 / 快照兜底 / 数据洞察）
+│   ├── utils/              #   公共工具（课程班级解析 / 时间格式化）
+│   ├── components/         #   可复用组件（CountUp 等）
+│   ├── data/               #   静态数据（应用注册表 / 校区 / 食堂 / 教室 / 题库…）
+│   └── views/              #   应用页面（一个 .vue 一个应用）
 ├── server/
 │   ├── index.mjs           # 原生 Node 网关（8787）
 │   └── parse_kcb.py        # 课程总表 xlsx 解析（仅 Python 标准库）
@@ -111,11 +135,42 @@ QDU-Nav/
 │   └── qdu_crawler.py      # 公开公告 / 校历图片抓取（工具）
 ├── tests/                  # Python 单元测试（解析器 / schema / xlsx / 公开抓取）
 ├── scripts/
-│   └── snapshot.mjs        # Node 版快照抓取脚本（等价实现，回退用）
+│   ├── snapshot.mjs        # Node 版快照抓取脚本（等价实现，回退用）
+│   └── gen-classrooms.mjs  # 楼宇/教室数据生成（从课程总表派生）
 ├── public/data/snapshot.json     # 定时更新的数据快照
 ├── public/data/course_stats.json # 定时更新的数据洞察统计
 └── .github/workflows/      # snapshot.yml 定时爬取 / deploy.yml 构建部署
 ```
+
+## 二次开发：移植与扩展
+
+本站按「**改配置 → 换数据 → 增应用**」三步即可改造成任意主题的学习导航站，视图与逻辑无需改动。
+
+### 1. 换品牌与文案（3 分钟）
+
+编辑 `src/config/site.js` 一个文件即可：`name` / `brand` / `tagline` / `motto` / `version` / 版权与来源说明 / Wiki 社区链接。顶栏、欢迎页、页脚、首页关于面板、数据来源声明会全部同步更新。
+
+### 2. 换主色调（1 分钟）
+
+编辑 `src/styles.css` 顶部的 `:root` 变量（`--primary` 主色、`--accent` 强调色、`--bg` 背景等），全站配色即换，无需改任何组件。
+
+### 3. 换成本校数据
+
+- **静态数据**：`src/data/` 下的校区、食堂、教室、题库等直接替换为本校内容；
+- **动态数据**：本仓库的爬虫链路（`crawler/` + `scripts/snapshot.mjs`）面向「教务处公开栏目」设计——把 `crawler/config.py` 的抓取 URL 与 `crawler/parsers.py` / `server/parse_kcb.py` 的解析规则换成目标站点的页面结构即可；若暂无爬虫，也可以直接准备一份符合 `snapshot.json` schema 的静态文件放进 `public/data/`（schema 定义见 `tests/test_snapshot_schema.py`），站点即可离线工作。
+
+### 4. 新增一个应用（3 步）
+
+1. 在 `src/views/` 新建页面组件（可仿照任一现有应用；页面内统一通过 `emit('back')` 返回、`emit('open', appId)` 跳转其他应用）；
+2. 在 `src/data/apps.js` 的 `apps` 数组追加一项 `{ id, title, desc, icon, color, group, link: '#/app/<id>' }`（首页网格与应用分类会自动出现）；
+3. 在 `src/router.js` 的 `VIEWS` 注册表登记 `id → 组件`；如需出现在底部导航，再在 `NAV_APPS` 加一项。
+
+完成。移除一个应用同理：删视图、删 `apps` 条目、删 `VIEWS` 登记即可。
+
+### 5. 版本管理约定
+
+- 版本号只维护在 `src/config/site.js` 的 `SITE.version`，页脚与「关于本站」自动展示；README 顶部的版本行请在发版时同步更新；
+- 建议语义化版本：`1.x.y`（功能迭代）/ `2.x.y`（较大重构）。
 
 ## 关于与版权
 
@@ -123,6 +178,12 @@ QDU-Nav/
 - **数据版权**：站内数据抓取自青岛大学官网公开页面，版权归青岛大学及相关版权方所有；本站仅聚合展示并在界面标注来源
 - **用途**：本站为学习与校园生活便利而制作，内容仅供学习交流与实用参考，**不用于任何商业目的**
 - 页面脚本均为本站原创（MIT 许可），但爬取的课程数据、通知、校历等文本版权归属原发布方
+
+## 版本历史
+
+| 版本 | 说明 |
+| --- | --- |
+| **v1.0.0** | **初始模板版**。完成前端工程化重构：站点配置（`config/site.js`）、路由注册表（`router.js`）、公共工具（`utils/`）模块化拆分，消除分散文案与重复工具函数；全文件补齐模块注释；新增版本号标注（页脚 / 关于面板 / README）与「二次开发：移植与扩展」指南。此前为无版本号的功能迭代。 |
 
 ## 免责声明
 

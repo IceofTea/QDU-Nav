@@ -1,8 +1,10 @@
 <script setup>
+/** 首页：欢迎语 / 应用网格 / 分类入口 / 校园数据 / 数据洞察 / 校区 / 关于本站 */
 import { ref, computed, onMounted } from 'vue'
 import { apps, campusStats } from '../data/apps'
 import { campuses } from '../data/campus'
 import { getCourseStats, EMPTY_STATS } from '../api/courseStats'
+import { SITE } from '../config/site'
 
 const emit = defineEmits(['open'])
 
@@ -45,7 +47,7 @@ function toggleCampus(name) {
   <div class="page home">
     <section class="hero">
       <h2 class="hero-title">{{ greeting() }}</h2>
-      <p class="hero-sub">欢迎回到 QDU 校园导航，聚合你所需的校园服务</p>
+      <p class="hero-sub">欢迎回到 {{ SITE.name }}，{{ SITE.heroSub }}</p>
       <div class="search-bar">
         <span class="search-icon">🔍</span>
         <input v-model="keyword" class="search-input" placeholder="搜一搜你想要的应用" />
@@ -57,15 +59,15 @@ function toggleCampus(name) {
         <div class="wiki-main">
           <div class="wiki-emoji">📚</div>
           <div>
-            <div class="wiki-title">青大 Wiki · 学习资料社区</div>
-            <div class="wiki-desc">课程笔记、考研复试经验、校园攻略文档，与本站配套的维基仓库，欢迎贡献</div>
+            <div class="wiki-title">{{ SITE.wiki.title }}</div>
+            <div class="wiki-desc">{{ SITE.wiki.desc }}</div>
           </div>
         </div>
         <div class="wiki-links">
-          <a class="wiki-link" href="https://iceoftea.github.io/QDU-Wiki/" target="_blank" rel="noopener">网站 ↗</a>
-          <a class="wiki-link" href="https://github.com/IceofTea/QDU-Wiki" target="_blank" rel="noopener">GitHub ↗</a>
-          <a class="wiki-link" href="https://gitee.com/iceoftea/QDU-Wiki" target="_blank" rel="noopener">Gitee ↗</a>
-          <a class="wiki-link" href="https://docs.qq.com/aio/DVFJnbFR3TWdzbFVn" target="_blank" rel="noopener">腾讯文档 ↗</a>
+          <a class="wiki-link" :href="SITE.wiki.links.site" target="_blank" rel="noopener">网站 ↗</a>
+          <a class="wiki-link" :href="SITE.wiki.links.github" target="_blank" rel="noopener">GitHub ↗</a>
+          <a class="wiki-link" :href="SITE.wiki.links.gitee" target="_blank" rel="noopener">Gitee ↗</a>
+          <a class="wiki-link" :href="SITE.wiki.links.docs" target="_blank" rel="noopener">腾讯文档 ↗</a>
         </div>
       </div>
     </section>
@@ -172,10 +174,11 @@ function toggleCampus(name) {
     <section class="section">
       <h3 class="section-title">关于本站</h3>
       <div class="about-card">
-        <div class="about-line"><b>网站开发者：</b>炎黄YH</div>
-        <div class="about-line"><b>数据来源：</b>青岛大学教务处公开栏目 —— 教务通知（jwc.qdu.edu.cn/jwtz）、教学动态与校历、课程总表（本科，xlsx 附件）。所有数据均抓取自学校官网公开页面，版权归青岛大学及相关版权方所有。</div>
-        <div class="about-line"><b>抓取方式：</b>GitHub Actions 每 6 小时自动运行爬虫（Python 与 Node 双实现），抓取 → 解析 → 生成静态数据快照 → 站点自动重新构建并部署；也可在仓库手动触发工作流，或在本地运行脚本即时更新。</div>
-        <div class="about-line"><b>用途与版权：</b>本站仅聚合学校已公开的信息，方便学习与校园生活；数据以学校官网为准，本站不对其真实性负责。所有内容仅供学习交流与生活实用，无任何商业目的。</div>
+        <div class="about-line"><b>网站开发者：</b>{{ SITE.developer }}</div>
+        <div class="about-line"><b>网站版本：</b>v{{ SITE.version }}</div>
+        <div class="about-line"><b>数据来源：</b>{{ SITE.aboutSource }}</div>
+        <div class="about-line"><b>抓取方式：</b>{{ SITE.aboutCrawl }}</div>
+        <div class="about-line"><b>用途与版权：</b>{{ SITE.aboutUsage }}</div>
       </div>
     </section>
   </div>

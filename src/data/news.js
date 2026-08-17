@@ -1,3 +1,4 @@
+/** 教务通知兜底数据：快照/网络不可用时的静态示例，正常数据来自 /data/snapshot.json */
 export const fallbackNotices = [
   { date: '2026-07-22', title: '关于举办青岛大学第十五届青年教师教学大奖赛的通知', url: 'https://jwc.qdu.edu.cn/info/1009/6583.htm' },
   { date: '2026-07-20', title: '关于举办青岛大学第七届教师教学创新大赛的通知', url: 'https://jwc.qdu.edu.cn/info/1009/6582.htm' },
