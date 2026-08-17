@@ -49,12 +49,19 @@ async function copyMail() {
 
     <template v-if="tab === 'official'">
       <div class="mail-helper">
-        <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>📧 邮箱助手：一键生成你的校园邮箱</div>
+        <div class="mail-head">
+          <span class="mail-emoji">📧</span>
+          <div class="mail-head-txt">
+            <div class="mail-title">邮箱助手</div>
+            <div class="mail-sub">输入学号，一键生成你的校园邮箱</div>
+          </div>
+        </div>
         <div class="mail-row">
           <input class="input" v-model="sid" type="text" inputmode="numeric" placeholder="输入学号，如 2023XXXXXX" style="flex:1;min-width:0;" />
           <button class="btn accent" :disabled="!email" @click="copyMail">{{ copied ? '已复制 ✓' : '复制邮箱' }}</button>
         </div>
         <div class="mail-out" :class="{ empty: !email }">{{ email || '输入学号后自动生成' }}</div>
+        <div class="mail-quip">💡 悄悄告诉你：校长邮箱是 <b>xiaozhang@qdu.edu.cn</b>，一般别乱发哦～</div>
         <p class="muted" style="font-size:12px;margin-top:8px;line-height:1.8;">
           校园邮箱地址：<a class="link" href="https://mail.qdu.edu.cn" target="_blank" rel="noopener">mail.qdu.edu.cn</a>（账号 <b>学号@qdu.edu.cn</b>），用于接收教务处通知、奖学金与就业信息。尚未开通？可到
           <a class="link" href="https://ehall.qdu.edu.cn" target="_blank" rel="noopener">网上办事大厅</a>「邮箱申请」开通，或咨询智慧校园服务热线 0532-85955678。
@@ -98,11 +105,41 @@ async function copyMail() {
 
 <style scoped>
 .mail-helper {
-  background: #f0f7ff;
+  background: linear-gradient(160deg, #eef7ff 0%, #f7fbff 60%, #fffdf4 100%);
   border: 1px solid #cfe3fb;
-  border-radius: 12px;
-  padding: 14px;
+  border-radius: 16px;
+  padding: 16px;
   margin-bottom: 18px;
+  box-shadow: 0 6px 20px rgba(27, 102, 201, 0.08);
+}
+.mail-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.mail-emoji {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1b66c9, #4f9cf5);
+  color: #fff;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  box-shadow: 0 4px 10px rgba(27, 102, 201, 0.3);
+}
+.mail-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+}
+.mail-sub {
+  font-size: 12px;
+  color: var(--text-sub);
+  margin-top: 2px;
 }
 .mail-row {
   display: flex;
@@ -128,5 +165,15 @@ async function copyMail() {
   border-color: var(--border);
   font-weight: 500;
   font-size: 13px;
+}
+.mail-quip {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #7c5a12;
+  background: #fff8e6;
+  border: 1px dashed #f2c14e;
+  border-radius: 10px;
+  padding: 8px 12px;
+  line-height: 1.7;
 }
 </style>

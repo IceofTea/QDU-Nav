@@ -37,7 +37,6 @@ onMounted(async () => {
     termRows.value = d?.rows || []
     term.value = d?.courseTable?.semester || ''
   }
-  meta.value = await apiFetch('/courseTable')
   loading.value = false
 })
 

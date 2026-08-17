@@ -53,9 +53,10 @@ export const officialGroups = [
     name: '官方新媒体',
     icon: '📱',
     sites: [
-      { name: '青岛大学官方微博', url: 'https://weibo.com/qddx', desc: '官方微博（账号 qddx）· 校园动态实时发布' },
-      { name: '青岛大学官方微信 / 视频号', url: 'https://www.qdu.edu.cn', desc: '公众号 / 视频号账号 qddx · 微信搜索「青岛大学」关注' },
-      { name: '青岛大学官方抖音', url: 'https://www.qdu.edu.cn', desc: '官方抖音号 qddx · 校园短视频' }
+      { name: '青岛大学官方微博', url: 'https://www.weibo.com/u/5726029829', desc: '官方微博 · 校园动态实时发布' },
+      { name: '青岛大学官方微信', url: 'https://mp.weixin.qq.com/s/o6vjr3toGHgJjSUABA26_A', desc: '官方微信公众号 · 深度推文与通知' },
+      { name: '青岛大学官方抖音', url: 'https://www.douyin.com/user/MS4wLjABAAAAYfbvDMnY0h8CqJM8vIW2bX7Lq1yCbtBKOSA3iTKj1kY4fOHZtKG3lMWG2tCGqAPP?from_tab_name=main', desc: '官方抖音 · 校园短视频' },
+      { name: '青岛大学 B 站', url: 'https://space.bilibili.com/441692154?spm_id_from=333.337.0.0', desc: 'B 站官方账号 · 视频 / 直播 / 校园 Vlog' }
     ]
   },
   {

@@ -8,6 +8,27 @@ import { normRoom, clsSplit } from '../utils/course'
 
 let snap = null
 let loading = null
+let tmMeta = null
+let tmLoading = null
+
+/** 课程表元信息轻量读取（timetable_meta.json 约 2KB，避免全量 15MB snapshot） */
+async function loadTimetableMetaFast() {
+  if (tmMeta) return tmMeta
+  if (tmLoading) return tmLoading
+  tmLoading = (async () => {
+    try {
+      const r = await fetch(import.meta.env.BASE_URL + 'data/timetable_meta.json')
+      if (!r.ok) return null
+      tmMeta = await r.json()
+      return tmMeta
+    } catch {
+      return null
+    } finally {
+      tmLoading = null
+    }
+  })()
+  return tmLoading
+}
 
 const rowsOf = (d, term) => (term && term !== 'all' ? d.rows.filter((r) => r.term === term) : d.rows)
 const allRoomsOf = (d) => [...new Set(d.rows.map((r) => r.r && normRoom(r.r)).filter(Boolean))]
@@ -52,6 +73,19 @@ export async function staticCalendar() {
 }
 
 export async function staticCourseTable() {
+  const m = await loadTimetableMetaFast()
+  if (m && m.courseTable) {
+    return {
+      semester: m.courseTable.semester,
+      count: m.courseTable.count,
+      rooms: m.courseTable.rooms,
+      updatedAt: m.courseTable.updatedAt,
+      cached: true,
+      static: true,
+      latestUrl: m.courseTable.latestUrl,
+      semesters: (m.courseTables || []).map((t) => t.semester)
+    }
+  }
   const d = await loadSnap()
   if (!d) return null
   return {
