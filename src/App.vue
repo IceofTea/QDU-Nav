@@ -16,6 +16,7 @@ import Canteen from './views/Canteen.vue'
 import Categories from './views/Categories.vue'
 import BuildingMatch from './views/BuildingMatch.vue'
 import CourseStats from './views/CourseStats.vue'
+import Budget from './views/Budget.vue'
 
 const viewMap = {
   campusNews: CampusNews,
@@ -31,7 +32,8 @@ const viewMap = {
   officialSites: OfficialSites,
   categories: Categories,
   buildingMatch: BuildingMatch,
-  courseStats: CourseStats
+  courseStats: CourseStats,
+  budget: Budget
 }
 
 const stage = ref(localStorage.getItem('qdu_welcome_seen') ? 'main' : 'welcome')

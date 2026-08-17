@@ -8,6 +8,7 @@ export const apps = [
   { id: 'physicalTest', title: '体测成绩计算器', desc: '保存并计算大一到大四体测成绩', icon: '💪', color: '#0f766e', group: '健康', link: '#/app/physicalTest' },
   { id: 'officialSites', title: '学校官网', desc: '青岛大学官方网站与各学院官网大全', icon: '🏛️', color: '#7c3aed', group: '服务', link: '#/app/officialSites' },
   { id: 'whatToEat', title: '今天吃什么', desc: '是啊，吃什么', icon: '🍜', color: '#e76f51', group: '生活', link: '#/app/whatToEat' },
+  { id: 'budget', title: '生活费计数器', desc: '收支随手记，月底不吃土 · 支持奖学金收入', icon: '🧮', color: '#0e7490', group: '生活', link: '#/app/budget' },
   { id: 'quiz', title: '青大知多少', desc: '青大知识问答小游戏，测测你的校史功底', icon: '🎯', color: '#8b5cf6', group: '游戏', link: '#/app/quiz' },
   { id: 'foodWheel', title: '美食轮盘', desc: '食堂美食转盘，随机抽一个开吃', icon: '🎡', color: '#d97706', group: '游戏', link: '#/app/foodWheel' },
   { id: 'buildingMatch', title: '教学楼速配', desc: '翻牌配对教学楼新旧名称，测测你的记性', icon: '🧩', color: '#0f766e', group: '游戏', link: '#/app/buildingMatch' },
