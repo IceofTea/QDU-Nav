@@ -65,8 +65,8 @@ const server = http.createServer((req, res) => {
     const hit = u.pathname === '/api/hit'
     if (hit) {
       state.pv++
-      const cookie = req.headers.cookie || ''
-      if (!cookie.split('; ').includes(UV_COOKIE + '=1')) {
+      // UV 去重由前端 localStorage + isNewUv 参数完成（跨域第三方 Cookie 可能被拦截）
+      if (u.searchParams.get('isNewUv') !== '0') {
         state.uv++
         res.setHeader('Set-Cookie', `${UV_COOKIE}=1; Path=/; Max-Age=31536000; SameSite=Lax`)
       }
