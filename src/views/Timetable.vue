@@ -85,7 +85,7 @@ const result = computed(() => {
 
 const resultItems = computed(() => result.value.map((name) => ({ name, count: countOf(name) })))
 
-const PAGE_SIZE = 50
+const PAGE_SIZE = 10
 const page = ref(1)
 const expandAll = ref(false)
 const pageCount = computed(() => Math.max(1, Math.ceil(resultItems.value.length / PAGE_SIZE)))

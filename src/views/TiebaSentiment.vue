@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 const emit = defineEmits(['back'])
 
@@ -46,6 +46,30 @@ onMounted(load)
 function maxCount(arr, key = 'count') {
   return arr.reduce((m, x) => Math.max(m, x[key]), 0)
 }
+
+/* ---- ok 态图表化所需的派生数据 ---- */
+const maxReplies = computed(() => data.value?.topThreads?.[0]?.replies || 1)
+const hotBar = (r) => Math.round((r / maxReplies.value) * 100)
+const maxKw = computed(() => maxCount(data.value?.keywords || [], 'count') || 1)
+const maxTopic = computed(() => maxCount(data.value?.topics || [], 'count') || 1)
+const maxTrend = computed(() => maxCount(data.value?.weekTrend || [], 'count') || 1)
+const topicTotal = computed(() => (data.value?.topics || []).reduce((s, t) => s + t.count, 0) || 1)
+const weekSum = computed(() => (data.value?.weekTrend || []).reduce((s, p) => s + p.count, 0))
+const topTopic = computed(() => data.value?.topics?.[0] || null)
+const topKw = computed(() => data.value?.keywords?.[0] || null)
+
+/** 自动生成的文字洞察（数据驱动，无数据时自动降级为空） */
+const insights = computed(() => {
+  const list = []
+  const d = data.value
+  if (!d) return list
+  const top = d.topThreads?.[0]
+  if (top) list.push(`吧内最热帖《${top.title}》已有 ${top.replies} 回复，是当前社区关注度最高的讨论`)
+  if (topTopic.value) list.push(`讨论最集中的话题是「${topTopic.value.name}」（${topTopic.value.count} 条），学生最关心这类议题`)
+  if (topKw.value) list.push(`高频关键词「${topKw.value.word}」在标题中出现 ${topKw.value.count} 次`)
+  if (d.weekTrend?.length) list.push(`近 14 天共发帖 ${weekSum.value} 条，日均约 ${Math.round(weekSum.value / 14)} 条`)
+  return list
+})
 </script>
 
 <template>
@@ -88,12 +112,45 @@ function maxCount(arr, key = 'count') {
   </div>
 
   <template v-else-if="data">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;">
+      <div class="panel" style="margin:0;">
+        <div class="muted" style="font-size:12px;">抓取帖数</div>
+        <div style="font-size:22px;font-weight:800;margin-top:4px;">{{ data.total }}</div>
+        <div class="muted" style="font-size:12px;">{{ data.pages }} 页列表</div>
+      </div>
+      <div class="panel" style="margin:0;">
+        <div class="muted" style="font-size:12px;">最热帖回复</div>
+        <div style="font-size:22px;font-weight:800;margin-top:4px;">{{ maxReplies }}</div>
+        <div class="muted" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">《{{ (data.topThreads[0] || {}).title || '—' }}》</div>
+      </div>
+      <div class="panel" style="margin:0;">
+        <div class="muted" style="font-size:12px;">话题覆盖</div>
+        <div style="font-size:22px;font-weight:800;margin-top:4px;">{{ data.topics.length }}</div>
+        <div class="muted" style="font-size:12px;">{{ data.keywords.length }} 个高频关键词</div>
+      </div>
+      <div class="panel" style="margin:0;">
+        <div class="muted" style="font-size:12px;">近 14 天发帖</div>
+        <div style="font-size:22px;font-weight:800;margin-top:4px;">{{ weekSum }}</div>
+        <div class="muted" style="font-size:12px;">日均约 {{ Math.round(weekSum / 14) }} 条</div>
+      </div>
+    </div>
+    <div v-if="insights.length" class="panel" style="margin-bottom:16px;background:#eef6ff;border-color:#bcd6f5;">
+      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>一眼看懂这些数据</div>
+      <ul style="margin:0;padding-left:18px;font-size:13px;line-height:2;color:var(--text);">
+        <li v-for="s in insights" :key="s">{{ s }}</li>
+      </ul>
+    </div>
+
     <div class="panel" style="margin-bottom:16px;">
       <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>🔥 热帖榜（按回复数 Top 10）</div>
       <a v-for="(t, i) in data.topThreads" :key="t.url || i" class="hot-row" :href="t.url" target="_blank" rel="noopener">
         <span class="hot-rank" :class="{ top: i < 3 }">{{ i + 1 }}</span>
-        <span class="hot-title">{{ t.title }}</span>
-        <span class="hot-meta muted">{{ t.replies }} 回复 · {{ t.author || '匿名' }} · {{ t.date }}</span>
+        <span class="hot-main">
+          <span class="hot-title">{{ t.title }}</span>
+          <span class="hot-sub muted">{{ t.author || '匿名' }} · {{ t.date }}</span>
+        </span>
+        <span class="hot-replybar"><i :style="{ width: hotBar(t.replies) + '%' }"></i></span>
+        <span class="hot-meta">{{ t.replies }} 回复</span>
       </a>
       <p class="muted" style="font-size:12px;margin:10px 2px 0;">抓取 {{ data.total }} 帖（{{ data.pages }} 页，覆盖最近发帖），更新于 {{ (data.updatedAt || '').slice(0, 10) }}</p>
     </div>
@@ -101,12 +158,14 @@ function maxCount(arr, key = 'count') {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:16px;">
       <div class="panel">
         <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>🏷️ 关键词热度</div>
-        <div class="kw-row" v-for="k in data.keywords" :key="k.word">
-          <span class="kw-word">{{ k.word }}</span>
-          <span class="kw-bar"><i :style="{ width: (k.count / maxCount(data.keywords) * 100) + '%' }"></i></span>
-          <span class="kw-count muted">{{ k.count }}</span>
+        <div class="kw-cloud" v-if="data.keywords.length">
+          <span v-for="k in data.keywords" :key="k.word" class="kw-tag"
+            :style="{ fontSize: (12 + Math.round((k.count / maxKw) * 14)) + 'px', opacity: 0.65 + (k.count / maxKw) * 0.35 }">
+            {{ k.word }}<em>{{ k.count }}</em>
+          </span>
         </div>
-        <p v-if="!data.keywords.length" class="muted" style="font-size:13px;">暂无关键词命中。</p>
+        <p v-else class="muted" style="font-size:13px;">暂无关键词命中。</p>
+        <p class="muted" style="font-size:12px;margin-top:10px;">字号越大出现越频繁，点进热帖能对上社区最近在聊什么。</p>
       </div>
 
       <div class="panel">
@@ -114,14 +173,14 @@ function maxCount(arr, key = 'count') {
         <div class="topic-row" v-for="t in data.topics" :key="t.name">
           <span class="kw-word">{{ TOPIC_ICONS[t.name] || '·' }} {{ t.name }}</span>
           <span class="kw-bar"><i :style="{ width: (t.count / maxCount(data.topics) * 100) + '%' }"></i></span>
-          <span class="kw-count muted">{{ t.count }}</span>
+          <span class="kw-count muted">{{ Math.round((t.count / topicTotal) * 100) }}%</span>
         </div>
         <p v-if="!data.topics.length" class="muted" style="font-size:13px;">暂无话题归类。</p>
       </div>
     </div>
 
     <div class="panel">
-      <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>📈 近 14 天发帖趋势</div>
+      <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>📈 近 14 天发帖趋势（日均 {{ Math.round(weekSum / 14) }} 条）</div>
       <div class="trend" v-if="data.weekTrend && data.weekTrend.length">
         <div v-for="p in data.weekTrend" :key="p.label" class="trend-col" :title="p.label + '：' + p.count + ' 帖'">
           <div class="trend-bar"><i :style="{ height: (p.count / maxCount(data.weekTrend) * 100 || 0) + '%' }"></i></div>
@@ -173,9 +232,9 @@ function maxCount(arr, key = 'count') {
 }
 .hot-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
-  padding: 9px 2px;
+  padding: 8px 2px;
   border-bottom: 1px dashed var(--border);
   color: inherit;
   text-decoration: none;
@@ -192,20 +251,40 @@ function maxCount(arr, key = 'count') {
 .hot-rank.top {
   color: #eab308;
 }
-.hot-title {
+.hot-main {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hot-title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 14px;
 }
+.hot-sub {
+  font-size: 11px;
+}
+.hot-replybar {
+  flex: 0 0 90px;
+  height: 6px;
+  border-radius: 4px;
+  background: var(--border);
+  overflow: hidden;
+}
+.hot-replybar i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #eab308, #f59e0b);
+}
 .hot-meta {
   font-size: 12px;
   flex: 0 0 auto;
-  max-width: 40%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: var(--text);
+  font-weight: 700;
 }
 .kw-row,
 .topic-row {
@@ -213,6 +292,26 @@ function maxCount(arr, key = 'count') {
   align-items: center;
   gap: 10px;
   padding: 6px 0;
+}
+.kw-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 6px 0;
+  line-height: 1.7;
+}
+.kw-tag {
+  color: var(--text);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  font-weight: 600;
+}
+.kw-tag em {
+  font-style: normal;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
 }
 .kw-word {
   flex: 0 0 96px;
