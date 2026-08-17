@@ -5,6 +5,7 @@ import { apps, campusStats } from '../data/apps'
 import { campuses } from '../data/campus'
 import { getCourseStats, EMPTY_STATS } from '../api/courseStats'
 import { SITE } from '../config/site'
+import VisitStats from '../components/VisitStats.vue'
 
 const emit = defineEmits(['open'])
 
@@ -174,6 +175,7 @@ function toggleCampus(name) {
     <section class="section">
       <h3 class="section-title">关于本站</h3>
       <div class="about-card">
+        <VisitStats />
         <div class="about-line"><b>网站开发者：</b>{{ SITE.developer }}</div>
         <div class="about-line"><b>网站版本：</b>v{{ SITE.version }}</div>
         <div class="about-line"><b>数据来源：</b>{{ SITE.aboutSource }}</div>
