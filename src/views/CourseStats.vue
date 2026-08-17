@@ -56,6 +56,28 @@ const distShare = (arr) => {
   const tot = labeledDist(arr).reduce((s, k) => s + k.count, 0)
   return (v) => (tot ? Math.round((v / tot) * 1000) / 10 : 0)
 }
+
+/** 概览 KPI */
+const topCampus = computed(() => stats.value.campusDist[0] || null)
+const topDay = computed(() => stats.value.dayDist[0] || null)
+const colCount = computed(() => labeledDist(stats.value.colDist).length)
+const maxPeriod = computed(() => stats.value.periodDist.reduce((m, r) => Math.max(m, r.count), 1))
+const periodLabel = (start) => `第 ${start}–${start + 1} 节`
+
+/** 自动生成的文字洞察（数据驱动，无统计时自动降级为空） */
+const insights = computed(() => {
+  const list = []
+  if (topCampus.value) list.push(`开课最集中在 ${topCampus.value.name}，占已标注排课的 ${distShare(stats.value.campusDist)(topCampus.value.count)}%`)
+  if (topDay.value) list.push(`${topDay.value}是全校排课最满的一天（${topDay.value.count} 节），图书馆/自习室会更紧张`)
+  const busy = stats.value.periodDist.reduce((a, b) => (b.count > a.count ? b : a), stats.value.periodDist[0] || null)
+  if (busy) list.push(`每天 ${periodLabel(busy.start)} 是排课高峰（${busy.count} 节次），想要抢空教室可以避开这些时段`)
+  if (stats.value.terms.length >= 2) {
+    const [latest, prev] = stats.value.terms
+    const d = latest.count - prev.count
+    list.push(d >= 0 ? `本学期开课规模比上学期增加 ${d} 段，选课竞争略升` : `本学期开课规模比上学期减少 ${-d} 段`)
+  }
+  return list
+})
 </script>
 
 <template>
@@ -72,6 +94,36 @@ const distShare = (arr) => {
     <div v-if="!hasDist" class="panel" style="margin-bottom:16px;background:#fff8ec;border-color:#f5d79a;">
       <div style="font-size:13px;font-weight:700;color:#92400e;">📌 课程性质 / 校区 / 学院分布数据将在下一次定时抓取后自动补充</div>
       <p class="muted" style="font-size:12px;margin:6px 0 0;">历史快照未包含这些字段，重新抓取（每 6 小时一次）后本页会展示真实分布。</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;">
+      <div class="panel" style="margin:0;">
+        <div class="muted" style="font-size:12px;">已标注校区</div>
+        <div style="font-size:22px;font-weight:800;margin-top:4px;"><CountUp :value="colCount ? stats.campusDist.length : 0" /></div>
+        <div class="muted" style="font-size:12px;">浮山 / 金家岭 / 松山</div>
+      </div>
+      <div class="panel" style="margin:0;">
+        <div class="muted" style="font-size:12px;">最忙校区</div>
+        <div style="font-size:18px;font-weight:800;margin-top:6px;">{{ topCampus ? topCampus.name : '—' }}</div>
+        <div class="muted" style="font-size:12px;">{{ topCampus ? topCampus.count + ' 条 · ' + share(topCampus.count) + '%' : '—' }}</div>
+      </div>
+      <div class="panel" style="margin:0;">
+        <div class="muted" style="font-size:12px;">最忙星期</div>
+        <div style="font-size:18px;font-weight:800;margin-top:6px;">{{ topDay ? topDay.day : '—' }}</div>
+        <div class="muted" style="font-size:12px;">{{ topDay ? topDay.count + ' 节' : '—' }}</div>
+      </div>
+      <div class="panel" style="margin:0;">
+        <div class="muted" style="font-size:12px;">开课学院</div>
+        <div style="font-size:22px;font-weight:800;margin-top:4px;"><CountUp :value="colCount" /></div>
+        <div class="muted" style="font-size:12px;">开课最忙的是「{{ (labeledDist(stats.colDist)[0] || {}).name || '—' }}」</div>
+      </div>
+    </div>
+
+    <div v-if="insights.length" class="panel" style="margin-bottom:16px;background:#eef6ff;border-color:#bcd6f5;">
+      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>一眼看懂这些数据</div>
+      <ul style="margin:0;padding-left:18px;font-size:13px;line-height:2;color:var(--text);">
+        <li v-for="s in insights" :key="s">{{ s }}</li>
+      </ul>
     </div>
 
     <div class="panel" style="margin-bottom:16px;">
@@ -139,6 +191,19 @@ const distShare = (arr) => {
           </div>
         </div>
         <p class="muted" style="font-size:12px;margin-top:8px;">周一到周五开课密集，周末最少。</p>
+      </div>
+
+      <div v-if="stats.periodDist.length" class="panel">
+        <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>每天节次分布</div>
+        <div v-for="r in stats.periodDist" :key="r.start" style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
+            <span>{{ periodLabel(r.start) }}</span><span class="muted">{{ r.count }} 节 · {{ share(r.count) }}%</span>
+          </div>
+          <div style="background:#eef3fb;border-radius:8px;overflow:hidden;">
+            <div style="height:12px;background:linear-gradient(90deg,#4d7c0f,#84cc16);border-radius:8px;" :style="{ width: pct(r.count, maxPeriod) + '%' }"></div>
+          </div>
+        </div>
+        <p class="muted" style="font-size:12px;margin-top:8px;">每天上午 3-4 节最满，早八之后、晚课之前是高峰。</p>
       </div>
     </div>
 

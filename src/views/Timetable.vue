@@ -219,7 +219,7 @@ onMounted(loadCourses)
             <div v-for="co in dayCourses(i + 1)" :key="co.c + co.s + co.r" class="wg-cell" :style="posStyle(co)">
               <b>{{ co.c }}</b>
               <div class="wg-sub">{{ subOf(co) }}</div>
-              <div class="wg-sub muted">第{{ co.w }}周</div>
+              <div class="wg-sub muted">{{ co.campus && co.campus !== '未标注' ? co.campus + ' · ' : '' }}第{{ co.w }}周</div>
             </div>
           </div>
         </div>

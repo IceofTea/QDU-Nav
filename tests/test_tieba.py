@@ -10,58 +10,64 @@ from crawler.tieba import (  # noqa: E402
     analyze, norm_date, parse_replies, parse_threads,
 )
 
-SAMPLE = """<html><body><ul class="threadlist_bright j_threadlist">
-<li class=" j_thread_list clearfix" data-field='{"author_name":"A"}'>
-  <div class="threadlist_title pull_left j_th_tit ">
-    <a class="j_th_tit " href="/p/7912345678" title="【求助】金家岭食堂哪家好吃">【求助】金家岭食堂哪家好吃</a>
+SAMPLE = """<html><body>
+<li class="tl_shadow tl_shadow_new " data-tid="7912345678">
+  <div class="ti_infos clearfix">
+    <div class="ti_author_time">
+      <div class="ti_author_icons clearfix"><span class="ti_author"> 吧友甲</span></div>
+      <span class="ti_time">07-23</span>
+    </div>
   </div>
-  <div class="threadlist_author pull_left">
-    <span class="tb_icon_author no_icon_author"></span>
-    <span class="frs-author-name-wrap"><a class="frs-author-name j_click_username" href="#">吧友甲</a></span>
+  <a href="/p/7912345678?lp=5028&amp;mo_device=1" class="j_common ti_item " tid="7912345678">
+    <div class="ti_title"><span>【求助】金家岭食堂哪家好吃</span></div>
+  </a>
+  <div class="ti_zan_reply clearfix">
+    <a class="ti_func_btn btn_reply j_ti_reply" href="/p/7912345678">回复 <span class="btn_icon">12000</span></a>
   </div>
-  <div class="threadlist_reply pull_left j_replyer">
-    <span class="threadlist_reply_num j_reply_num" title="回复">1.2万</span>
-    <span class="threadlist_reply_text">回复</span>
-  </div>
-  <div class="threadlist_date pull_right">07-23</div>
 </li>
-<li class=" j_thread_list clearfix">
-  <div class="threadlist_title pull_left j_th_tit ">
-    <a class="j_th_tit " href="/p/7912345679" title="考研复试经验分享">考研复试经验分享</a>
+<li class="tl_shadow tl_shadow_new " data-tid="7912345679">
+  <div class="ti_infos clearfix">
+    <div class="ti_author_time">
+      <div class="ti_author_icons clearfix"><span class="ti_author"> 学长乙</span></div>
+      <span class="ti_time">今天</span>
+    </div>
   </div>
-  <div class="threadlist_author pull_left">
-    <span class="frs-author-name-wrap"><a class="frs-author-name" href="#">学长乙</a></span>
+  <a href="/p/7912345679?lp=5028&amp;mo_device=1" class="j_common ti_item " tid="7912345679">
+    <div class="ti_title"><span>考研复试经验分享</span></div>
+  </a>
+  <div class="ti_zan_reply clearfix">
+    <a class="ti_func_btn btn_reply j_ti_reply" href="/p/7912345679">回复 <span class="btn_icon">3</span></a>
   </div>
-  <div class="threadlist_reply pull_left j_replyer">
-    <span class="threadlist_reply_num j_reply_num" title="回复">3</span>
-  </div>
-  <div class="threadlist_date pull_right">今天</div>
 </li>
-<li class=" j_thread_list clearfix">
-  <div class="threadlist_title pull_left j_th_tit ">
-    <a class="j_th_tit " href="/p/7912345680" title="宿舍空调装好了">宿舍空调装好了</a>
+<li class="tl_shadow tl_shadow_new " data-tid="7912345680">
+  <div class="ti_infos clearfix">
+    <div class="ti_author_time">
+      <div class="ti_author_icons clearfix"><span class="ti_author"> 吧友丙</span></div>
+      <span class="ti_time">2026-08-15</span>
+    </div>
   </div>
-  <div class="threadlist_author pull_left">
-    <span class="frs-author-name-wrap"><a class="frs-author-name" href="#">吧友丙</a></span>
+  <a href="/p/7912345680?lp=5028&amp;mo_device=1" class="j_common ti_item " tid="7912345680">
+    <div class="ti_title"><span>宿舍空调装好了</span></div>
+  </a>
+  <div class="ti_zan_reply clearfix">
+    <a class="ti_func_btn btn_reply j_ti_reply" href="/p/7912345680">回复 <span class="btn_icon">45</span></a>
   </div>
-  <div class="threadlist_reply pull_left j_replyer">
-    <span class="threadlist_reply_num j_reply_num" title="回复">45</span>
-  </div>
-  <div class="threadlist_date pull_right">2026-08-15</div>
 </li>
-<li class=" j_thread_list clearfix">
-  <div class="threadlist_title pull_left j_th_tit ">
-    <a class="j_th_tit " href="/p/7912345681" title="暑假校园网断了吗">暑假校园网断了吗</a>
+<li class="tl_shadow tl_shadow_new " data-tid="7912345681">
+  <div class="ti_infos clearfix">
+    <div class="ti_author_time">
+      <div class="ti_author_icons clearfix"><span class="ti_author"> 吧友丁</span></div>
+      <span class="ti_time">昨天</span>
+    </div>
   </div>
-  <div class="threadlist_author pull_left">
-    <span class="frs-author-name-wrap"><a class="frs-author-name" href="#">吧友丁</a></span>
+  <a href="/p/7912345681?lp=5028&amp;mo_device=1" class="j_common ti_item " tid="7912345681">
+    <div class="ti_title"><span>暑假校园网断了吗</span></div>
+  </a>
+  <div class="ti_zan_reply clearfix">
+    <a class="ti_func_btn btn_reply j_ti_reply" href="/p/7912345681">回复 <span class="btn_icon">7</span></a>
   </div>
-  <div class="threadlist_reply pull_left j_replyer">
-    <span class="threadlist_reply_num j_reply_num" title="回复">7</span>
-  </div>
-  <div class="threadlist_date pull_right">昨天</div>
 </li>
-</ul></body></html>"""
+</body></html>"""
 
 
 class TestTieba(unittest.TestCase):
