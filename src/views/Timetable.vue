@@ -211,8 +211,16 @@ const weekOptions = computed(() => {
 function subOf(co) {
   if (opened.value.mode === 'room') return `${co.cls} · ${co.t}`
   if (opened.value.mode === 'teacher') return `${co.cls} · ${co.r}`
-  return co.r || co.cls
+  return [co.t, co.r].filter(Boolean).join(' · ') || co.cls
 }
+
+/** 周课表视图：网格 / 列表；点击课程弹出详情 */
+const viewMode = ref('grid')
+const detail = ref(null)
+function showCourse(co) {
+  detail.value = co
+}
+const dayLabel = (d) => dayNames[d - 1] || ('周' + d)
 
 const dayCourses = (d) =>
   (opened.value?.days?.[d] || [])
@@ -260,9 +268,14 @@ onMounted(loadCourses)
         <button class="tab" :class="{ active: weekFilter === '' }" @click="weekFilter = ''">全部</button>
         <button v-for="w in weekOptions" :key="w" class="tab" :class="{ active: weekFilter === String(w) }" @click="weekFilter = String(w)">第{{ w }}周</button>
       </div>
+      <div class="tab-row" style="flex-wrap:wrap;gap:6px;margin-top:10px;">
+        <button class="tab" :class="{ active: viewMode === 'grid' }" @click="viewMode = 'grid'">📅 周视图</button>
+        <button class="tab" :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'">📋 列表视图</button>
+        <span class="muted" style="font-size:12px;margin-left:auto;">手机建议用列表视图，点课程看详情</span>
+      </div>
     </div>
     <div class="panel">
-      <div class="week-grid">
+      <div v-if="viewMode === 'grid'" class="week-grid">
         <div class="wg-head-row">
           <div class="wg-head wg-time-col">节次</div>
           <div v-for="d in dayNames" :key="d" class="wg-head">{{ d }}</div>
@@ -272,13 +285,46 @@ onMounted(loadCourses)
             {{ p }}
           </div>
           <div v-for="(d, i) in dayNames" :key="d">
-            <div v-for="co in dayCourses(i + 1)" :key="co.c + co.s + co.r" class="wg-cell" :style="posStyle(co)">
+            <div v-for="co in dayCourses(i + 1)" :key="co.c + co.s + co.r" class="wg-cell" :style="posStyle(co)" @click="showCourse(co)">
               <b>{{ co.c }}</b>
               <div class="wg-sub">{{ subOf(co) }}</div>
               <div class="wg-sub muted">{{ co.campus && co.campus !== '未标注' ? co.campus + ' · ' : '' }}第{{ co.w }}周</div>
             </div>
           </div>
         </div>
+      </div>
+
+      <div v-else class="wg-list">
+        <div v-for="(d, i) in dayNames" :key="d" class="wg-list-day">
+          <div v-if="dayCourses(i + 1).length" class="wg-list-dayname">{{ d }}</div>
+          <button v-for="co in dayCourses(i + 1)" :key="co.c + co.s + co.r" class="wg-list-item" @click="showCourse(co)">
+            <span class="wg-li-time">{{ co.s }}–{{ co.e }} 节</span>
+            <span class="wg-li-main">
+              <b>{{ co.c }}</b>
+              <span class="wg-li-sub">{{ subOf(co) }}</span>
+            </span>
+            <span class="wg-li-go">›</span>
+          </button>
+        </div>
+        <p v-if="!Object.values(opened.days).flat().length" class="muted" style="padding:14px;text-align:center;">该学期暂无排课</p>
+      </div>
+    </div>
+
+    <div v-if="detail" class="overlay" @click.self="detail = null">
+      <div class="overlay-card course-detail">
+        <div class="course-detail-head">
+          <div class="course-detail-title">{{ detail.c }}</div>
+          <button class="overlay-close" @click="detail = null">✕</button>
+        </div>
+        <div class="course-detail-row"><span>教师</span><b>{{ detail.t || '—' }}</b></div>
+        <div class="course-detail-row"><span>教室</span><b>{{ detail.r || '—' }}</b></div>
+        <div class="course-detail-row"><span>班级</span><b>{{ detail.cls || '—' }}</b></div>
+        <div class="course-detail-row"><span>时间</span><b>{{ dayLabel(detail.d) }} · 第 {{ detail.s }}–{{ detail.e }} 节</b></div>
+        <div class="course-detail-row"><span>周次</span><b>第 {{ detail.w }} 周</b></div>
+        <div v-if="detail.campus && detail.campus !== '未标注'" class="course-detail-row"><span>校区</span><b>{{ detail.campus }}</b></div>
+        <div v-if="detail.cat" class="course-detail-row"><span>类别</span><b>{{ detail.cat }}</b></div>
+        <div v-if="detail.credit" class="course-detail-row"><span>学分</span><b>{{ detail.credit }}</b></div>
+        <button class="btn accent" style="width:100%;margin-top:14px;" @click="detail = null">知道了</button>
       </div>
     </div>
   </template>
@@ -435,9 +481,62 @@ onMounted(loadCourses)
   overflow: hidden;
   font-size: 11px;
   line-height: 1.35;
+  cursor: pointer;
 }
 .wg-cell b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wg-sub { font-size: 10px; color: var(--text-light); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 列表视图 */
+.wg-list { display: flex; flex-direction: column; gap: 12px; }
+.wg-list-day { display: flex; flex-direction: column; gap: 6px; }
+.wg-list-dayname { font-size: 13px; font-weight: 800; color: var(--primary); margin-top: 4px; }
+.wg-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-left: 3px solid #1b66c9;
+  border-radius: 10px;
+  background: #fafcff;
+  padding: 10px 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.wg-list-item:active { background: var(--primary-soft); }
+.wg-li-time { flex: 0 0 58px; font-size: 12px; font-weight: 700; color: var(--primary); }
+.wg-li-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wg-li-main b { font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wg-li-sub { font-size: 12px; color: var(--text-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wg-li-go { color: var(--text-light); font-size: 16px; }
+
+/* 课程详情弹窗 */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 60;
+}
+.overlay-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 18px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+.course-detail-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.course-detail-title { font-size: 16px; font-weight: 800; flex: 1; }
+.overlay-close { border: none; background: none; font-size: 16px; cursor: pointer; color: var(--muted); }
+.course-detail-row { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
+.course-detail-row span { flex: 0 0 52px; color: var(--text-sub); }
+.course-detail-row b { flex: 1; color: var(--text); font-weight: 600; word-break: break-all; }
 @media (max-width: 640px) {
   .week-grid { --row: 40px; --tc: 30px; }
   .wg-head { font-size: 10px; padding: 3px 0; }
