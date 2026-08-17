@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { officialGroups, colleges, emergency } from '../data/official'
 
 const emit = defineEmits(['back'])
@@ -13,6 +13,24 @@ const CAT_ORDER = ['人文社科', '理工', '医学', '艺术与体育', '合�
 const collegeGroups = CAT_ORDER
   .map((cat) => ({ cat, list: collegeList.filter((c) => c.category === cat) }))
   .filter((g) => g.list.length)
+
+/** 邮箱助手：输入学号 → 一键生成并复制校园邮箱 */
+const sid = ref('')
+const copied = ref(false)
+const email = computed(() => {
+  const v = sid.value.trim()
+  return v ? v + '@qdu.edu.cn' : ''
+})
+async function copyMail() {
+  if (!email.value) return
+  try {
+    await navigator.clipboard.writeText(email.value)
+    copied.value = true
+    setTimeout(() => (copied.value = false), 1600)
+  } catch {
+    /* 剪贴板权限受限时静默忽略 */
+  }
+}
 </script>
 
 <template>
@@ -30,9 +48,22 @@ const collegeGroups = CAT_ORDER
     </div>
 
     <template v-if="tab === 'official'">
+      <div class="mail-helper">
+        <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>📧 邮箱助手：一键生成你的校园邮箱</div>
+        <div class="mail-row">
+          <input class="input" v-model="sid" type="text" inputmode="numeric" placeholder="输入学号，如 2023XXXXXX" style="flex:1;min-width:0;" />
+          <button class="btn accent" :disabled="!email" @click="copyMail">{{ copied ? '已复制 ✓' : '复制邮箱' }}</button>
+        </div>
+        <div class="mail-out" :class="{ empty: !email }">{{ email || '输入学号后自动生成' }}</div>
+        <p class="muted" style="font-size:12px;margin-top:8px;line-height:1.8;">
+          校园邮箱地址：<a class="link" href="https://mail.qdu.edu.cn" target="_blank" rel="noopener">mail.qdu.edu.cn</a>（账号 <b>学号@qdu.edu.cn</b>），用于接收教务处通知、奖学金与就业信息。尚未开通？可到
+          <a class="link" href="https://ehall.qdu.edu.cn" target="_blank" rel="noopener">网上办事大厅</a>「邮箱申请」开通，或咨询智慧校园服务热线 0532-85955678。
+        </p>
+      </div>
+
       <div v-for="g in groups" :key="g.name" class="official-group">
         <h4 class="group-name">{{ g.icon }} {{ g.name }}</h4>
-        <a v-for="s in g.sites" :key="s.url" class="site-link" :href="s.url" target="_blank" rel="noopener">
+        <a v-for="s in g.sites" :key="s.url" class="site-link" :class="{ featured: s.featured }" :href="s.url" target="_blank" rel="noopener">
           <span class="site-name">{{ s.name }}</span>
           <span class="site-desc">{{ s.desc }}</span>
           <span class="site-go">↗</span>
@@ -64,3 +95,38 @@ const collegeGroups = CAT_ORDER
     </template>
   </div>
 </template>
+
+<style scoped>
+.mail-helper {
+  background: #f0f7ff;
+  border: 1px solid #cfe3fb;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 18px;
+}
+.mail-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.mail-row .btn {
+  flex-shrink: 0;
+}
+.mail-out {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px dashed var(--primary);
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 15px;
+  word-break: break-all;
+}
+.mail-out.empty {
+  color: var(--muted);
+  border-color: var(--border);
+  font-weight: 500;
+  font-size: 13px;
+}
+</style>

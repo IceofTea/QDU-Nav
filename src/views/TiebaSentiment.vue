@@ -7,6 +7,8 @@ const loading = ref(true)
 const status = ref('loading')
 const data = ref(null)
 const errMsg = ref('')
+/** 当前悬停/点选的趋势柱子下标（-1 表示无） */
+const activeTrend = ref(-1)
 
 const TOPIC_ICONS = {
   考研升学: '🎓',
@@ -181,13 +183,17 @@ const insights = computed(() => {
 
     <div class="panel">
       <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>📈 近 14 天发帖趋势（日均 {{ Math.round(weekSum / 14) }} 条）</div>
-      <div class="trend" v-if="data.weekTrend && data.weekTrend.length">
-        <div v-for="p in data.weekTrend" :key="p.label" class="trend-col" :title="p.label + '：' + p.count + ' 帖'">
-          <div class="trend-bar"><i :style="{ height: (p.count / maxCount(data.weekTrend) * 100 || 0) + '%' }"></i></div>
+<div class="trend" v-if="data.weekTrend && data.weekTrend.length">
+        <div v-for="(p, i) in data.weekTrend" :key="p.label" class="trend-col"
+          :title="p.label + '：' + p.count + ' 帖'" :class="{ active: activeTrend === i }"
+          @mouseenter="activeTrend = i" @mouseleave="activeTrend = -1" @click="activeTrend = activeTrend === i ? -1 : i">
+          <div class="trend-tip" :class="{ show: activeTrend === i }">{{ p.count }} 帖</div>
+          <div class="trend-bar"><i :style="{ height: (p.count / maxTrend * 100 || 0) + '%' }"></i></div>
           <span class="trend-label muted">{{ p.label }}</span>
         </div>
       </div>
       <p v-else class="muted" style="font-size:13px;">暂无趋势数据。</p>
+      <p class="muted" style="font-size:12px;margin-top:6px;">💡 鼠标悬停或点击柱子可查看当天发帖数；窄屏可左右滑动。</p>
     </div>
   </template>
 </template>
@@ -342,16 +348,40 @@ const insights = computed(() => {
   display: flex;
   align-items: flex-end;
   gap: 6px;
-  height: 140px;
+  height: 150px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
 }
 .trend-col {
   flex: 1;
+  min-width: 34px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  gap: 4px;
+  gap: 3px;
   height: 100%;
+  cursor: pointer;
+}
+.trend-col.active .trend-bar i {
+  background: linear-gradient(180deg, #f59e0b, #fbbf24);
+}
+.trend-tip {
+  font-size: 11px;
+  font-weight: 700;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #f5d79a;
+  border-radius: 6px;
+  padding: 1px 7px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.trend-tip.show {
+  opacity: 1;
 }
 .trend-bar {
   flex: 1;

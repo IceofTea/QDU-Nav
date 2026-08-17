@@ -3,9 +3,17 @@ export const officialGroups = [
     name: '社区与资源',
     icon: '📚',
     sites: [
-      { name: '青大 Wiki（GitHub）', url: 'https://github.com/IceofTea/QDU-Wiki', desc: '课程笔记 / 考研复试 / 经验文档' },
-      { name: '青大 Wiki（Gitee 镜像）', url: 'https://gitee.com/iceoftea/QDU-Wiki', desc: '国内访问更快的镜像仓库' },
+      { name: '青大 Wiki', url: 'https://iceoftea.github.io/QDU-Wiki/', desc: '课程笔记 / 考研复试 / 经验文档' },
       { name: '青岛大学吧', url: 'https://tieba.baidu.com/f?kw=%E9%9D%92%E5%B2%9B%E5%A4%A7%E5%AD%A6', desc: '百度贴吧 · 学生社区交流' }
+    ]
+  },
+  {
+    name: '信息化与服务',
+    icon: '🖥️',
+    sites: [
+      { name: '网上办事大厅', url: 'https://ehall.qdu.edu.cn', desc: '选课 / 成绩 / 缴费 / 邮箱申请等一站式服务，较重要的校园平台', featured: true },
+      { name: '校园邮箱', url: 'https://mail.qdu.edu.cn', desc: '学生邮箱 Webmail · 账号：学号@qdu.edu.cn' },
+      { name: '智慧校园与信息化建设中心', url: 'https://nic.qdu.edu.cn', desc: '网络 / 账号 / 智慧校园' }
     ]
   },
   {
@@ -35,18 +43,19 @@ export const officialGroups = [
     ]
   },
   {
-    name: '信息化与服务',
-    icon: '🖥️',
-    sites: [
-      { name: '网上办事大厅', url: 'https://ehall.qdu.edu.cn', desc: '校园一网通办入口' },
-      { name: '智慧校园与信息化建设中心', url: 'https://nic.qdu.edu.cn', desc: '网络 / 账号 / 智慧校园' }
-    ]
-  },
-  {
     name: '图书馆与资源',
     icon: '📖',
     sites: [
       { name: '图书馆', url: 'https://lib.qdu.edu.cn', desc: '馆藏检索 / 数据库 / 开馆时间' }
+    ]
+  },
+  {
+    name: '官方新媒体',
+    icon: '📱',
+    sites: [
+      { name: '青岛大学官方微博', url: 'https://weibo.com/qddx', desc: '官方微博（账号 qddx）· 校园动态实时发布' },
+      { name: '青岛大学官方微信 / 视频号', url: 'https://www.qdu.edu.cn', desc: '公众号 / 视频号账号 qddx · 微信搜索「青岛大学」关注' },
+      { name: '青岛大学官方抖音', url: 'https://www.qdu.edu.cn', desc: '官方抖音号 qddx · 校园短视频' }
     ]
   },
   {

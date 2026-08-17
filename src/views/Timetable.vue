@@ -4,6 +4,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { apiFetch } from '../api/index'
 import { loadSnap } from '../api/localCourse'
+import { loadTimetableMeta, loadTermRows } from '../api/termTimetable'
 import { normRoom, clsSplit, profOf, parseWeeks } from '../utils/course'
 import { fmtTime } from '../utils/format'
 
@@ -13,6 +14,7 @@ const tab = ref('class')
 const kw = ref('')
 const meta = ref(null)
 const snap = ref(null)
+const termRows = ref([])
 const loading = ref(true)
 const opened = ref(null)
 const term = ref('')
@@ -22,9 +24,20 @@ const dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '�
 const PERIOD = 12
 
 onMounted(async () => {
-  snap.value = await loadSnap()
+  const mm = await loadTimetableMeta()
+  if (mm && mm.semesters && mm.semesters.length) {
+    snap.value = mm
+    const cur = mm.semesters.find((s) => s.semester === mm.currentSemester) || mm.semesters[0]
+    term.value = cur.semester
+    const t = await loadTermRows(cur.file)
+    termRows.value = t.rows || []
+  } else {
+    const d = await loadSnap()
+    snap.value = d
+    termRows.value = d?.rows || []
+    term.value = d?.courseTable?.semester || ''
+  }
   meta.value = await apiFetch('/courseTable')
-  term.value = snap.value?.courseTable?.semester || meta.value?.semester || ''
   loading.value = false
 })
 
@@ -36,7 +49,7 @@ const semesters = computed(() => {
 })
 
 const curRows = computed(() => {
-  const rows = snap.value?.rows || []
+  const rows = termRows.value || []
   const t = term.value
   if (!t || t === semester.value) return rows.filter((r) => r.term === semester.value)
   return rows.filter((r) => r.term === t)
@@ -110,7 +123,7 @@ function switchTab(t) {
   expandAll.value = false
 }
 
-function switchTerm(t) {
+async function switchTerm(t) {
   term.value = t
   kw.value = ''
   gradeFilter.value = ''
@@ -118,6 +131,12 @@ function switchTerm(t) {
   opened.value = null
   page.value = 1
   expandAll.value = false
+  const mm = snap.value
+  const cur = mm?.semesters?.find((s) => s.semester === t)
+  if (cur) {
+    const d = await loadTermRows(cur.file)
+    termRows.value = d.rows || []
+  }
 }
 
 function countOf(obj) {

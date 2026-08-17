@@ -227,7 +227,7 @@ body {
 .wiki-emoji { font-size: 34px; }
 .wiki-title { font-size: 17px; font-weight: 800; }
 .wiki-desc { font-size: 12px; opacity: 0.85; margin-top: 3px; line-height: 1.6; }
-.wiki-links { display: flex; gap: 10px; }
+.wiki-links { display: flex; flex-wrap: wrap; gap: 10px; }
 .wiki-link {
   background: rgba(255, 255, 255, 0.16);
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -238,6 +238,7 @@ body {
   padding: 9px 16px;
   border-radius: 10px;
   transition: 0.2s;
+  white-space: nowrap;
 }
 .wiki-link:hover { background: rgba(255, 255, 255, 0.28); }
 
@@ -795,6 +796,7 @@ table.data th { background: var(--primary-soft); color: var(--primary-dark); fon
 .field-label { font-size: 13px; font-weight: 600; color: var(--text-sub); }
 .field-split { grid-column: span 2; }
 .split-row { display: flex; align-items: center; gap: 8px; }
+.split-row .input { flex: 1; min-width: 0; }
 .split-colon { font-weight: 700; color: var(--text-sub); }
 
 .score-list { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
@@ -820,6 +822,14 @@ table.data th { background: var(--primary-soft); color: var(--primary-dark); fon
   transition: 0.16s;
 }
 .site-link:hover { background: var(--primary-soft); border-color: var(--primary); }
+.site-link.featured {
+  border-color: #f2c14e;
+  background: linear-gradient(135deg, #fff8e6, #fffdf4);
+  box-shadow: 0 3px 12px rgba(242, 193, 78, 0.25);
+}
+.site-link.featured .site-name { color: #92400e; }
+.site-link.featured .site-desc { color: #7c5a12; }
+.site-link.featured .site-go { color: #d97706; }
 .site-name { font-size: 14px; font-weight: 700; color: var(--text); flex-shrink: 0; }
 .site-desc { font-size: 12px; color: var(--text-sub); flex: 1; }
 .site-go { color: var(--primary); font-weight: 700; }
