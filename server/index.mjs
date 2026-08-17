@@ -255,7 +255,8 @@ const routes = {
     const kw = (q.get('q') || '').trim()
     if (!kw) return { ok: false, error: 'need q' }
     const idx = await getCourseIndex(force)
-    const hits = idx.rows.filter((r) => r.cls.includes(kw) || r.c.includes(kw) || r.t.includes(kw))
+    const clsSplit = (cls) => (cls || '').split(/[,，、]/).map((s) => s.trim()).filter(Boolean)
+    const hits = idx.rows.filter((r) => clsSplit(r.cls).includes(kw) || r.c.includes(kw) || r.t.includes(kw))
     return { semester: idx.semester, q: kw, count: hits.length, rows: hits.slice(0, 200) }
   },
   // 食堂空座率：框架端点。当前返回官方食堂名单与营业时间；

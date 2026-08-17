@@ -36,11 +36,11 @@ const viewMap = {
   budget: Budget
 }
 
-const stage = ref(localStorage.getItem('qdu_welcome_seen') ? 'main' : 'welcome')
+const stage = ref(sessionStorage.getItem('qdu_welcome_seen') ? 'main' : 'welcome')
 const current = ref('home')
 
 function enter() {
-  localStorage.setItem('qdu_welcome_seen', '1')
+  sessionStorage.setItem('qdu_welcome_seen', '1')
   stage.value = 'main'
 }
 

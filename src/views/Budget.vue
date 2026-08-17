@@ -306,7 +306,18 @@ const monthLabel = computed(() => {
 .cat-btn.active { border-color: var(--primary); background: var(--primary-soft); box-shadow: 0 0 0 1px var(--primary); }
 .cat-icon { font-size: 17px; }
 .cat-name { font-size: 13px; font-weight: 700; }
-.cat-hint { font-size: 10px; color: var(--text-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cat-hint {
+  font-size: 10px;
+  color: var(--text-sub);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cat-btn.active .cat-hint {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
 .amount-input { font-size: 18px; font-weight: 700; flex: 1; min-width: 120px; }
 .date-input { width: 150px; }
 .btn.big { padding: 12px; font-size: 15px; }

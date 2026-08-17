@@ -14,7 +14,7 @@ export async function getCourseStats() {
   try {
     const ctrl = new AbortController()
     const timer = setTimeout(() => ctrl.abort(), 8000)
-    const res = await fetch('/data/course_stats.json', { signal: ctrl.signal })
+    const res = await fetch(import.meta.env.BASE_URL + 'data/course_stats.json', { signal: ctrl.signal })
     clearTimeout(timer)
     if (!res.ok) throw new Error('HTTP ' + res.status)
     const d = await res.json()

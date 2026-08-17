@@ -15,7 +15,6 @@ const term = ref('')
 const weekFilter = ref('')
 
 const dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-const ROW = 46
 const PERIOD = 12
 const normRoom = (r) => (r || '').replace(/[（(]智慧[)）]/g, '').trim()
 
@@ -46,18 +45,73 @@ const teachers = computed(() => [...new Set(curRows.value.map((r) => r.t).filter
 
 const sourceName = computed(() => (tab.value === 'class' ? '班级' : tab.value === 'room' ? '教室' : '教师'))
 
-const result = computed(() => {
-  const k = kw.value.trim()
-  if (!k) return []
-  const max = 60
-  if (tab.value === 'class') return classes.value.filter((c) => c.includes(k)).slice(0, max)
-  if (tab.value === 'room') return rooms.value.filter((r) => r.includes(k)).slice(0, max)
-  return teachers.value.filter((t) => t.includes(k)).slice(0, max)
+// 上课班级常为「多班合上」串（如 24临床（5+3）[01-05]班,25体育[01-02]班），拆分为单个班级
+const clsSplit = (cls) => (cls || '').split(/[,，、]/).map((s) => s.trim()).filter(Boolean)
+const singleClasses = computed(() => {
+  const set = new Set()
+  for (const r of curRows.value) clsSplit(r.cls).forEach((c) => set.add(c))
+  return [...set].sort((a, b) => {
+    const y = (s) => Number((s.match(/^2\d/) || [0])[0])
+    return y(b) - y(a) || a.localeCompare(b, 'zh')
+  })
 })
+const profOf = (cls) =>
+  cls.replace(/^2\d/, '').replace(/（[^）]*）/g, '').replace(/\[[^\]]*\]/g, '').replace(/\d+班$/, '').replace(/班$/, '').trim()
+const years = computed(() => [...new Set(singleClasses.value.map((c) => (c.match(/^2\d/) || [])[0]).filter(Boolean))].sort().reverse())
+const profs = computed(() => {
+  const m = {}
+  for (const c of singleClasses.value) {
+    const p = profOf(c)
+    if (p) m[p] = (m[p] || 0) + 1
+  }
+  return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([p]) => p)
+})
+const gradeFilter = ref('')
+const profFilter = ref('')
+
+const result = computed(() => {
+  const max = 40
+  const k = kw.value.trim()
+  if (tab.value === 'class') {
+    let list = singleClasses.value
+    if (gradeFilter.value) list = list.filter((c) => c.startsWith(gradeFilter.value))
+    if (profFilter.value) list = list.filter((c) => profOf(c) === profFilter.value)
+    if (k) {
+      const pre = list.filter((c) => c.startsWith(k))
+      list = pre.length ? pre : list.filter((c) => c.includes(k))
+    }
+    return list.slice(0, max)
+  }
+  const src = tab.value === 'room' ? rooms.value : teachers.value
+  return (k ? src.filter((x) => x.includes(k)) : src).slice(0, max)
+})
+
+const resultItems = computed(() => result.value.map((name) => ({ name, count: countOf(name) })))
+
+function switchTab(t) {
+  tab.value = t
+  gradeFilter.value = ''
+  profFilter.value = ''
+}
+
+function switchTerm(t) {
+  term.value = t
+  kw.value = ''
+  gradeFilter.value = ''
+  profFilter.value = ''
+  opened.value = null
+}
+
+function countOf(obj) {
+  const rows = curRows.value
+  if (tab.value === 'class') return rows.filter((r) => clsSplit(r.cls).includes(obj)).length
+  if (tab.value === 'room') return rows.filter((r) => normRoom(r.r) === obj).length
+  return rows.filter((r) => r.t === obj).length
+}
 
 function coursesOf(obj) {
   const rows = curRows.value
-  if (tab.value === 'class') return rows.filter((r) => r.cls === obj)
+  if (tab.value === 'class') return rows.filter((r) => clsSplit(r.cls).includes(obj))
   if (tab.value === 'room') return rows.filter((r) => normRoom(r.r) === obj)
   return rows.filter((r) => r.t === obj)
 }
@@ -103,9 +157,9 @@ const dayCourses = (d) =>
     .sort((a, b) => a.s - b.s)
 
 const posStyle = (co) => ({
-  left: 'calc(40px + (100% - 40px) * ' + (co.d - 1) + ' / 7)',
-  top: (co.s - 1) * ROW + 'px',
-  height: (co.e - co.s + 1) * ROW - 3 + 'px'
+  left: 'calc(var(--tc,40px) + (100% - var(--tc,40px)) * ' + (co.d - 1) + ' / 7)',
+  top: 'calc(var(--row,46px) * ' + (co.s - 1) + ')',
+  height: 'calc(var(--row,46px) * ' + (co.e - co.s + 1) + ' - 3px)'
 })
 
 // 官方课程总表
@@ -151,7 +205,7 @@ onMounted(loadCourses)
           <div v-for="d in dayNames" :key="d" class="wg-head">{{ d }}</div>
         </div>
         <div class="wg-body">
-          <div v-for="p in PERIOD" :key="p" class="wg-time" :style="{ top: (p - 1) * ROW + 'px' }">
+          <div v-for="p in PERIOD" :key="p" class="wg-time" :style="{ top: 'calc(var(--row,46px) * ' + (p - 1) + ')' }">
             {{ p }}
           </div>
           <div v-for="(d, i) in dayNames" :key="d">
@@ -170,34 +224,47 @@ onMounted(loadCourses)
     <div class="panel" style="margin-bottom:16px;">
       <div class="source-bar" style="flex-wrap:wrap;">
         <i class="dot live"></i>
-        {{ term || semester }} · {{ classes.length }} 个班级 · {{ rooms.length }} 间教室 · {{ teachers.length }} 位教师
+        {{ term || semester }} · {{ singleClasses.length }} 个班级 · {{ rooms.length }} 间教室 · {{ teachers.length }} 位教师
         <span class="sep">·</span>
         <span>数据更新于 {{ snap?.updatedAt ? fmtTime(snap.updatedAt) : '—' }}</span>
       </div>
       <div v-if="semesters.length > 1" class="tab-row" style="margin-top:10px;">
-        <button v-for="t in semesters" :key="t" class="tab" :class="{ active: term === t }" @click="term = t; kw = ''; opened = null">{{ t }}</button>
+        <button v-for="t in semesters" :key="t" class="tab" :class="{ active: term === t }" @click="switchTerm(t)">{{ t }}</button>
       </div>
       <div class="tab-row" style="margin-top:10px;">
-        <button class="tab" :class="{ active: tab === 'class' }" @click="tab = 'class'">班级课表</button>
-        <button class="tab" :class="{ active: tab === 'room' }" @click="tab = 'room'">教室课表</button>
-        <button class="tab" :class="{ active: tab === 'teacher' }" @click="tab = 'teacher'">教师课表</button>
+        <button class="tab" :class="{ active: tab === 'class' }" @click="switchTab('class')">班级课表</button>
+        <button class="tab" :class="{ active: tab === 'room' }" @click="switchTab('room')">教室课表</button>
+        <button class="tab" :class="{ active: tab === 'teacher' }" @click="switchTab('teacher')">教师课表</button>
       </div>
       <div class="input-row" style="margin-top:12px;">
-        <input class="input" v-model="kw" :placeholder="'搜索' + sourceName + '（中文）'" @keyup.enter="result[0] && open(result[0])" />
+        <input class="input" v-model="kw" :placeholder="'搜索' + sourceName + '（中文）'" @keyup.enter="resultItems[0] && open(resultItems[0].name)" />
       </div>
       <div class="muted" style="font-size:12px;margin-top:6px;">
-        输入关键字即时匹配，点击结果查看周课表。例如班级「23高材」、教室「博学楼307」、教师姓名。
+        可直接点选下方{{ sourceName }}，或用关键字搜索。例如班级「23高材」、教室「博学楼307」。
       </div>
+      <template v-if="tab === 'class'">
+        <div class="tab-row" style="flex-wrap:wrap;gap:6px;margin-top:10px;">
+          <button class="tab" :class="{ active: gradeFilter === '' }" @click="gradeFilter = ''">全部年级</button>
+          <button v-for="y in years" :key="y" class="tab" :class="{ active: gradeFilter === y }" @click="gradeFilter = y">{{ y }}级</button>
+        </div>
+        <div class="tab-row" style="flex-wrap:wrap;gap:6px;margin-top:8px;">
+          <button class="tab" :class="{ active: profFilter === '' }" @click="profFilter = ''">全部专业</button>
+          <button v-for="p in profs" :key="p" class="tab" :class="{ active: profFilter === p }" @click="profFilter = p">{{ p }}</button>
+        </div>
+      </template>
     </div>
 
-    <div class="panel" v-if="kw.trim()">
-      <div class="muted" style="font-size:12px;margin-bottom:8px;">「{{ kw.trim() }}」匹配 {{ result.length }} 个{{ sourceName }}</div>
+    <div class="panel">
+      <div class="muted" style="font-size:12px;margin-bottom:8px;">
+        共 {{ resultItems.length }} 个{{ sourceName }}（{{ tab === 'class' ? '默认按年级排序，含合班课拆分' : '按名称排序' }}），点击查看周课表
+      </div>
       <div class="cal-list">
-        <button v-for="r in result" :key="r" class="cal-item" style="width:100%;text-align:left;cursor:pointer;border:none;background:none;font-family:inherit;" @click="open(r)">
-          <span class="cal-title">{{ r }}</span>
+        <button v-for="it in resultItems" :key="it.name" class="cal-item" style="width:100%;text-align:left;cursor:pointer;border:none;background:none;font-family:inherit;" @click="open(it.name)">
+          <span class="cal-title">{{ it.name }}</span>
+          <span class="cal-count">{{ it.count }} 门课</span>
           <span class="cal-go">查看课表 ›</span>
         </button>
-        <div v-if="!result.length" class="muted" style="padding:16px;text-align:center;">未找到匹配的{{ sourceName }}，换个关键字试试</div>
+        <div v-if="!resultItems.length" class="muted" style="padding:16px;text-align:center;">没有匹配的{{ sourceName }}，换个关键字或筛选试试</div>
       </div>
     </div>
   </template>
@@ -236,33 +303,41 @@ onMounted(loadCourses)
 </template>
 
 <style scoped>
-.week-grid { position: relative; }
-.wg-head-row { display: grid; grid-template-columns: 40px repeat(7, 1fr); }
+.week-grid { position: relative; --row: 46px; --tc: 40px; }
+.wg-head-row { display: grid; grid-template-columns: var(--tc,40px) repeat(7, 1fr); }
 .wg-head { text-align: center; font-size: 12px; font-weight: 700; padding: 4px 0; box-sizing: border-box; }
 .wg-body {
   position: relative;
-  height: 552px;
+  height: calc(var(--row,46px) * 12);
   border-top: 1px solid var(--border);
 }
 .wg-time {
   position: absolute;
   left: 0;
-  width: 40px;
+  width: var(--tc,40px);
   font-size: 11px;
   color: var(--text-light);
   text-align: center;
 }
 .wg-cell {
   position: absolute;
-  width: calc((100% - 40px) / 7 - 6px);
+  width: calc((100% - var(--tc,40px)) / 7 - 5px);
   box-sizing: border-box;
   background: #eef4fd;
   border-left: 3px solid #1b66c9;
-  border-radius: 8px;
-  padding: 4px 5px;
+  border-radius: 6px;
+  padding: 3px 5px;
   overflow: hidden;
   font-size: 11px;
-  line-height: 1.4;
+  line-height: 1.35;
 }
-.wg-sub { font-size: 10px; color: var(--text-light); }
+.wg-cell b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wg-sub { font-size: 10px; color: var(--text-light); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 640px) {
+  .week-grid { --row: 40px; --tc: 30px; }
+  .wg-head { font-size: 10px; padding: 3px 0; }
+  .wg-cell { font-size: 9px; padding: 2px 3px; border-left-width: 2px; border-radius: 4px; }
+  .wg-sub { font-size: 8px; }
+  .wg-time { font-size: 10px; }
+}
 </style>

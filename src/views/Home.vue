@@ -125,7 +125,7 @@ function toggleCampus(name) {
             <b>{{ stats.hotRooms[0] && stats.hotRooms[0].name }}</b>（{{ stats.hotRooms[0] && stats.hotRooms[0].periods }} 节次）、
             最热教师 <b>{{ stats.hotTeachers[0] && stats.hotTeachers[0].name }}</b>
           </div>
-          <div v-else class="insight-desc muted">统计加载中…</div>
+          <div v-else class="insight-desc muted">统计数据暂不可用</div>
         </div>
         <div class="insight-bars">
           <div v-for="t in stats.terms.slice(0, 5)" :key="t.semester" class="insight-bar" :title="t.semester + ' · ' + t.count">

@@ -367,6 +367,7 @@ body {
 .cal-item:last-child { border-bottom: none; }
 .cal-title { flex: 1; font-size: 14px; font-weight: 600; color: var(--text); }
 .cal-date { flex-shrink: 0; font-size: 12px; color: var(--text-sub); }
+.cal-count { flex-shrink: 0; font-size: 12px; color: var(--text-sub); margin-left: 8px; white-space: nowrap; }
 .cal-go { flex-shrink: 0; font-size: 12px; font-weight: 600; color: var(--primary); }
 
 /* ===== 页脚 ===== */
