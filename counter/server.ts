@@ -1,36 +1,98 @@
-// QDU-Nav 独立访问计数服务（Deno Deploy 版）
+// QDU-Nav 独立访问计数服务（Deno Deploy 版 · 多维统计）
 // -----------------------------------------------------------------------------
-// 给 QDU 校园导航一个完全独立于 QDU-Wiki 的「独立访客 / 累计访问」计数。
-// 不依赖 Vercount / 不蒜子（实测 Vercount 无页面级 UV，同域下两站无法分开记 UV）。
-//
 // 端点：
-//   GET /api/hit?isNewUv=1|0   本次访问 PV+1；isNewUv=1 时 UV+1，返回 { uv, pv }
-//   GET /api/stats             查询 { uv, pv }（不计数）
-//   GET /                      探活文本
-//
-// 跨域说明：前端（GitHub Pages）跨域请求本服务时，响应 Set-Cookie 属于第三方
-// Cookie，现代浏览器可能拦截，故 UV 去重改由前端 localStorage + isNewUv 参数完成。
-//
-// 部署（免费、无需绑卡，Deno Deploy 新平台 console.deno.com）：
-//   1) 打开 https://console.deno.com → Sign in with GitHub → 创建组织（Standard Deploy）
-//   2) + New app → 从 GitHub 仓库 IceofTea/QDU-Nav 部署，App Directory 选仓库根（勿选 src）
-//   3) 配置：Runtime Configuration = Dynamic App；Entrypoint = counter/server.ts；
-//      Install command 留空；Build command 填 echo skip（跳过类型检查，规避容器类型环境差异）
-//   4) 在应用 Settings/Databases 创建并 Attach 一个 KV 数据库（Deno.openKv 依赖它）
-//   5) 部署后生产地址形如 https://qdu-nav.iceoftea.deno.net，填入 src/config/site.js 的 SITE.counter.api
-// 说明：免费额度含 KV 持久存储（数据重启不丢）；组织未验证也能正常使用，验证仅提升额度。
+//   GET /api/hit?isNewUv=1|0&app=<appId>   本次访问 PV+1；isNewUv=1 时 UV+1；
+//                                          按日期/小时/星期/设备/系统/来源/应用自动累计，返回完整统计
+//   GET /api/stats                         查询完整统计（不计数）
+//   GET /                                  探活文本
+// 数据全部存 Deno KV（['stats'] 单 key），免费额度含 KV 持久化，重启不丢。
+// 部署见文件头部注释（console.deno.com：App Directory 根、Dynamic、entrypoint、
+// Build 命令 echo skip、创建并 Attach KV 数据库）。
 
-const KEY = ['counter']
+const KEY = ['stats']
 const kv = await Deno.openKv()
 
-interface State {
+interface DayStats { pv: number; uv: number }
+interface Stats {
   uv: number
   pv: number
+  byDay: Record<string, DayStats>
+  byHour: Record<string, number>
+  byWeekday: Record<string, number>
+  byDevice: Record<string, number>
+  byOs: Record<string, number>
+  byRef: Record<string, number>
+  byApp: Record<string, number>
 }
 
-async function getState(): Promise<State> {
-  const r = await kv.get<State>(KEY)
-  return r.value ?? { uv: 0, pv: 0 }
+function emptyStats(): Stats {
+  return { uv: 0, pv: 0, byDay: {}, byHour: {}, byWeekday: {}, byDevice: {}, byOs: {}, byRef: {}, byApp: {} }
+}
+
+async function getStats(): Promise<Stats> {
+  const r = await kv.get<Stats>(KEY)
+  return r.value ?? emptyStats()
+}
+
+const pad = (n: number) => String(n).padStart(2, '0')
+function dayKey(d: Date) {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+function bump(obj: Record<string, number>, k: string) {
+  obj[k] = (obj[k] || 0) + 1
+}
+
+function parseDevice(ua: string) {
+  if (/iPad|Tablet|PlayBook/i.test(ua)) return '平板'
+  if (/Mobile|Android|iPhone|iOS/i.test(ua)) return '手机'
+  return '桌面'
+}
+function parseOs(ua: string) {
+  if (/Android/i.test(ua)) return 'Android'
+  if (/iPhone|iPad|iOS/i.test(ua)) return 'iOS'
+  if (/Windows/i.test(ua)) return 'Windows'
+  if (/Mac OS X|Macintosh/i.test(ua)) return 'macOS'
+  if (/Linux/i.test(ua)) return 'Linux'
+  return '其他'
+}
+function parseRef(ref: string) {
+  if (!ref) return '直接访问'
+  if (/github\.io|github\.com/i.test(ref)) return 'GitHub'
+  if (/baidu|google|bing|sogou|sm\.cn|so\.com/i.test(ref)) return '搜索引擎'
+  if (/tieba|zhihu|weibo|xiaohongshu|douyin|bilibili/i.test(ref)) return '社交平台'
+  return '其他外链'
+}
+
+function overview(s: Stats) {
+  const todayKey = dayKey(new Date())
+  const today = s.byDay[todayKey] ?? { pv: 0, uv: 0 }
+  const week: { label: string; pv: number; uv: number }[] = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date()
+    d.setDate(d.getDate() - i)
+    const k = dayKey(d)
+    const v = s.byDay[k] ?? { pv: 0, uv: 0 }
+    week.push({ label: k.slice(5), pv: v.pv, uv: v.uv })
+  }
+  const hours = Array.from({ length: 24 }, (_, i) => ({ label: i + '点', v: s.byHour[String(i)] || 0 }))
+  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'].map((n, i) => ({
+    label: n,
+    v: s.byWeekday[String(i)] || 0
+  }))
+  const toArr = (obj: Record<string, number>) =>
+    Object.entries(obj).map(([name, v]) => ({ name, v })).sort((a, b) => b.v - a.v)
+  return {
+    uv: s.uv,
+    pv: s.pv,
+    today: { date: todayKey, ...today },
+    week,
+    hours,
+    weekdays,
+    devices: toArr(s.byDevice),
+    os: toArr(s.byOs),
+    refs: toArr(s.byRef),
+    apps: toArr(s.byApp)
+  }
 }
 
 Deno.serve(async (req) => {
@@ -46,16 +108,28 @@ Deno.serve(async (req) => {
   const u = new URL(req.url)
   if (u.pathname === '/api/hit' || u.pathname === '/api/stats') {
     const hit = u.pathname === '/api/hit'
-    const state = await getState()
+    const s = await getStats()
     if (hit) {
-      state.pv++
-      if (u.searchParams.get('isNewUv') !== '0') {
-        state.uv++
-      }
-      await kv.set(KEY, state)
+      const isNew = u.searchParams.get('isNewUv') !== '0'
+      s.pv++
+      if (isNew) s.uv++
+      const now = new Date()
+      const dk = dayKey(now)
+      const day = s.byDay[dk] ?? { pv: 0, uv: 0 }
+      day.pv++
+      if (isNew) day.uv++
+      s.byDay[dk] = day
+      bump(s.byHour, String(now.getHours()))
+      bump(s.byWeekday, String(now.getDay()))
+      bump(s.byDevice, parseDevice(req.headers.get('user-agent') || ''))
+      bump(s.byOs, parseOs(req.headers.get('user-agent') || ''))
+      bump(s.byRef, parseRef(req.headers.get('referer') || ''))
+      const app = u.searchParams.get('app')
+      if (app) bump(s.byApp, app)
+      await kv.set(KEY, s)
     }
     headers.set('Content-Type', 'application/json')
-    return new Response(JSON.stringify({ uv: state.uv, pv: state.pv }), { headers })
+    return new Response(JSON.stringify(overview(s)), { headers })
   }
 
   headers.set('Content-Type', 'text/plain; charset=utf-8')

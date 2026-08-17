@@ -21,9 +21,11 @@ export const apps = [
   { id: 'foodWheel', title: '美食轮盘', desc: '食堂美食转盘，随机抽一个开吃', icon: '🎡', color: '#d97706', group: '游戏', link: '#/app/foodWheel' },
   { id: 'quiz', title: '青大知多少', desc: '青大知识问答小游戏，测测你的校史功底', icon: '🎯', color: '#8b5cf6', group: '游戏', link: '#/app/quiz' },
   { id: 'buildingMatch', title: '教学楼速配', desc: '翻牌配对教学楼新旧名称，测测你的记忆', icon: '🧩', color: '#0f766e', group: '游戏', link: '#/app/buildingMatch' },
+  { id: 'leaderTest', title: '校领导测试', desc: '测出你像哪位青岛大学校领导', icon: '🎓', color: '#7c3aed', group: '游戏', link: '#/app/leaderTest' },
   { id: 'timetable', title: '课程表', desc: '查看班级、教室与教师课表，支持预览下学期', icon: '🗓️', color: '#1b66c9', group: '学习', link: '#/app/timetable' },
   { id: 'courseStats', title: '数据洞察', desc: '从近7学期5万条排课看教室/教师/课程热度', icon: '📊', color: '#0f766e', group: '学习', link: '#/app/courseStats' },
   { id: 'tiebaSentiment', title: '贴吧舆情', desc: '青岛大学吧热帖与话题舆情分析', icon: '📣', color: '#1677ff', group: '生活', link: '#/app/tiebaSentiment' },
+  { id: 'siteStats', title: '本站舆情', desc: '独立访客、访问趋势、设备来源与热门应用', icon: '📊', color: '#0891b2', group: '服务', link: '#/app/siteStats' },
   { id: 'contributors', title: '贡献者墙', desc: '词云致敬每一位代码贡献者', icon: '🏆', color: '#0f766e', group: '服务', link: '#/app/contributors' }
 ]
 

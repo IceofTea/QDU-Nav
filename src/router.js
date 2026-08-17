@@ -9,6 +9,7 @@
  * 新增一个应用页面的完整流程见 README「二次开发：新增应用」。
  */
 import { ref, computed, markRaw } from 'vue'
+import { SITE } from './config/site'
 import Home from './views/Home.vue'
 import CampusNews from './views/CampusNews.vue'
 import Timetable from './views/Timetable.vue'
@@ -23,10 +24,12 @@ import OfficialSites from './views/OfficialSites.vue'
 import Canteen from './views/Canteen.vue'
 import Categories from './views/Categories.vue'
 import BuildingMatch from './views/BuildingMatch.vue'
+import LeaderTest from './views/LeaderTest.vue'
 import CourseStats from './views/CourseStats.vue'
 import Budget from './views/Budget.vue'
 import TiebaSentiment from './views/TiebaSentiment.vue'
 import Contributors from './views/Contributors.vue'
+import SiteStats from './views/SiteStats.vue'
 
 /** 应用 id → 视图组件注册表 */
 export const VIEWS = {
@@ -43,10 +46,12 @@ export const VIEWS = {
   officialSites: OfficialSites,
   categories: Categories,
   buildingMatch: BuildingMatch,
+  leaderTest: LeaderTest,
   courseStats: CourseStats,
   budget: Budget,
   tiebaSentiment: TiebaSentiment,
-  contributors: Contributors
+  contributors: Contributors,
+  siteStats: SiteStats
 }
 
 /** 底部快捷导航（首页 + 高频应用） */
@@ -88,6 +93,7 @@ export function useViewState() {
     current.value = id
     location.hash = APP_ROUTE + id
     window.scrollTo(0, 0)
+    reportApp(id)
   }
 
   /** 返回首页 */
@@ -98,4 +104,15 @@ export function useViewState() {
   }
 
   return { current, currentComp, openApp, goHome }
+}
+
+/** 应用打开自动上报（本站舆情 · 纯自动化；同一应用 5s 节流防连发） */
+const appReportLast = {}
+function reportApp(id) {
+  const api = SITE.counter && SITE.counter.api
+  if (!api || typeof fetch !== 'function') return
+  const now = Date.now()
+  if (now - (appReportLast[id] || 0) < 5000) return
+  appReportLast[id] = now
+  fetch(api + '/api/hit?isNewUv=0&app=' + encodeURIComponent(id)).catch(() => {})
 }

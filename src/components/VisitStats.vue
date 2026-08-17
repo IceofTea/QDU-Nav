@@ -67,32 +67,39 @@ onMounted(refresh)
 
 <template>
   <div class="visit-stats">
-    <div class="vs-item">
-      <span class="vs-icon">👀</span>
-      <span class="vs-num">{{ uvText }}</span>
-      <span class="vs-label">独立访客</span>
+    <div class="vs-row">
+      <div class="vs-item">
+        <span class="vs-icon">👀</span>
+        <span class="vs-num">{{ uvText }}</span>
+        <span class="vs-label">独立访客</span>
+      </div>
+      <span class="vs-divider"></span>
+      <div class="vs-item">
+        <span class="vs-icon">📈</span>
+        <span class="vs-num">{{ pvText }}</span>
+        <span class="vs-label">累计访问</span>
+      </div>
     </div>
-    <span class="vs-divider"></span>
-    <div class="vs-item">
-      <span class="vs-icon">📈</span>
-      <span class="vs-num">{{ pvText }}</span>
-      <span class="vs-label">累计访问</span>
-    </div>
-    <span class="vs-note">本站累计 · 自建独立计数</span>
+    <div class="vs-note">本站累计 · 自建独立计数</div>
   </div>
 </template>
 
 <style scoped>
 .visit-stats {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 8px;
   background: linear-gradient(135deg, #eef6ff, #f8fbff);
   border: 1px solid #cfe3fb;
   border-radius: 12px;
   padding: 10px 14px;
   margin-top: 12px;
+}
+.vs-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 .vs-item {
   display: inline-flex;
@@ -120,6 +127,5 @@ onMounted(refresh)
 .vs-note {
   font-size: 11px;
   color: var(--text-light);
-  margin-left: auto;
 }
 </style>
