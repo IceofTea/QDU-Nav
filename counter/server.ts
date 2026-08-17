@@ -23,14 +23,6 @@
 const KEY = ['counter']
 const kv = await Deno.openKv()
 
-// 初始化计数校准（仅首次部署生效，之后正常累计）
-const SEED_KEY = ['counter', 'seed2']
-const seed = await kv.get<boolean>(SEED_KEY)
-if (!seed.value) {
-  await kv.set(KEY, { uv: 100, pv: 200 })
-  await kv.set(SEED_KEY, true)
-}
-
 interface State {
   uv: number
   pv: number
