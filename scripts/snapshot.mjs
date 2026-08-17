@@ -139,7 +139,7 @@ const mergedRows = []
 for (const t of courseTables) {
   const term = t.semester
   for (const row of t.rows) {
-    mergedRows.push({ c: row.c, t: row.t, cls: row.cls, d: row.d, s: row.s, e: row.e, w: row.w, r: row.r, term, kind: row.kind || '', campus: row.campus || '' })
+
   }
 }
 const allRooms = new Set(mergedRows.map((r) => r.r && normRoom(r.r)).filter(Boolean)).size

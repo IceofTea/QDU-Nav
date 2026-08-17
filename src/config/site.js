@@ -15,7 +15,7 @@ export const SITE = {
   /** 校训（欢迎页标语） */
   motto: '明德 · 博学 · 守正 · 出奇',
   /** 当前版本号（页脚 / 关于面板 / README 同步标注，格式 x.y.z） */
-  version: '1.0.0',
+  version: '1.1.1',
   /** 网站开发者署名 */
   developer: '炎黄YH',
 

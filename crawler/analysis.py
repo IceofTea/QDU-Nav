@@ -38,6 +38,7 @@ def analyze(snap, top=10):
     periods = Counter()
     kinds = Counter()
     campuses = Counter()
+    colleges = Counter()
 
     for r in rows:
         if r.get('r'):
@@ -52,6 +53,8 @@ def analyze(snap, top=10):
             periods[r['s']] += 1
         kinds[r.get('kind') or '未标注'] += 1
         campuses[r.get('campus') or '未标注'] += 1
+        if r.get('col'):
+            colleges[r['col']] += 1
 
     day_names = {1: '周一', 2: '周二', 3: '周三', 4: '周四', 5: '周五', 6: '周六', 7: '周日'}
 
@@ -67,6 +70,7 @@ def analyze(snap, top=10):
         'periodDist': [{'start': k, 'count': periods[k]} for k in sorted(periods)],
         'kindDist': [{'name': k, 'count': v} for k, v in kinds.most_common(6)],
         'campusDist': [{'name': k, 'count': v} for k, v in campuses.most_common(6)],
+        'colDist': [{'name': k, 'count': v} for k, v in colleges.most_common(12)],
     }
 
 

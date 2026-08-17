@@ -68,7 +68,6 @@ const gradeFilter = ref('')
 const profFilter = ref('')
 
 const result = computed(() => {
-  const max = 40
   const k = kw.value.trim()
   if (tab.value === 'class') {
     let list = singleClasses.value
@@ -78,10 +77,10 @@ const result = computed(() => {
       const pre = list.filter((c) => c.startsWith(k))
       list = pre.length ? pre : list.filter((c) => c.includes(k))
     }
-    return list.slice(0, max)
+    return list
   }
   const src = tab.value === 'room' ? rooms.value : teachers.value
-  return (k ? src.filter((x) => x.includes(k)) : src).slice(0, max)
+  return k ? src.filter((x) => x.includes(k)) : src
 })
 
 const resultItems = computed(() => result.value.map((name) => ({ name, count: countOf(name) })))

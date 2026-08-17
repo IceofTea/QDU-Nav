@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { foods, halls, pickFoods } from '../data/foods'
+import { foods, halls } from '../data/foods'
 import CountUp from '../components/CountUp.vue'
 
 const emit = defineEmits(['back'])
@@ -9,6 +9,9 @@ const picks = ref([])
 const pickedCount = ref(0)
 const filter = ref('全部')
 const showAll = ref(false)
+const campusFilter = ref('全部')
+
+const CAMPUSES = ['全部', '浮山校区', '金家岭校区', '松山校区']
 
 const tags = computed(() => ['全部', ...new Set(foods.map(f => f.tag))])
 
@@ -17,16 +20,36 @@ const filtered = computed(() => {
   return foods.filter(f => f.tag === filter.value)
 })
 
+const campusPool = computed(() => {
+  if (campusFilter.value === '全部') return foods
+  return foods.filter(f => f.campus === campusFilter.value)
+})
+
+function pickFrom(pool, count) {
+  const p = [...pool]
+  const res = []
+  while (res.length < count && p.length) {
+    const i = Math.floor(Math.random() * p.length)
+    res.push(p.splice(i, 1)[0])
+  }
+  return res
+}
+
 function roll() {
-  picks.value = pickFoods(3)
+  picks.value = pickFrom(campusPool.value, 3)
   pickedCount.value += 1
   sessionStorage.setItem('qdu_food_picked', String(pickedCount.value))
 }
 
 function pickOne() {
-  picks.value = pickFoods(1)
+  picks.value = pickFrom(campusPool.value, 1)
   pickedCount.value += 1
   sessionStorage.setItem('qdu_food_picked', String(pickedCount.value))
+}
+
+function setCampus(c) {
+  campusFilter.value = c
+  roll()
 }
 
 onMounted(() => {
@@ -43,7 +66,18 @@ onMounted(() => {
   </div>
 
   <div class="panel" style="margin-bottom:16px;text-align:center;">
-    <div class="muted" style="font-size:13px;margin-bottom:14px;">随机推荐 3 个选择</div>
+    <div class="tab-row" style="justify-content:center;margin-bottom:14px;">
+      <button
+        v-for="c in CAMPUSES"
+        :key="c"
+        class="tab"
+        :class="{ active: campusFilter === c }"
+        @click="setCampus(c)"
+      >{{ c }}</button>
+    </div>
+    <div class="muted" style="font-size:13px;margin-bottom:14px;">
+      随机推荐 3 个选择<template v-if="campusFilter !== '全部'">（仅 {{ campusFilter }}）</template>
+    </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;">
       <div v-for="(f, i) in picks" :key="i" class="food-card">
         <div style="font-size:26px;">🍽️</div>
