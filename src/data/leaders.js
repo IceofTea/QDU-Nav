@@ -1,8 +1,9 @@
 /**
  * 校领导风格测试 · 数据
  * 维度 9 项：决策魄力 / 规划理性 / 改革锐气 / 情怀感召 / 制度规范 / 育人理念 / 师生动员 / 执行强度 / 发展导向
- * 题目：直接搬用 leadertest.site 原题（政治/治理场景，一字未改）+ 青大校园特色题，共 25 题。
- * 原型 vec：0-10 各维强度；weight：各维匹配权重。
+ * 原型 10 位：竺苗龙 / 徐建培 / 夏临华 / 王安民 / 范跃进 / 夏东伟 / 胡金焱 / 魏志强 / 孔伟金 / 李建波
+ * 题目 30 道：参考 leadertest.site 原题 17 道（治理/政治场景，一字未改）+ 青大校园特色题 13 道。
+ * 照片存于 public/leader/（真实证件照，竺苗龙暂无照片则回退首字母头像）。
  */
 
 export const DIMS = [
@@ -28,7 +29,7 @@ export const leaders = [
       '航天力学专家，长期担任名誉校长，是我国著名航天力学专家与学术带头人。淡泊行政权力、沉潜基础研究，以专业造诣和学术声望引领学校发展，属于典型的学者型领导。',
     vec: { power: 3, logic: 9, conflict: 1, emotion: 3, order: 7, ideology: 6, mobilization: 2, force: 2, development: 4 },
     weight: { power: 1.0, logic: 1.5, conflict: 0.7, emotion: 0.8, order: 1.0, ideology: 0.9, mobilization: 0.7, force: 0.7, development: 0.9 },
-    photo: ''
+    photo: 'leader/竺苗龙.png'
   },
   {
     name: '徐建培',
@@ -40,7 +41,7 @@ export const leaders = [
       '由青岛大学校长起步，后进入国家部委及地方政府担任要职，行事风格偏向从教育管理向更广阔行政领域拓展，长于整合资源、打通渠道，属于跨界发展的管理者。',
     vec: { power: 7, logic: 8, conflict: 4, emotion: 4, order: 7, ideology: 5, mobilization: 6, force: 5, development: 8 },
     weight: { power: 1.2, logic: 1.3, conflict: 0.8, emotion: 0.7, order: 1.1, ideology: 0.9, mobilization: 1.1, force: 1.0, development: 1.4 },
-    photo: ''
+    photo: 'leader/徐建培.png'
   },
   {
     name: '夏临华',
@@ -52,7 +53,7 @@ export const leaders = [
       '理论物理学家、「百千万人才工程」人选，长期深耕理论物理前沿研究。以科研视野和学术判断管理学校，强调内涵与基础研究，属于典型的专家治校。',
     vec: { power: 5, logic: 9, conflict: 2, emotion: 4, order: 7, ideology: 5, mobilization: 3, force: 2, development: 6 },
     weight: { power: 0.9, logic: 1.6, conflict: 0.6, emotion: 0.8, order: 1.1, ideology: 0.9, mobilization: 0.6, force: 0.5, development: 1.0 },
-    photo: ''
+    photo: 'leader/夏临华.png'
   },
   {
     name: '王安民',
@@ -64,7 +65,7 @@ export const leaders = [
       '兼具发改委、科技局等政府工作经历后回归高校，善于把行政管理经验与教育管理结合，注重流程、资源与务实落地，属于政学结合的实践者。',
     vec: { power: 7, logic: 8, conflict: 4, emotion: 5, order: 8, ideology: 5, mobilization: 6, force: 5, development: 7 },
     weight: { power: 1.2, logic: 1.3, conflict: 0.8, emotion: 0.9, order: 1.5, ideology: 0.9, mobilization: 1.0, force: 1.0, development: 1.3 },
-    photo: ''
+    photo: 'leader/王安民.png'
   },
   {
     name: '范跃进',
@@ -76,7 +77,7 @@ export const leaders = [
       '以大刀阔斧的改革著称，曾主政三所高校。在青大任内提出「对标苏大」等目标，推行管理体制与人事改革，为后续发展奠定基础，属于改革派奠基人。',
     vec: { power: 9, logic: 6, conflict: 8, emotion: 7, order: 6, ideology: 5, mobilization: 8, force: 8, development: 9 },
     weight: { power: 1.5, logic: 1.0, conflict: 1.4, emotion: 1.1, order: 0.9, ideology: 0.9, mobilization: 1.4, force: 1.4, development: 1.6 },
-    photo: ''
+    photo: 'leader/范跃进.png'
   },
   {
     name: '夏东伟',
@@ -88,7 +89,7 @@ export const leaders = [
       '任期注重学术指标提升，强调本研贯通培养与科研训练，习惯用软科排名、自然指数等具体数据衡量学校进步，务实推进每一项可量化的目标，属于成果导向的实干家。',
     vec: { power: 7, logic: 8, conflict: 5, emotion: 4, order: 8, ideology: 5, mobilization: 5, force: 6, development: 9 },
     weight: { power: 1.2, logic: 1.4, conflict: 0.9, emotion: 0.7, order: 1.4, ideology: 0.9, mobilization: 0.9, force: 1.1, development: 1.7 },
-    photo: ''
+    photo: 'leader/夏东伟.png'
   },
   {
     name: '胡金焱',
@@ -100,7 +101,7 @@ export const leaders = [
       '注重顶层设计，提出「一二三四五」育人体系，主持「书记下午茶」，风格亲民。强调把个人发展融入国家战略，鼓励学生立志与创新，属于战略家与思想者。',
     vec: { power: 6, logic: 8, conflict: 4, emotion: 8, order: 6, ideology: 8, mobilization: 8, force: 4, development: 8 },
     weight: { power: 1.0, logic: 1.3, conflict: 0.8, emotion: 1.5, order: 1.0, ideology: 1.5, mobilization: 1.5, force: 0.8, development: 1.3 },
-    photo: ''
+    photo: 'leader/胡金焱.png'
   },
   {
     name: '魏志强',
@@ -112,7 +113,31 @@ export const leaders = [
       '风格务实果断，目标直指「双一流」与 A 类学科，提出「111」计划与「系统+、纺织+、医学+」板块思路，强调数据驱动与产教融合，行事充满紧迫感，属于实干派与强驱动者。',
     vec: { power: 8, logic: 7, conflict: 7, emotion: 5, order: 7, ideology: 6, mobilization: 6, force: 8, development: 9 },
     weight: { power: 1.5, logic: 1.2, conflict: 1.3, emotion: 0.9, order: 1.2, ideology: 1.1, mobilization: 1.1, force: 1.5, development: 1.7 },
-    photo: ''
+    photo: 'leader/魏志强.png'
+  },
+  {
+    name: '孔伟金',
+    slug: 'kong_weijin',
+    period: '现任副校长',
+    role: '执行型 · 学术创新',
+    bio: '学术创新、深耕研教。',
+    summary:
+      '现任副校长，侧重研究生教育与学术创新，重视学术训练与创新氛围的营造，属于学术与管理并重、在分管领域扎实执行的推动者。',
+    vec: { power: 5, logic: 9, conflict: 4, emotion: 5, order: 7, ideology: 6, mobilization: 5, force: 4, development: 8 },
+    weight: { power: 0.9, logic: 1.6, conflict: 0.8, emotion: 0.9, order: 1.2, ideology: 1.1, mobilization: 0.9, force: 0.8, development: 1.5 },
+    photo: 'leader/孔伟金.png'
+  },
+  {
+    name: '李建波',
+    slug: 'li_jianbo',
+    period: '现任副校长',
+    role: '改革型 · 创新创业',
+    bio: '创新创业、服务驱动。',
+    summary:
+      '现任副校长，强势推动创新创业教育改革，强调「刀刃向内」与服务驱动，鼓励师生把创意变成项目、把服务做进一线，属于改革驱动的执行推动者。',
+    vec: { power: 6, logic: 7, conflict: 7, emotion: 6, order: 6, ideology: 6, mobilization: 7, force: 6, development: 9 },
+    weight: { power: 1.1, logic: 1.2, conflict: 1.3, emotion: 1.0, order: 1.0, ideology: 1.1, mobilization: 1.3, force: 1.1, development: 1.6 },
+    photo: 'leader/李建波.png'
   }
 ]
 
@@ -289,7 +314,15 @@ export const questions = [
     ]
   },
   {
-    id: 'q4', type: 'single', kicker: '单选题', title: '面对「内卷」，你更倾向于：',
+    id: 'q4', type: 'binary', kicker: '判断题', title: '期末复习，你更相信哪种打法？',
+    desc: '请选择更接近你真实倾向的一项。', weight: 1.0,
+    options: [
+      { label: '提前两周做计划表，稳步推进', score: { logic: 2, order: 1 } },
+      { label: '考前集中冲刺，高效爆发', score: { force: 2, development: 1 } }
+    ]
+  },
+  {
+    id: 'q5', type: 'single', kicker: '单选题', title: '面对「内卷」，你更倾向于：',
     desc: '请选择更接近你真实倾向的一项。', weight: 1.0,
     options: [
       { label: '卷就卷，靠效率卷赢', score: { development: 2, force: 1 } },
@@ -299,7 +332,7 @@ export const questions = [
     ]
   },
   {
-    id: 'q5', type: 'single', kicker: '单选题', title: '宿舍出现矛盾，你的第一反应是：',
+    id: 'q6', type: 'single', kicker: '单选题', title: '宿舍出现矛盾，你的第一反应是：',
     desc: '请选择最接近你真实倾向的一项。', weight: 1.0,
     options: [
       { label: '定个宿舍公约，按规矩来', score: { order: 2 } },
@@ -309,7 +342,7 @@ export const questions = [
     ]
   },
   {
-    id: 'q6', type: 'binary', kicker: '判断题', title: '保研加分，创新创业大赛 vs 传统奖学金，你更看重？',
+    id: 'q7', type: 'binary', kicker: '判断题', title: '保研加分，创新创业大赛 vs 传统奖学金，你更看重？',
     desc: '请选择更接近你真实倾向的一项。', weight: 1.0,
     options: [
       { label: '创新创业大赛：跑起来才有机会', score: { development: 2, conflict: 1 } },
@@ -317,7 +350,7 @@ export const questions = [
     ]
   },
   {
-    id: 'q7', type: 'policy', kicker: '政策题', title: '如果让你当一任校领导，优先推动哪件事？',
+    id: 'q8', type: 'policy', kicker: '政策题', title: '如果让你当一任校领导，优先推动哪件事？',
     desc: '这题区分度很高。', weight: 1.6,
     options: [
       { label: '冲刺双一流与 A 类学科，立军令状', score: { development: 2, force: 1, conflict: 1 } },
@@ -327,7 +360,7 @@ export const questions = [
     ]
   },
   {
-    id: 'q8', type: 'single', kicker: '单选题', title: '你怎么看待「第二课堂」和德育分？',
+    id: 'q9', type: 'single', kicker: '单选题', title: '你怎么看待「第二课堂」和德育分？',
     desc: '请选择更接近你真实倾向的一项。', weight: 1.0,
     options: [
       { label: '要有制度，量化考核才公平', score: { order: 2 } },
@@ -335,6 +368,36 @@ export const questions = [
       { label: '别搞形式主义，务实点', score: { conflict: 2, logic: 1 } },
       { label: '给足自主空间，让学生自己长', score: { logic: 2, mobilization: 1 } }
     ]
+  },
+  {
+    id: 'q10', type: 'single', kicker: '单选题', title: '组织一次校庆活动，你更看重：',
+    desc: '请选择更接近你真实倾向的一项。', weight: 1.0,
+    options: [
+      { label: '执行到位、场面震撼', score: { force: 2, order: 1 } },
+      { label: '全员参与，把师生调动起来', score: { mobilization: 2, emotion: 1 } },
+      { label: '有创意、有话题，出圈传播', score: { conflict: 2, development: 1 } },
+      { label: '流程规范、不出差错', score: { order: 2, logic: 1 } }
+    ]
+  },
+  {
+    id: 'q11', type: 'likert', kicker: '场景题', title: '“我愿意为集体目标承担高强度任务。”',
+    desc: '请选择符合程度。', weight: 1.0,
+    scores: [{ force: -2, emotion: 1 }, { force: -1 }, {}, { force: 1, development: 1 }, { force: 2, development: 2 }]
+  },
+  {
+    id: 'q12', type: 'single', kicker: '单选题', title: '社团换届，你更倾向自己：',
+    desc: '请选择更接近你真实倾向的一项。', weight: 1.0,
+    options: [
+      { label: '继续留任，把盘子稳住', score: { power: 2, order: 1 } },
+      { label: '主动让贤，培养新人', score: { emotion: 2, mobilization: 1 } },
+      { label: '换一种方式继续参与', score: { logic: 2, conflict: 1 } },
+      { label: '交给机制，谁上都是传承', score: { order: 2, ideology: 1 } }
+    ]
+  },
+  {
+    id: 'q13', type: 'likert', kicker: '场景题', title: '“我喜欢制定清晰的长期计划，并按部就班推进。”',
+    desc: '请选择符合程度。', weight: 1.0,
+    scores: [{ logic: -2, order: -1 }, { logic: -1 }, {}, { logic: 1, order: 1 }, { logic: 2, order: 2 }]
   }
 ]
 

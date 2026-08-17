@@ -80,12 +80,25 @@ function userScores() {
 const user = ref(null)
 const ranked = ref([])
 
+/** 用户向量归一化到 0-10（与原型 vec 同标尺，按用户自身轮廓拉伸），避免低分维原型常胜 */
+function normalizedUser(raw) {
+  const vals = DIMS.map((d) => raw[d.key])
+  const mn = Math.min(...vals, 0)
+  const mx = Math.max(...vals, 10)
+  const span = mx - mn || 1
+  const n = {}
+  for (const d of DIMS) n[d.key] = Math.max(0, Math.min(10, ((raw[d.key] - mn) / span) * 10))
+  return n
+}
+
 function finish() {
-  const u = userScores()
-  user.value = u
-  ranked.value = [...leaders]
-    .map((l) => ({ ...l, dist: DIMS.reduce((s, d) => s + l.weight[d.key] * Math.abs(u[d.key] - l.vec[d.key]), 0) }))
+  const nu = normalizedUser(userScores())
+  user.value = nu
+  const list = [...leaders]
+    .map((l) => ({ ...l, dist: DIMS.reduce((s, d) => s + l.weight[d.key] * Math.abs(nu[d.key] - l.vec[d.key]), 0) }))
     .sort((a, b) => a.dist - b.dist)
+  const worst = list[list.length - 1].dist || 1
+  ranked.value = list.map((r) => ({ ...r, match: Math.max(5, Math.round(100 - (r.dist / worst) * 100)) }))
   phase.value = 'result'
 }
 
@@ -107,6 +120,9 @@ const whyText = computed(() => {
 /** 结果条：用户得分归一（0-10 截断，与原型同量纲） */
 const norm = (v) => Math.max(0, Math.min(10, Math.round(v || 0)))
 const pct = (v) => Math.round((v / 10) * 100)
+/** 维度对齐度：用户与原型该维越接近越满 */
+const dimAlign = (d) =>
+  Math.max(0, Math.min(100, Math.round(100 - Math.abs(user.value[d.key] - best.value.vec[d.key]) * 10)))
 
 const shareText = computed(() => (best.value ? shareLine(best.value) : ''))
 const copied = ref(false)
@@ -174,50 +190,52 @@ const initial = (name) => name.charAt(0)
   </div>
 
   <!-- 结果页 -->
-  <div v-else-if="phase === 'result' && best" class="panel" style="text-align:center;padding:24px 18px;">
-    <div class="muted" style="font-size:12px;">唯一结果匹配</div>
-
-    <div class="portrait" :style="avatarStyle(best)">
-      <img v-if="best.photo" :src="best.photo" alt="" @error="best.photo = ''" />
-      <span v-else class="portrait-initial">{{ initial(best.name) }}</span>
-    </div>
-    <div style="font-size:24px;font-weight:800;margin-top:10px;">{{ best.name }}</div>
-    <div class="muted" style="font-size:12px;">{{ best.period }} · {{ best.role }}</div>
-    <div style="font-size:15px;font-weight:700;margin:8px 0 0;color:var(--primary-dark);">{{ best.bio }}</div>
-
-    <div class="muted" style="font-size:12px;margin:18px 0 8px;">多维原型比对</div>
-    <div v-for="d in DIMS" :key="d.key" style="margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
-        <span>{{ d.label }}</span><span class="muted">你 {{ norm(user[d.key]) }} / 原型 {{ best.vec[d.key] }}</span>
+  <div v-else-if="phase === 'result' && best" class="panel result-panel">
+    <div class="result-hero">
+      <div class="portrait" :style="avatarStyle(best)">
+        <img v-if="best.photo" :src="best.photo" alt="" @error="best.photo = ''" />
+        <span v-else class="portrait-initial">{{ initial(best.name) }}</span>
       </div>
-      <div style="display:flex;gap:3px;">
-        <div style="flex:1;height:10px;border-radius:5px;background:#eef3fb;overflow:hidden;">
-          <div style="height:100%;border-radius:5px;background:linear-gradient(90deg,#1b66c9,#3b82f6);" :style="{ width: pct(norm(user[d.key])) + '%' }"></div>
-        </div>
-        <div style="flex:1;height:10px;border-radius:5px;background:#eef3fb;overflow:hidden;">
-          <div style="height:100%;border-radius:5px;background:linear-gradient(90deg,#d97706,#f59e0b);" :style="{ width: pct(best.vec[d.key]) + '%' }"></div>
-        </div>
+      <div class="result-hero-txt">
+        <div class="muted" style="font-size:11px;">唯一结果匹配 · 契合度 {{ best.match }}%</div>
+        <div class="result-name">{{ best.name }}</div>
+        <div class="muted" style="font-size:12px;">{{ best.period }} · {{ best.role }}</div>
+        <div class="result-bio">{{ best.bio }}</div>
       </div>
-      <div class="muted" style="font-size:10px;text-align:right;">蓝=你 · 橙=原型</div>
     </div>
 
-    <div style="margin-top:6px;padding:12px;background:var(--primary-soft);border-radius:12px;text-align:left;">
-      <div style="font-weight:800;font-size:14px;margin-bottom:4px;">为什么会是这个人</div>
+    <div class="result-sec">
+      <div class="sec-title">契合分析</div>
       <p class="muted" style="font-size:13px;line-height:1.8;margin:0;">{{ whyText }}</p>
     </div>
 
-    <div style="margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:12px;text-align:left;">
-      <div style="font-weight:800;font-size:14px;margin-bottom:4px;">{{ best.name }} · 简要事迹</div>
+    <div class="result-sec">
+      <div class="sec-title">多维原型比对 <span class="sec-note">蓝=你的画像 · 橙={{ best.name }}原型</span></div>
+      <div v-for="d in DIMS" :key="d.key" class="dim-block">
+        <div class="dim-head">
+          <span class="dim-name">{{ d.label }}</span>
+          <span class="dim-nums">你 <b>{{ norm(user[d.key]) }}</b> / 原型 <b>{{ best.vec[d.key] }}</b></span>
+        </div>
+        <div class="dim-track">
+          <i class="dim-you" :style="{ width: pct(norm(user[d.key])) + '%' }"></i>
+          <i class="dim-proto" :style="{ width: pct(best.vec[d.key]) + '%' }"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-sec">
+      <div class="sec-title">简要事迹</div>
       <p class="muted" style="font-size:13px;line-height:1.8;margin:0;">{{ best.summary }}</p>
     </div>
 
-    <div style="margin-top:14px;text-align:left;">
-      <div class="muted" style="font-size:13px;font-weight:700;margin-bottom:8px;">最接近的另外两位</div>
-      <div v-for="(o, i) in [second, third]" :key="o.name" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--border);">
-        <span style="flex:0 0 22px;text-align:center;font-weight:800;color:var(--muted);">#{{ i + 2 }}</span>
-        <div class="mini-avatar" :style="avatarStyle(o)">{{ initial(o.name) }}</div>
-        <div>
-          <div style="font-size:13px;font-weight:700;">{{ o.name }}</div>
+    <div class="result-sec">
+      <div class="sec-title">最接近的另外两位</div>
+      <div v-for="(o, i) in [second, third]" :key="o.name" class="near-row">
+        <span class="near-rank">#{{ i + 2 }}</span>
+        <img v-if="o.photo" class="near-img" :src="o.photo" alt="" @error="o.photo = ''" />
+        <span v-else class="near-avatar" :style="avatarStyle(o)">{{ initial(o.name) }}</span>
+        <div class="near-main">
+          <div class="near-name">{{ o.name }}</div>
           <div class="muted" style="font-size:12px;">{{ o.bio }}</div>
         </div>
       </div>
@@ -229,7 +247,7 @@ const initial = (name) => name.charAt(0)
       <button class="btn ghost small" @click="copyShare">{{ copied ? '已复制 ✓' : '复制文案' }}</button>
     </div>
 
-    <div style="margin:16px 0 4px;font-size:13px;">这个结果准吗？</div>
+    <div style="margin:18px 0 4px;font-size:13px;">这个结果准吗？</div>
     <div style="display:flex;gap:10px;justify-content:center;">
       <button class="tab" :class="{ active: feedback === 'ok' }" @click="feedback = 'ok'">👍 准</button>
       <button class="tab" :class="{ active: feedback === 'mid' }" @click="feedback = 'mid'">🤔 一般</button>
@@ -255,13 +273,35 @@ const initial = (name) => name.charAt(0)
 .likert { display: flex; flex-direction: column; gap: 8px; }
 .likert-btn { border: 1px solid var(--border); background: var(--card); border-radius: 12px; padding: 12px; font-family: inherit; font-size: 14px; cursor: pointer; color: var(--text); }
 .likert-btn.active { border-color: var(--primary); background: var(--primary-soft); }
+.result-panel { padding: 18px 16px; }
+.result-hero { display: flex; align-items: center; gap: 14px; }
 .portrait {
-  width: 96px; height: 96px; border-radius: 50%; margin: 14px auto 0;
+  width: 86px; height: 86px; border-radius: 50%; flex: 0 0 auto;
   display: flex; align-items: center; justify-content: center; overflow: hidden;
   border: 3px solid #fff; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
 }
 .portrait img { width: 100%; height: 100%; object-fit: cover; }
-.portrait-initial { font-size: 40px; font-weight: 800; color: #fff; }
-.mini-avatar { width: 34px; height: 34px; border-radius: 50%; color: #fff; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
-.share-box { margin-top: 14px; padding: 12px; border: 1px dashed var(--primary); border-radius: 12px; background: var(--primary-soft); text-align: left; }
+.portrait-initial { font-size: 34px; font-weight: 800; color: #fff; }
+.result-hero-txt { flex: 1; min-width: 0; }
+.result-name { font-size: 22px; font-weight: 800; line-height: 1.2; }
+.result-bio { font-size: 14px; font-weight: 700; color: var(--primary-dark); margin-top: 2px; }
+.result-sec { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border); }
+.sec-title { font-size: 14px; font-weight: 800; margin-bottom: 10px; }
+.sec-note { font-size: 11px; font-weight: 500; color: var(--text-sub); margin-left: 6px; }
+.dim-block { margin-bottom: 9px; }
+.dim-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; margin-bottom: 3px; }
+.dim-name { color: var(--text); }
+.dim-nums { color: var(--text-sub); }
+.dim-nums b { color: var(--primary); }
+.dim-track { position: relative; height: 14px; border-radius: 7px; background: #eef3fb; overflow: hidden; }
+.dim-you { position: absolute; left: 0; top: 0; height: 100%; border-radius: 7px 0 0 7px; background: linear-gradient(90deg, #1b66c9, #3b82f6); }
+.dim-proto { position: absolute; left: 0; top: 0; height: 4px; margin-top: 5px; border-radius: 2px; background: #f59e0b; }
+.near-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--border); }
+.near-row:last-child { border-bottom: none; }
+.near-rank { flex: 0 0 22px; font-weight: 800; color: var(--muted); font-size: 13px; }
+.near-img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; flex: none; }
+.near-avatar { width: 38px; height: 38px; border-radius: 50%; color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; flex: none; }
+.near-main { flex: 1; min-width: 0; }
+.near-name { font-size: 13px; font-weight: 700; }
+.share-box { margin-top: 16px; padding: 12px; border: 1px dashed var(--primary); border-radius: 12px; background: var(--primary-soft); }
 </style>

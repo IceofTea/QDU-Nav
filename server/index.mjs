@@ -283,7 +283,13 @@ const MIME = {
 }
 
 function serveStatic(req, res, urlPath) {
-  const file = path.join(DIST, urlPath === '/' ? 'index.html' : urlPath)
+  let p
+  try {
+    p = decodeURIComponent(urlPath)
+  } catch {
+    p = urlPath
+  }
+  const file = path.join(DIST, p === '/' ? 'index.html' : p)
   if (!file.startsWith(DIST)) {
     res.writeHead(403)
     return res.end()
