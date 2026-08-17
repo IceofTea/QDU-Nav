@@ -15,7 +15,7 @@ export const SITE = {
   /** 校训（欢迎页标语） */
   motto: '明德 · 博学 · 守正 · 出奇',
   /** 当前版本号（页脚 / 关于面板 / README 同步标注，格式 x.y.z） */
-  version: '1.2.9',
+  version: '1.2.10',
   /** 网站开发者署名 */
   developer: '炎黄YH',
 
@@ -48,8 +48,8 @@ export const SITE = {
 
   /** 首页 Wiki 社区卡片 */
   wiki: {
-    title: '青大 Wiki · 学习资料社区',
-    desc: '课程笔记、考研复试经验、校园攻略文档，与本站配套的维基仓库，欢迎贡献',
+    title: '青大 Wiki · 校园生活手册',
+    desc: '在校生经验与校园信息整理（生活 / 校园 / 学习经验分享），与本站互补的维基仓库，欢迎补充贡献',
     links: {
       site: 'https://iceoftea.github.io/QDU-Wiki/',
       github: 'https://github.com/IceofTea/QDU-Wiki',

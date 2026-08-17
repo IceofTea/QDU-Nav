@@ -142,17 +142,18 @@ body {
   height: 42px;
   padding: 0 13px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #0f2f5e, #1b66c9);
+  background: var(--card, #fff);
+  border: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(27, 102, 201, 0.3);
+  box-shadow: 0 4px 12px rgba(27, 102, 201, 0.12);
 }
 .brand-logo span {
   font-size: 15px;
   font-weight: 800;
   letter-spacing: 0.5px;
-  background: linear-gradient(120deg, #ffffff 0%, #a8d4ff 55%, #4ea6f0 100%);
+  background: linear-gradient(90deg, #f43f5e 0%, #f59e0b 20%, #10b981 40%, #06b6d4 60%, #3b82f6 80%, #8b5cf6 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

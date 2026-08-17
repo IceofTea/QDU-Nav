@@ -560,10 +560,26 @@ onMounted(loadCourses)
 .course-detail-row span { flex: 0 0 52px; color: var(--text-sub); }
 .course-detail-row b { flex: 1; color: var(--text); font-weight: 600; word-break: break-all; }
 @media (max-width: 640px) {
-  .week-grid { --row: 40px; --tc: 30px; }
+  /* 手机端：隐藏节次时间列，7 天均分一屏，无需左右拖拽；每卡只显示课程名，点卡片看详情 */
+  .week-grid { --row: 30px; --tc: 0px; }
+  .wg-head-row { grid-template-columns: repeat(7, 1fr); }
+  .wg-time-col, .wg-time { display: none; }
   .wg-head { font-size: 10px; padding: 3px 0; }
-  .wg-cell { font-size: 9px; padding: 2px 3px; border-left-width: 2px; border-radius: 4px; }
-  .wg-sub { font-size: 8px; }
-  .wg-time { font-size: 10px; }
+  .wg-cell {
+    font-size: 9px;
+    padding: 2px 3px;
+    border-left-width: 2px;
+    border-radius: 4px;
+    line-height: 1.25;
+  }
+  .wg-cell b {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: normal;
+    word-break: break-all;
+  }
+  .wg-sub, .wg-sub.muted { display: none; }
 }
 </style>

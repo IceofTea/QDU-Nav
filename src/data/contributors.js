@@ -17,7 +17,7 @@ export const contributors = [
     name: 'Huanuyn',
     login: 'Huanuyn1',
     url: 'https://github.com/Huanuyn1',
-    role: '社区贡献 · 修复课程接口解析路径与美食轮盘指针',
+    role: '社区贡献 · 修复课程接口与美食轮盘',
     weight: 1.2,
     emoji: '🚀'
   },

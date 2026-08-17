@@ -2,8 +2,12 @@
 /** 生活费计数器：随手记账 + 微信/支付宝账单 CSV 导入 + 奖学金快捷勾选
  *  数据仅存本机浏览器 localStorage（qdu_budget_records），不上传任何数据 */
 import { ref, computed, watch } from 'vue'
+import BudgetSim from './BudgetSim.vue'
 
 const emit = defineEmits(['back'])
+
+/** 子视图：main 计数器 / sim 生活费模拟 */
+const subView = ref('main')
 
 const CATS = {
   expense: [
@@ -132,8 +136,52 @@ function add() {
   note.value = ''
 }
 
+/** 编辑 / 纠错：载入一条记录到表单，保存后原地更新 */
+const editing = ref(null)
+function editStart(r) {
+  editing.value = r.id
+  mode.value = r.type
+  cat.value = r.cat
+  amount.value = String(r.amount)
+  note.value = r.note
+  date.value = r.date
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+function save() {
+  const amt = Number(amount.value)
+  if (!amt || amt <= 0) return
+  if (editing.value) {
+    const rec = records.value.find((r) => r.id === editing.value)
+    if (rec) {
+      rec.type = mode.value
+      rec.cat = cat.value
+      rec.amount = Math.round(amt * 100) / 100
+      rec.note = note.value.trim()
+      rec.date = date.value || today()
+    }
+    editing.value = null
+  } else {
+    records.value.unshift({
+      id: Date.now() + Math.random(),
+      type: mode.value,
+      cat: cat.value,
+      amount: Math.round(amt * 100) / 100,
+      note: note.value.trim(),
+      date: date.value || today()
+    })
+  }
+  amount.value = ''
+  note.value = ''
+}
+function cancelEdit() {
+  editing.value = null
+  amount.value = ''
+  note.value = ''
+}
+
 function remove(id) {
   records.value = records.value.filter((r) => r.id !== id)
+  if (editing.value === id) editing.value = null
 }
 
 function sum(list, type) {
@@ -226,6 +274,15 @@ const income = computed(() => sum(monthRecords.value, 'income'))
 const expense = computed(() => sum(monthRecords.value, 'expense'))
 const balance = computed(() => Math.round((income.value - expense.value) * 100) / 100)
 
+/** 生活费（固定收入）视角：本月生活费到账额 / 生活费结余 */
+const allowance = computed(() =>
+  Math.round(monthRecords.value.filter((r) => r.type === 'income' && r.cat === 'allowance').reduce((s, r) => s + r.amount, 0) * 100) / 100
+)
+const budgetBalance = computed(() => Math.round((allowance.value - expense.value) * 100) / 100)
+const allowanceUsed = computed(() =>
+  allowance.value > 0 ? Math.round((expense.value / allowance.value) * 100) : 0
+)
+
 const prevMonthKey = computed(() => monthOffset(month.value, -1))
 const prevExpense = computed(() =>
   Math.round(records.value.filter((r) => r.type === 'expense' && r.date.startsWith(prevMonthKey.value)).reduce((s, r) => s + r.amount, 0) * 100) / 100
@@ -265,6 +322,14 @@ const sorted = computed(() =>
 
 function balanceMsg() {
   if (!monthRecords.value.length) return '本月还没记一笔，先「记一笔」开始吧'
+  if (allowance.value > 0) {
+    if (expense.value === 0) return `生活费已到账 ¥${fmt(allowance.value)}，本月刚开始，稳住 ✊`
+    if (budgetBalance.value < 0) return `生活费已花超 ¥${fmt(Math.abs(budgetBalance.value))} 元，别让下月生活费提前消失 😱`
+    const used = allowanceUsed.value
+    if (used > 90) return `生活费已用 ${used}%（剩 ¥${fmt(budgetBalance.value)}），食堂走起 🍚`
+    if (used > 65) return `生活费已用 ${used}%（剩 ¥${fmt(budgetBalance.value)}），下半月悠着点 ⚠️`
+    return `生活费已用 ${used}%（剩 ¥${fmt(budgetBalance.value)}），节奏不错 🎉`
+  }
   if (balance.value < 0) {
     const over = Math.abs(balance.value)
     if (over > 500) return '已超支 ' + fmt(over) + ' 元！得认真记账了，别让下月生活费提前消失 😱'
@@ -291,10 +356,14 @@ const monthLabel = computed(() => {
 </script>
 
 <template>
+  <BudgetSim v-if="subView === 'sim'" @back="subView = 'main'" />
+
+  <template v-else>
   <div class="view-top">
     <button class="back-btn" @click="emit('back')">← 返回首页</button>
     <div class="view-title">生活费计数器</div>
     <div class="view-sub">随手记一笔，月底少流一滴泪 · 奖学金、兼职收入也能入账</div>
+    <button class="btn ghost small" style="margin-top:10px;" @click="subView = 'sim'">🧮 生活费模拟 · 青岛一个月多少生活费合适 ›</button>
   </div>
 
   <div class="panel">
@@ -307,6 +376,10 @@ const monthLabel = computed(() => {
       <div class="balance-label">本月结余</div>
       <div class="balance-num"><span class="balance-sym">¥</span>{{ fmt(Math.abs(balance)) }}</div>
       <div class="balance-hint">{{ balanceMsg() }}</div>
+      <div v-if="allowance" class="balance-live">
+        生活费 ¥{{ fmt(allowance) }} · 已用 {{ allowanceUsed }}%（剩 ¥{{ fmt(Math.max(0, budgetBalance)) }}）
+        <div class="balance-live-bar"><i :style="{ width: Math.min(100, allowanceUsed) + '%' }"></i></div>
+      </div>
       <div v-if="prevDiff" class="balance-cmp" :class="prevDiff > 0 ? 'up' : 'down'">
         {{ prevDiff > 0 ? '▲' : '▼' }} 支出较上月 {{ prevDiff > 0 ? '+' : '' }}{{ fmt(prevDiff) }} 元
       </div>
@@ -319,7 +392,8 @@ const monthLabel = computed(() => {
   </div>
 
   <div class="panel">
-    <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>记一笔</div>
+    <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ editing ? '✏️ 修改记录' : '记一笔' }}</div>
+    <button v-if="editing" class="btn ghost small" style="margin-bottom:10px;" @click="cancelEdit">← 取消修改</button>
     <div class="seg">
       <button class="seg-btn" :class="{ active: mode === 'expense' }" @click="mode = 'expense'; cat = 'food'">💸 支出</button>
       <button class="seg-btn" :class="{ active: mode === 'income' }" @click="mode = 'income'; cat = 'allowance'">💵 收入</button>
@@ -353,9 +427,10 @@ const monthLabel = computed(() => {
       <input v-model="date" class="input date-input" type="date" />
     </div>
     <input v-model="note" class="input" style="margin-top:10px;" placeholder="备注（可选），如：食堂麻辣香锅" @keyup.enter="add" />
-    <button class="btn accent big" style="margin-top:12px;width:100%;" :disabled="!(Number(amount) > 0)" @click="add">
-      ＋ 记入{{ mode === 'expense' ? '支出' : '收入' }}
+    <button class="btn accent big" style="margin-top:12px;width:100%;" :disabled="!(Number(amount) > 0)" @click="save">
+      {{ editing ? '✓ 保存修改' : '＋ 记入' + (mode === 'expense' ? '支出' : '收入') }}
     </button>
+    <button v-if="editing" class="btn ghost big" style="margin-top:8px;width:100%;" @click="cancelEdit">取消</button>
   </div>
 
   <div class="panel">
@@ -424,11 +499,13 @@ const monthLabel = computed(() => {
           <span class="muted" style="font-size:11px;">{{ r.date }}</span>
         </span>
         <span class="rec-amt" :class="r.type === 'income' ? 'in' : 'out'">{{ r.type === 'income' ? '+' : '-' }}¥{{ fmt(r.amount) }}</span>
+        <button class="rec-del" @click="editStart(r)" title="编辑">✎</button>
         <button class="rec-del" @click="remove(r.id)" title="删除">✕</button>
       </div>
     </div>
     <p class="muted" style="font-size:11px;margin-top:10px;">记录保存在本机浏览器（localStorage），不会上传任何数据。</p>
   </div>
+  </template>
 </template>
 
 <style scoped>
@@ -445,6 +522,9 @@ const monthLabel = computed(() => {
 .balance-num { font-size: 38px; font-weight: 800; line-height: 1.15; margin: 4px 0; }
 .balance-sym { font-size: 20px; font-weight: 700; opacity: 0.9; }
 .balance-hint { font-size: 12px; opacity: 0.9; margin-bottom: 4px; }
+.balance-live { font-size: 12px; opacity: 0.9; margin-bottom: 6px; }
+.balance-live-bar { height: 6px; border-radius: 4px; background: rgba(255,255,255,0.18); overflow: hidden; margin-top: 5px; max-width: 260px; }
+.balance-live-bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg,#f59e0b,#fbbf24); }
 .balance-cmp { font-size: 11px; opacity: 0.9; margin-bottom: 10px; }
 .balance-cmp.up { color: #ffb3a0; }
 .balance-cmp.down { color: #7ee2c4; }

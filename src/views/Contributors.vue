@@ -82,6 +82,16 @@ function hueOf(i) {
         <b>v1.2.0</b> — 课程表班级分页、数据洞察分布科学化、奖学金金额校准、
         贴吧舆情降级修复与贡献者墙上线。
       </li>
+      <li><b>v1.2.1</b> — 修复部署失败；数据洞察附带列恢复 + KPI 概览与节次分布。</li>
+      <li><b>v1.2.2</b> — 课程表每页 10 条；贴吧舆情图表化（KPI、标签云、趋势交互）。</li>
+      <li><b>v1.2.3</b> — 课程表按学期提速；校园邮箱与邮箱助手；官网分组与新媒体入口。</li>
+      <li><b>v1.2.4</b> — 课程表加载提速根因修复；官方新媒体链接校正；邮箱助手美化。</li>
+      <li><b>v1.2.5</b> — 课程表卡顿彻底修复（计数预计算）；智能分页（折叠 + 跳转）。</li>
+      <li><b>v1.2.6</b> — shallowRef + Worker 后台解析，主线程不再卡。</li>
+      <li><b>v1.2.7</b> — 周课表显示任课教师；列表视图与课程详情弹窗。</li>
+      <li><b>v1.2.8</b> — 班级范围展开；分段授课合并；合班备注。</li>
+      <li><b>v1.2.9</b> — 首页独立访客 / 累计访问统计（自建 Deno 计数服务）。</li>
+      <li><b>v1.2.10</b> — 生活费记录可改可删 + 生活费视角结余；生活费模拟（简单 / 精细版）。</li>
     </ul>
     <p class="muted" style="font-size:12px;margin-top:10px;">
       想加入贡献者墙？给
@@ -105,6 +115,7 @@ function hueOf(i) {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  max-width: 100%;
   padding: 10px 18px;
   border-radius: 999px;
   color: #fff;
@@ -127,10 +138,17 @@ function hueOf(i) {
 }
 .cloud-name {
   font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .cloud-role {
-  font-size: 12px;
-  opacity: 0.9;
+  font-size: 11px;
+  opacity: 0.92;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
 }
 .changelog {
   margin: 0;
