@@ -18,6 +18,8 @@ const picked = ref(null)
 const done = ref(false)
 const best = ref(0)
 const rounds = ref(0)
+const scores = ref([])
+const wrongList = ref([])
 
 function shuffle(arr) {
   const a = [...arr]
@@ -35,6 +37,7 @@ function start() {
   correct.value = 0
   picked.value = null
   done.value = false
+  wrongList.value = []
 }
 
 function choose(optIdx) {
@@ -43,6 +46,8 @@ function choose(optIdx) {
   if (optIdx === cur.value.answer) {
     score.value += 10
     correct.value += 1
+  } else {
+    wrongList.value.push(cur.value)
   }
 }
 
@@ -53,6 +58,14 @@ function next() {
     best.value = Math.max(best.value, score.value)
     localStorage.setItem('qdu_quiz_best', String(best.value))
     localStorage.setItem('qdu_quiz_rounds', String(rounds.value))
+    scores.value.unshift({
+      score: score.value,
+      correct: correct.value,
+      total: QUESTIONS,
+      date: new Date().toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })
+    })
+    scores.value = scores.value.slice(0, 100)
+    localStorage.setItem('qdu_quiz_scores', JSON.stringify(scores.value))
   } else {
     index.value += 1
     picked.value = null
@@ -60,6 +73,9 @@ function next() {
 }
 
 const cur = computed(() => pool.value[index.value])
+
+const leaderboard = computed(() =>
+  [...scores.value].sort((a, b) => b.score - a.score || b.correct - a.correct).slice(0, 10))
 
 const filteredBank = computed(() => {
   const k = bankKw.value.trim()
@@ -88,6 +104,10 @@ const grade = computed(() => {
 onMounted(() => {
   best.value = Number(localStorage.getItem('qdu_quiz_best')) || 0
   rounds.value = Number(localStorage.getItem('qdu_quiz_rounds')) || 0
+  try {
+    const s = JSON.parse(localStorage.getItem('qdu_quiz_scores'))
+    scores.value = Array.isArray(s) ? s : []
+  } catch { scores.value = [] }
   start()
 })
 </script>
@@ -163,7 +183,10 @@ onMounted(() => {
         }"
         :disabled="picked !== null"
         @click="choose(oi)"
-      >{{ String.fromCharCode(65 + oi) }}. {{ opt }}</button>
+      >
+        <span class="opt-key" :class="{ ok: picked !== null && oi === cur.answer, no: picked === oi && oi !== cur.answer }">{{ String.fromCharCode(65 + oi) }}</span>
+        <span>{{ opt }}</span>
+      </button>
     </div>
 
     <div v-if="picked !== null" class="result-box" :style="{ background: picked === cur.answer ? '#e8f6ee' : '#fdf0f0' }">
@@ -184,6 +207,35 @@ onMounted(() => {
       <button class="btn" @click="start">再来一轮</button>
       <button class="btn ghost" @click="emit('back')">返回首页</button>
     </div>
+  </div>
+
+  <div v-if="done && wrongList.length" class="panel" style="margin-top:16px;">
+    <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>📝 本轮错题回顾</div>
+    <div v-for="(w, wi) in wrongList" :key="wi" class="bank-item">
+      <div class="bank-q" style="cursor:default;">
+        <span class="bank-no" style="background:#b63a46;">{{ wi + 1 }}</span>
+        <span class="bank-text">{{ w.q }}</span>
+      </div>
+      <div style="display:grid;gap:6px;margin:8px 0 0 32px;">
+        <div v-for="(opt, oi) in w.options" :key="oi" class="bank-opt" :class="{ right: oi === w.answer }">
+          {{ String.fromCharCode(65 + oi) }}. {{ opt }}{{ oi === w.answer ? ' ✓' : '' }}
+        </div>
+      </div>
+      <div class="bank-explain" style="margin-left:32px;">💡 {{ w.explain }}</div>
+    </div>
+  </div>
+
+  <div v-if="done" class="panel" style="margin-top:16px;">
+    <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>🏅 本机排行榜 Top 10</div>
+    <div v-if="leaderboard.length" class="rank-list">
+      <div v-for="(s, i) in leaderboard" :key="i" class="rank-row">
+        <span class="rank-no" :class="{ top: i === 0 }">{{ i + 1 }}</span>
+        <span class="rank-main">{{ s.score }} 分 · 答对 {{ s.correct }}/{{ s.total }}</span>
+        <span class="muted" style="font-size:12px;">{{ s.date }}</span>
+      </div>
+    </div>
+    <div v-else class="muted" style="text-align:center;padding:12px;">完成一轮答题即可上榜</div>
+    <p class="muted" style="font-size:11px;margin-top:10px;">成绩仅保存在本机浏览器（localStorage），供自己挑战刷新。</p>
   </div>
 </template>
 
@@ -247,7 +299,25 @@ onMounted(() => {
   cursor: pointer;
   transition: 0.15s;
   color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
+.opt-key {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.opt-key.ok { background: #0f766e; }
+.opt-key.no { background: #b63a46; }
 .opt:hover:not(:disabled) {
   border-color: var(--primary);
   background: var(--primary-soft);
@@ -266,4 +336,22 @@ onMounted(() => {
 .opt.dim {
   opacity: 0.5;
 }
+.rank-list { display: flex; flex-direction: column; }
+.rank-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.rank-row:last-child { border-bottom: none; }
+.rank-no {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: #eef3fb;
+  color: var(--text-sub);
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.rank-no.top { background: #f59e0b; color: #fff; }
+.rank-main { flex: 1; font-size: 13px; font-weight: 600; }
 </style>

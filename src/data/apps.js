@@ -22,7 +22,8 @@ export const apps = [
   { id: 'quiz', title: '青大知多少', desc: '青大知识问答小游戏，测测你的校史功底', icon: '🎯', color: '#8b5cf6', group: '游戏', link: '#/app/quiz' },
   { id: 'foodWheel', title: '美食轮盘', desc: '食堂美食转盘，随机抽一个开吃', icon: '🎡', color: '#d97706', group: '游戏', link: '#/app/foodWheel' },
   { id: 'buildingMatch', title: '教学楼速配', desc: '翻牌配对教学楼新旧名称，测测你的记性', icon: '🧩', color: '#0f766e', group: '游戏', link: '#/app/buildingMatch' },
-  { id: 'courseStats', title: '数据洞察', desc: '从近7学期5万条排课看教室/教师/课程热度', icon: '📊', color: '#0f766e', group: '学习', link: '#/app/courseStats' }
+  { id: 'courseStats', title: '数据洞察', desc: '从近7学期5万条排课看教室/教师/课程热度', icon: '📊', color: '#0f766e', group: '学习', link: '#/app/courseStats' },
+  { id: 'commentWall', title: '评论区', desc: '本地评论墙 · 昵称/游客 + 敏感词过滤', icon: '💬', color: '#64748b', group: '生活', link: '#/app/commentWall' }
 ]
 
 export const appGroups = ['学习', '新生', '健康', '服务', '生活', '游戏']

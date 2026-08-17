@@ -25,6 +25,7 @@ import Categories from './views/Categories.vue'
 import BuildingMatch from './views/BuildingMatch.vue'
 import CourseStats from './views/CourseStats.vue'
 import Budget from './views/Budget.vue'
+import CommentWall from './views/CommentWall.vue'
 
 /** 应用 id → 视图组件注册表 */
 export const VIEWS = {
@@ -42,7 +43,8 @@ export const VIEWS = {
   categories: Categories,
   buildingMatch: BuildingMatch,
   courseStats: CourseStats,
-  budget: Budget
+  budget: Budget,
+  commentWall: CommentWall
 }
 
 /** 底部快捷导航（首页 + 高频应用） */

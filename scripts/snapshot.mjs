@@ -139,7 +139,12 @@ const mergedRows = []
 for (const t of courseTables) {
   const term = t.semester
   for (const row of t.rows) {
-    mergedRows.push({ c: row.c, t: row.t, cls: row.cls, d: row.d, s: row.s, e: row.e, w: row.w, r: row.r, term })
+    mergedRows.push({
+      c: row.c, t: row.t, cls: row.cls, d: row.d, s: row.s, e: row.e, w: row.w, r: row.r, term,
+      // 附带列：供「数据洞察」等做课程性质 / 校区 / 学院等分布统计
+      col: row.col || '', campus: row.campus || '', kind: row.kind || '',
+      cat: row.cat || '', credit: row.credit || '', weeks: row.weeks || ''
+    })
   }
 }
 const allRooms = new Set(mergedRows.map((r) => r.r && normRoom(r.r)).filter(Boolean)).size

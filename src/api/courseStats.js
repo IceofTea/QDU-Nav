@@ -16,7 +16,8 @@ export const EMPTY_STATS = {
   dayDist: [],
   periodDist: [],
   kindDist: [],
-  campusDist: []
+  campusDist: [],
+  colDist: []
 }
 
 export async function getCourseStats() {
@@ -27,7 +28,8 @@ export async function getCourseStats() {
     clearTimeout(timer)
     if (!res.ok) throw new Error('HTTP ' + res.status)
     const d = await res.json()
-    return d && d.periods ? d : EMPTY_STATS
+    if (!d || !d.periods) return EMPTY_STATS
+    return { ...EMPTY_STATS, ...d, colDist: d.colDist || [] }
   } catch {
     return EMPTY_STATS
   }

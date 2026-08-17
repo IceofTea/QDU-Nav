@@ -1,4 +1,6 @@
 <script setup>
+/** 生活费计数器：随手记账 + 微信/支付宝账单 CSV 导入 + 奖学金快捷勾选
+ *  数据仅存本机浏览器 localStorage（qdu_budget_records），不上传任何数据 */
 import { ref, computed, watch } from 'vue'
 
 const emit = defineEmits(['back'])
@@ -8,10 +10,13 @@ const CATS = {
     { key: 'food', icon: '🍚', label: '伙食费', hint: '食堂 · 外卖 · 小卖部' },
     { key: 'party', icon: '🍻', label: '聚餐费', hint: '团建 · 约饭 · 奶茶局' },
     { key: 'transport', icon: '🚌', label: '交通费', hint: '公交 · 打车 · 共享电车' },
-    { key: 'fruit', icon: '🍎', label: '水果费', hint: '水果 · 酸奶 · 零食' },
+    { key: 'fruit', icon: '🍎', label: '水果零食', hint: '水果 · 酸奶 · 零食' },
+    { key: 'study', icon: '📚', label: '学习资料', hint: '教材 · 打印 · 报名费' },
+    { key: 'cloth', icon: '👕', label: '衣物鞋帽', hint: '衣服 · 鞋 · 配饰' },
+    { key: 'medical', icon: '💊', label: '医疗保健', hint: '药品 · 挂号 · 体检' },
     { key: 'daily', icon: '🧴', label: '日常用品', hint: '洗发水 · 纸巾 · 洗衣液' },
     { key: 'phone', icon: '📱', label: '电话费', hint: '话费 · 流量 · 校园网' },
-    { key: 'fun', icon: '🎮', label: '充三国杀', hint: '氪金一时爽，月底火葬场' },
+    { key: 'fun', icon: '🎮', label: '娱乐游戏', hint: '游戏 · 电影 · 门票' },
     { key: 'trouble', icon: '💥', label: '闯祸费', hint: '赔了舍友的碗 / 打碎东西' },
     { key: 'other', icon: '📦', label: '其它支出', hint: '说不清的一笔' }
   ],
@@ -19,15 +24,44 @@ const CATS = {
     { key: 'allowance', icon: '💰', label: '生活费', hint: '爸妈打款' },
     { key: 'scholarship', icon: '🏅', label: '奖学金', hint: '知识就是金钱' },
     { key: 'parttime', icon: '💼', label: '兼职', hint: '搬砖收入' },
-    { key: 'prize', icon: '🎁', label: '红包/奖金', hint: '意外之财' }
+    { key: 'prize', icon: '🎁', label: '红包/奖金', hint: '意外之财' },
+    { key: 'resale', icon: '🏷️', label: '闲置转卖', hint: '断舍离变现' },
+    { key: 'other', icon: '📥', label: '其它收入', hint: '天降横财' }
   ]
 }
+
+/** 青大常见奖学金 / 助学金预设（仅为快捷勾选参考，实际以学校通知为准） */
+const SCHOLARS = [
+  { name: '国家奖学金', amount: 8000 },
+  { name: '国家励志奖学金', amount: 5000 },
+  { name: '省政府奖学金', amount: 6000 },
+  { name: '校级一等奖学金', amount: 1500 },
+  { name: '校级二等奖学金', amount: 1000 },
+  { name: '校级三等奖学金', amount: 500 },
+  { name: '国家助学金（一档）', amount: 4400 },
+  { name: '国家助学金（二档）', amount: 3300 }
+]
+
+/** 导入账单时按商品名关键词猜测类别 */
+const HINT_CATS = [
+  { key: 'food', words: ['食堂', '餐', '饭', '外卖', '奶茶', '咖啡', '果', '零食', '面', '饺', '烧烤', '火锅', '汉堡', '小吃', '买菜', '菜场'] },
+  { key: 'party', words: ['聚餐', '团建', '约饭'] },
+  { key: 'transport', words: ['公交', '地铁', '打车', '滴滴', '高铁', '火车', '共享', '加油', '停车', '飞机'] },
+  { key: 'study', words: ['书', '教材', '打印', '文具', '资料', '报名', '考研', '考证'] },
+  { key: 'cloth', words: ['衣', '服', '鞋', '裤', '帽', '穿搭'] },
+  { key: 'medical', words: ['药', '医院', '挂号', '体检', '口罩'] },
+  { key: 'daily', words: ['洗发', '纸巾', '洗衣', '牙膏', '毛巾', '日用'] },
+  { key: 'phone', words: ['话费', '流量', '移动', '联通', '电信', '校园网', '宽带'] },
+  { key: 'fun', words: ['游戏', 'steam', '电影', 'ktv', '演出', '门票', '会员', '视频'] }
+]
 
 const REF = [
   { key: 'food', label: '伙食费', lo: 800, hi: 1500 },
   { key: 'party', label: '聚餐费', lo: 200, hi: 600 },
   { key: 'transport', label: '交通费', lo: 60, hi: 250 },
   { key: 'fruit', label: '水果零食', lo: 80, hi: 300 },
+  { key: 'study', label: '学习资料', lo: 20, hi: 150 },
+  { key: 'cloth', label: '衣物鞋帽', lo: 0, hi: 300 },
   { key: 'daily', label: '日常用品', lo: 50, hi: 200 },
   { key: 'phone', label: '电话费', lo: 50, hi: 150 },
   { key: 'fun', label: '娱乐游戏', lo: 0, hi: 300 },
@@ -68,6 +102,7 @@ const note = ref('')
 const date = ref(today())
 const month = ref(curMonth())
 const showRef = ref(false)
+const importMsg = ref('')
 
 const cats = computed(() => CATS[mode.value])
 const catInfo = (type, key) => (CATS[type] || []).find((c) => c.key === key)
@@ -99,10 +134,97 @@ function sum(list, type) {
   return Math.round(list.filter((r) => r.type === type).reduce((s, r) => s + r.amount, 0) * 100) / 100
 }
 
+/** 选中奖学金预设：自动带出金额与备注 */
+function pickScholar(s) {
+  if (Number(amount.value) && Number(amount.value) !== s.amount && !window.confirm(`当前金额为 ¥${fmt(Number(amount.value))}，要替换为 ¥${fmt(s.amount)} 吗？`)) return
+  amount.value = String(s.amount)
+  note.value = s.name
+}
+
+function guessCat(name) {
+  const n = (name || '').toLowerCase()
+  for (const h of HINT_CATS) {
+    if (h.words.some((w) => n.includes(w))) return h.key
+  }
+  return 'other'
+}
+
+function csvImport(file) {
+  importMsg.value = ''
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = () => {
+    const text = String(reader.result || '')
+    const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/)
+    let head = -1
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes('收/支')) { head = i; break }
+    }
+    if (head < 0) {
+      importMsg.value = '未识别到账单表头（需包含「收/支」「金额」列），请确认是微信/支付宝导出的账单 CSV。'
+      return
+    }
+    const cols = lines[head].split(',')
+    const idx = (name) => {
+      const exact = cols.findIndex((c) => c.trim() === name)
+      if (exact >= 0) return exact
+      return cols.findIndex((c) => c.includes(name))
+    }
+    const iTime = idx('交易时间') >= 0 ? idx('交易时间') : idx('交易创建时间')
+    const iKind = idx('收/支')
+    const iAmt = idx('金额')
+    const iName = idx('商品') >= 0 ? idx('商品') : idx('商品名称')
+    const iStatus = idx('当前状态') >= 0 ? idx('当前状态') : idx('交易状态')
+    const iNote = idx('备注')
+    if (iKind < 0 || iAmt < 0) {
+      importMsg.value = '账单缺少「收/支」或「金额」列，无法导入。'
+      return
+    }
+    const added = []
+    for (let i = head + 1; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (!line || !line.includes(',')) continue
+      const cell = line.split(',')
+      const get = (j) => (j >= 0 && j < cell.length ? cell[j].trim() : '')
+      const kind = get(iKind)
+      const status = get(iStatus)
+      if (status && !status.includes('成功') && !status.includes('支付')) continue
+      const amtRaw = get(iAmt).replace(/[^\d.]/g, '')
+      const amt = Math.round(Number(amtRaw || 0) * 100) / 100
+      if (!amt || amt <= 0 || (kind !== '支出' && kind !== '收入')) continue
+      const name = get(iName)
+      const noteText = get(iNote)
+      const dateText = (get(iTime) || '').slice(0, 10)
+      added.push({
+        id: Date.now() + Math.random() + added.length,
+        type: kind === '支出' ? 'expense' : 'income',
+        cat: guessCat(name),
+        amount: amt,
+        note: noteText || name,
+        date: dateText || today()
+      })
+    }
+    if (!added.length) {
+      importMsg.value = '未找到可导入的收支记录，请确认账单格式。'
+      return
+    }
+    records.value = added.concat(records.value)
+    importMsg.value = `✅ 已导入 ${added.length} 笔记录（金额合计 ¥${fmt(sum(added, 'expense'))} 支出 / ¥${fmt(sum(added, 'income'))} 收入）。支出已按商品名自动归类，可在明细中修改。`
+  }
+  reader.onerror = () => { importMsg.value = '文件读取失败。' }
+  reader.readAsText(file, 'utf-8')
+}
+
 const monthRecords = computed(() => records.value.filter((r) => r.date.startsWith(month.value)))
 const income = computed(() => sum(monthRecords.value, 'income'))
 const expense = computed(() => sum(monthRecords.value, 'expense'))
 const balance = computed(() => Math.round((income.value - expense.value) * 100) / 100)
+
+const prevMonthKey = computed(() => monthOffset(month.value, -1))
+const prevExpense = computed(() =>
+  Math.round(records.value.filter((r) => r.type === 'expense' && r.date.startsWith(prevMonthKey.value)).reduce((s, r) => s + r.amount, 0) * 100) / 100
+)
+const prevDiff = computed(() => Math.round((expense.value - prevExpense.value) * 100) / 100)
 
 const catStats = computed(() => {
   const map = {}
@@ -137,9 +259,17 @@ const sorted = computed(() =>
 
 function balanceMsg() {
   if (!monthRecords.value.length) return '本月还没记一笔，先「记一笔」开始吧'
-  if (balance.value < 0) return '本月已超支 ' + fmt(Math.abs(balance.value)) + ' 元，建议喊爸妈或白嫖食堂 🥲'
-  if (income.value === 0) return '光花不挣，奖学金该提上日程了 😏'
-  return '收支平衡，继续保持 🎉'
+  if (balance.value < 0) {
+    const over = Math.abs(balance.value)
+    if (over > 500) return '已超支 ' + fmt(over) + ' 元！得认真记账了，别让下月生活费提前消失 😱'
+    if (over > 200) return '本月超支 ' + fmt(over) + ' 元，接下来省着点，靠食堂续命 🥲'
+    return '轻微超支 ' + fmt(over) + ' 元，还有机会抢救 🫠'
+  }
+  if (income.value === 0) return '光花不挣，奖学金 / 兼职该提上日程了 😏'
+  const rate = balance.value / income.value
+  if (rate >= 0.5) return '结余过半，理财小能手就是你 🤑'
+  if (rate >= 0.25) return '收支健康，继续保持 🎉'
+  return '结余不多，月底前记得悠着点 ⚠️'
 }
 
 function clearAll() {
@@ -171,6 +301,9 @@ const monthLabel = computed(() => {
       <div class="balance-label">本月结余</div>
       <div class="balance-num"><span class="balance-sym">¥</span>{{ fmt(Math.abs(balance)) }}</div>
       <div class="balance-hint">{{ balanceMsg() }}</div>
+      <div v-if="prevDiff" class="balance-cmp" :class="prevDiff > 0 ? 'up' : 'down'">
+        {{ prevDiff > 0 ? '▲' : '▼' }} 支出较上月 {{ prevDiff > 0 ? '+' : '' }}{{ fmt(prevDiff) }} 元
+      </div>
       <div class="balance-row">
         <div class="balance-item income"><span>收入</span><b>+¥{{ fmt(income) }}</b></div>
         <div class="balance-item expense"><span>支出</span><b>-¥{{ fmt(expense) }}</b></div>
@@ -198,6 +331,16 @@ const monthLabel = computed(() => {
         <span class="cat-hint">{{ c.hint }}</span>
       </button>
     </div>
+    <template v-if="mode === 'income' && cat === 'scholarship'">
+      <div class="scholar-box">
+        <div class="scholar-label">🏅 奖学金 / 助学金预设（点击自动带出金额）</div>
+        <div class="scholar-grid">
+          <button v-for="s in SCHOLARS" :key="s.name" class="scholar-chip" @click="pickScholar(s)">
+            {{ s.name }} <b>¥{{ s.amount }}</b>
+          </button>
+        </div>
+      </div>
+    </template>
     <div class="input-row" style="margin-top:14px;">
       <input v-model="amount" class="input amount-input" type="number" inputmode="decimal" placeholder="金额，如 12.5" @keyup.enter="add" />
       <input v-model="date" class="input date-input" type="date" />
@@ -206,6 +349,16 @@ const monthLabel = computed(() => {
     <button class="btn accent big" style="margin-top:12px;width:100%;" :disabled="!(Number(amount) > 0)" @click="add">
       ＋ 记入{{ mode === 'expense' ? '支出' : '收入' }}
     </button>
+  </div>
+
+  <div class="panel">
+    <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>📥 导入微信 / 支付宝账单</div>
+    <p class="muted" style="font-size:12px;margin-bottom:10px;">
+      支持微信支付账单明细、支付宝账单明细导出的 CSV：在「微信支付 → 账单下载 → 用于个人对账」或「支付宝 → 我的账单 → 导出」下载后选择文件，金额按「收/支」自动记入，支出按商品名自动归类。
+    </p>
+    <input id="csv-file" type="file" accept=".csv,text/csv" style="display:none;" @change="csvImport($event.target.files[0])" />
+    <label for="csv-file" class="btn ghost" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">📄 选择账单 CSV 文件</label>
+    <div v-if="importMsg" class="import-msg">{{ importMsg }}</div>
   </div>
 
   <div class="panel">
@@ -284,7 +437,10 @@ const monthLabel = computed(() => {
 .balance-label { font-size: 12px; opacity: 0.85; }
 .balance-num { font-size: 38px; font-weight: 800; line-height: 1.15; margin: 4px 0; }
 .balance-sym { font-size: 20px; font-weight: 700; opacity: 0.9; }
-.balance-hint { font-size: 12px; opacity: 0.9; margin-bottom: 12px; }
+.balance-hint { font-size: 12px; opacity: 0.9; margin-bottom: 4px; }
+.balance-cmp { font-size: 11px; opacity: 0.9; margin-bottom: 10px; }
+.balance-cmp.up { color: #ffb3a0; }
+.balance-cmp.down { color: #7ee2c4; }
 .balance-row { display: flex; gap: 16px; flex-wrap: wrap; }
 .balance-item { font-size: 12px; display: flex; flex-direction: column; gap: 2px; }
 .balance-item b { font-size: 15px; }
@@ -321,6 +477,32 @@ const monthLabel = computed(() => {
 .amount-input { font-size: 18px; font-weight: 700; flex: 1; min-width: 120px; }
 .date-input { width: 150px; }
 .btn.big { padding: 12px; font-size: 15px; }
+.scholar-box { margin-top: 12px; padding: 12px; background: var(--primary-soft); border: 1px dashed var(--primary); border-radius: 12px; }
+.scholar-label { font-size: 12px; font-weight: 700; color: var(--primary-dark); margin-bottom: 8px; }
+.scholar-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.scholar-chip {
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 10px;
+  padding: 7px 9px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+.scholar-chip b { color: var(--primary); }
+.import-msg {
+  margin-top: 10px;
+  font-size: 12px;
+  padding: 10px;
+  background: #eefaf3;
+  border: 1px solid #bfe6cf;
+  border-radius: 10px;
+  color: #0f5c3d;
+}
 .ref-toggle {
   width: 100%;
   display: flex;
