@@ -10,8 +10,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DIST = path.join(__dirname, '..', 'dist')
 const PORT = Number(process.env.PORT) || 8787
 const execFileP = promisify(execFile)
-const PY = process.env.PYTHON || 'python'
-const PARSE_PY = process.env.PARSE_PY || path.join(os.tmpdir(), 'qdu_parse_kcb.py')
+const PY = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3')
+const PARSE_PY = process.env.PARSE_PY || path.join(__dirname, 'parse_kcb.py')
 
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36'

@@ -68,7 +68,10 @@ function spin() {
   }
 
   const extra = 360 * (4 + Math.floor(Math.random() * 4))
-  rotation.value = rotation.value + extra + (360 - target * anglePer.value - anglePer.value / 2)
+  // 指针最终停靠角必须等于目标扇区中心：把当前角度归一化后补足差值，
+  // 而不是把绝对目标角直接累加（否则第二次起指针与结果对不上）
+  const offset = 360 - target * anglePer.value - anglePer.value / 2
+  rotation.value += extra + (((offset - rotation.value) % 360) + 360) % 360
 
   setTimeout(() => {
     spinning.value = false
