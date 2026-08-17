@@ -1,90 +1,190 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { foods } from '../data/foods'
+import { foods, halls } from '../data/foods'
 import CountUp from '../components/CountUp.vue'
 
 const emit = defineEmits(['back'])
 
-const SEG = foods.slice(0, 8)
-const anglePer = 360 / SEG.length
+const HUNGRY = { name: '饿着😭', campus: '', zone: '', hall: '' }
+
+const TIERS = [
+  { key: 'free', label: '免费', cost: 0, hungry: 0.55, desc: '大概率饿着' },
+  { key: 'luck', label: '幸运', cost: 2, hungry: 0.3, desc: '小概率饿着' },
+  { key: 'lux', label: '豪华', cost: 5, hungry: 0.15, desc: '基本不饿着' },
+  { key: 'top', label: '至尊', cost: 10, hungry: 0.05, desc: '稳稳吃到' }
+]
+
 const colors = ['#1b66c9', '#e76f51', '#0f766e', '#d97706', '#7c3aed', '#b63a46', '#0284c7', '#f43f5e']
 
+const hallSegs = [...halls, { name: HUNGRY.name }]
+
+const balance = ref(0)
+const tier = ref('free')
+const stage = ref('hall')
 const rotation = ref(0)
 const spinning = ref(false)
 const result = ref(null)
+const currentHall = ref(null)
 const spins = ref(0)
 const history = ref([])
 
-const gradient = computed(() => {
-  return `conic-gradient(${SEG.map((f, i) => `${colors[i]} 0 ${(i + 1) * anglePer}deg`).join(', ')})`
+const currentSegs = computed(() => {
+  if (stage.value === 'hall') return hallSegs
+  const hall = currentHall.value
+  if (!hall) return []
+  let list = foods.filter((f) => f.hall === hall.name).map((f) => f.name).slice(0, 12)
+  while (list.length < 6) list = list.concat(list.length ? list.slice(0, 6 - list.length) : ['大众窗口'])
+  return list.map((n) => ({ name: n }))
 })
+
+const anglePer = computed(() => 360 / currentSegs.value.length)
+const gradient = computed(() =>
+  currentSegs.value.map((s, i) => `${colors[i % colors.length]} ${i * anglePer.value}deg ${(i + 1) * anglePer.value}deg`).join(', ')
+)
+
+const tierInfo = computed(() => TIERS.find((t) => t.key === tier.value))
+const canUseTier = (t) => balance.value >= t.cost || t.cost === 0
+
+function tierHungry(roll) {
+  return Math.random() < roll.hungry
+}
 
 function spin() {
   if (spinning.value) return
+  const info = tierInfo.value
+  if (info.cost > balance.value) return
+  if (stage.value === 'hall') balance.value -= info.cost
   spinning.value = true
   result.value = null
-  const target = Math.floor(Math.random() * SEG.length)
+
+  const segs = currentSegs.value
+  const roll = tierHungry(info)
+  let target
+  if (stage.value === 'hall') {
+    if (roll) target = segs.length - 1
+    else target = Math.floor(Math.random() * (segs.length - 1))
+  } else {
+    target = Math.floor(Math.random() * segs.length)
+  }
+
   const extra = 360 * (4 + Math.floor(Math.random() * 4))
-  const finalRot = rotation.value + extra + (360 - target * anglePer - anglePer / 2)
-  rotation.value = finalRot
+  rotation.value = rotation.value + extra + (360 - target * anglePer.value - anglePer.value / 2)
+
   setTimeout(() => {
     spinning.value = false
-    result.value = SEG[target]
-    spins.value += 1
-    history.value.unshift({ ...SEG[target], at: new Date().toLocaleTimeString() })
-    sessionStorage.setItem('qdu_wheel_spins', String(spins.value))
-    localStorage.setItem('qdu_wheel_history', JSON.stringify(history.value.slice(0, 10)))
+    const hit = segs[target]
+    if (stage.value === 'hall') {
+      if (hit.name === HUNGRY.name) {
+        result.value = { ...HUNGRY, hungry: true }
+        spins.value += 1
+        pushHistory(null, HUNGRY.name, tier.value)
+      } else {
+        const hall = halls.find((h) => h.name === hit.name)
+        currentHall.value = hall
+        result.value = { hallObj: hall, name: hall.name, campus: hall.campus, zone: hall.zone }
+        stage.value = 'dish'
+      }
+    } else {
+      const hall = currentHall.value
+      result.value = { hallObj: hall, dish: hit.name, name: hall.name + ' · ' + hit.name, campus: hall.campus, zone: hall.zone }
+      spins.value += 1
+      pushHistory(hall.name, hit.name, tier.value)
+      stage.value = 'hall'
+    }
   }, 3400)
+}
+
+function pushHistory(hall, dish, t) {
+  history.value.unshift({ at: new Date().toLocaleTimeString(), hall: hall || '—', dish, tier: t })
+  history.value = history.value.slice(0, 10)
+  localStorage.setItem('qdu_wheel_history', JSON.stringify(history.value))
+  sessionStorage.setItem('qdu_wheel_spins', String(spins.value))
+}
+
+function addBalance(n) {
+  balance.value += n
+  localStorage.setItem('qdu_wheel_balance', String(balance.value))
+}
+
+function pickTier(k) {
+  const t = TIERS.find((x) => x.key === k)
+  if (canUseTier(t)) tier.value = k
 }
 
 onMounted(() => {
   spins.value = Number(sessionStorage.getItem('qdu_wheel_spins')) || 0
+  balance.value = Number(localStorage.getItem('qdu_wheel_balance')) || 0
   try {
     history.value = JSON.parse(localStorage.getItem('qdu_wheel_history')) || []
   } catch {
     history.value = []
   }
 })
+
+const groupedFoods = computed(() => halls.map((h) => ({ ...h, foods: foods.filter((f) => f.hall === h.name).map((f) => f.name) })))
 </script>
 
 <template>
   <div class="view-top">
     <button class="back-btn" @click="emit('back')">← 返回首页</button>
     <div class="view-title">美食轮盘</div>
-    <div class="view-sub">食堂美食转盘 · 今日已抽 <CountUp :value="spins" /> 次</div>
+    <div class="view-sub">先转餐厅，再转菜式 · 已抽 <CountUp :value="spins" /> 次</div>
   </div>
 
   <div class="panel" style="text-align:center;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <div class="tier-tabs">
+        <button
+          v-for="t in TIERS"
+          :key="t.key"
+          class="tier-btn"
+          :class="{ active: tier === t.key, disabled: !canUseTier(t) }"
+          :title="t.desc"
+          @click="pickTier(t.key)"
+        >
+          {{ t.label }}{{ t.cost ? ' ' + t.cost + '币' : '' }}
+        </button>
+      </div>
+      <div class="balance-box">
+        <b>{{ balance }}</b> 币
+        <button class="btn ghost small" style="margin-left:6px;" @click="addBalance(10)">＋充值 10</button>
+      </div>
+    </div>
+    <div class="muted" style="font-size:12px;text-align:left;margin-top:6px;">
+      {{ tierInfo.label }}档：{{ tierInfo.desc }}（不充钱大概率抽中「饿着😭」哦）
+    </div>
+
     <div class="wheel-wrap">
       <div class="pointer"></div>
-      <div
-        class="wheel"
-        :style="{ background: gradient, transform: `rotate(${rotation}deg)` }"
-      ></div>
+      <div class="wheel" :style="{ background: 'conic-gradient(' + gradient + ')', transform: `rotate(${rotation}deg)` }"></div>
     </div>
 
     <div v-if="result" class="result-box" style="text-align:center;">
-      <div class="muted" style="font-size:13px;">恭喜抽中</div>
-      <div style="font-size:22px;font-weight:800;margin:4px 0;">🍽️ {{ result.name }}</div>
-      <div class="muted" style="font-size:13px;">{{ result.hall }} · {{ result.campus }} {{ result.zone }}</div>
+      <div class="muted" style="font-size:13px;">{{ result.hungry ? '很遗憾，今天要饿着啦' : stage === 'dish' ? '转到这家餐厅，继续转菜式' : '恭喜抽中' }}</div>
+      <div style="font-size:22px;font-weight:800;margin:4px 0;">{{ result.hungry ? '😭 ' + result.name : '🍽️ ' + result.name }}</div>
+      <div v-if="!result.hungry" class="muted" style="font-size:13px;">{{ result.campus }} · {{ result.zone }}</div>
     </div>
-    <div v-else class="muted" style="margin:10px 0;">点击「开始抽奖」，指针停下指向的美食就是今天的答案</div>
+    <div v-else class="muted" style="margin:10px 0;">
+      {{ stage === 'hall' ? '点击「开始抽奖」先转出餐厅' : '转出菜式！' }}
+    </div>
 
-    <button class="btn accent" style="margin-top:8px;" :disabled="spinning" @click="spin">
-      {{ spinning ? '转动中…' : '🎡 开始抽奖' }}
+    <button
+      class="btn accent"
+      style="margin-top:8px;"
+      :disabled="spinning || (stage === 'hall' && !canUseTier(tierInfo))"
+      @click="spin"
+    >
+      {{ spinning ? '转动中…' : stage === 'hall' ? '🎡 开始抽奖 · 转餐厅' : '🍜 继续转 · 转菜式' }}
     </button>
+    <div v-if="stage === 'dish' && result" class="muted" style="font-size:12px;margin-top:6px;">已定餐厅，点击按钮转动菜式转盘</div>
   </div>
 
   <div class="panel" style="margin-top:16px;">
-    <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>轮盘候选</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;">
-      <div
-        v-for="(f, i) in SEG"
-        :key="f.name"
-        style="display:flex;align-items:center;gap:8px;background:#f6f9ff;border-radius:10px;padding:8px 10px;"
-      >
-        <span style="width:12px;height:12px;border-radius:3px;background:var(--wheel-color);" :style="{ background: colors[i] }"></span>
-        <span style="font-size:13px;font-weight:600;">{{ f.name }}</span>
+    <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>菜式大全（{{ foods.length }} 道 · 按餐厅）</div>
+    <div v-for="g in groupedFoods" :key="g.name" style="margin-bottom:12px;">
+      <div style="font-weight:700;font-size:13px;margin-bottom:4px;">{{ g.name }} <span class="muted" style="font-weight:400;">{{ g.campus }} · {{ g.zone }}</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <span v-for="f in g.foods" :key="f" class="food-chip">{{ f }}</span>
       </div>
     </div>
   </div>
@@ -93,12 +193,13 @@ onMounted(() => {
     <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>抽奖记录（最近 {{ history.length }} 次）</div>
     <div v-if="!history.length" class="muted" style="text-align:center;padding:14px;">还没有抽奖记录</div>
     <table v-else class="data">
-      <thead><tr><th>时间</th><th>美食</th><th>食堂</th></tr></thead>
+      <thead><tr><th>时间</th><th>档位</th><th>餐厅</th><th>美食</th></tr></thead>
       <tbody>
         <tr v-for="(h, i) in history" :key="i">
           <td>{{ h.at }}</td>
-          <td><b>{{ h.name }}</b></td>
+          <td>{{ h.tier }}</td>
           <td>{{ h.hall }}</td>
+          <td><b>{{ h.dish }}</b></td>
         </tr>
       </tbody>
     </table>
@@ -110,7 +211,7 @@ onMounted(() => {
   position: relative;
   width: 260px;
   height: 260px;
-  margin: 10px auto 18px;
+  margin: 14px auto 18px;
 }
 .wheel {
   width: 100%;
@@ -132,5 +233,28 @@ onMounted(() => {
   border-top: 20px solid #b63a46;
   z-index: 2;
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
+}
+.tier-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tier-btn {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.tier-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.tier-btn.disabled { opacity: 0.45; cursor: not-allowed; }
+.balance-box { font-size: 13px; }
+.food-chip {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #f6f9ff;
+  border: 1px solid var(--border);
+  color: var(--text);
 }
 </style>

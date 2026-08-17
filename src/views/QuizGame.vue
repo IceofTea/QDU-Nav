@@ -5,6 +5,10 @@ import CountUp from '../components/CountUp.vue'
 
 const emit = defineEmits(['back'])
 
+const mode = ref('play')
+const bankKw = ref('')
+const bankOpen = ref({})
+
 const QUESTIONS = 10
 const pool = ref([])
 const index = ref(0)
@@ -57,6 +61,16 @@ function next() {
 
 const cur = computed(() => pool.value[index.value])
 
+const filteredBank = computed(() => {
+  const k = bankKw.value.trim()
+  if (!k) return quiz
+  return quiz.filter((q) => (q.q + q.explain + q.options.join('')).includes(k))
+})
+
+function toggleBank(q) {
+  bankOpen.value[q.q] = !bankOpen.value[q.q]
+}
+
 const verdict = computed(() => {
   if (picked.value === null) return ''
   return picked.value === cur.value.answer ? '✅ 回答正确' : '❌ 回答错误'
@@ -85,7 +99,45 @@ onMounted(() => {
     <div class="view-sub">校园知识问答 · 已挑战 <CountUp :value="rounds" /> 次 · 历史最高 <CountUp :value="best" /> 分</div>
   </div>
 
-  <div v-if="!done" class="panel">
+  <div class="panel" style="margin-bottom:16px;padding:10px;">
+    <div class="mode-tabs">
+      <button class="mode-btn" :class="{ active: mode === 'play' }" @click="mode = 'play'">🎯 开始答题</button>
+      <button class="mode-btn" :class="{ active: mode === 'bank' }" @click="mode = 'bank'">📚 题库查看（{{ quiz.length }} 题）</button>
+    </div>
+  </div>
+
+  <template v-if="mode === 'bank'">
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="input-row">
+        <input v-model="bankKw" class="input" placeholder="🔍 搜索题目 / 答案关键词" />
+      </div>
+      <div class="muted" style="font-size:12px;margin-top:6px;">共 {{ filteredBank.length }} 题，点击题目展开查看答案与解析</div>
+    </div>
+
+    <div class="panel">
+      <div v-for="(q, qi) in filteredBank" :key="q.q" class="bank-item">
+        <button class="bank-q" @click="toggleBank(q)">
+          <span class="bank-no">{{ qi + 1 }}</span>
+          <span class="bank-text">{{ q.q }}</span>
+          <span class="bank-toggle">{{ bankOpen[q.q] ? '收起 ▴' : '答案 ▾' }}</span>
+        </button>
+        <div v-if="bankOpen[q.q]" class="bank-detail">
+          <div style="display:grid;gap:6px;margin:8px 0;">
+            <div
+              v-for="(opt, oi) in q.options"
+              :key="oi"
+              class="bank-opt"
+              :class="{ right: oi === q.answer }"
+            >{{ String.fromCharCode(65 + oi) }}. {{ opt }}{{ oi === q.answer ? ' ✓' : '' }}</div>
+          </div>
+          <div class="bank-explain">💡 {{ q.explain }}</div>
+        </div>
+      </div>
+      <div v-if="!filteredBank.length" class="muted" style="text-align:center;padding:20px;">没有找到相关题目</div>
+    </div>
+  </template>
+
+  <template v-else-if="!done">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
       <div style="font-weight:800;font-size:15px;">第 {{ index + 1 }} / {{ pool.length }} 题</div>
       <div style="flex:1;height:8px;background:#eef3fa;border-radius:4px;overflow:hidden;">
@@ -121,7 +173,7 @@ onMounted(() => {
         {{ index + 1 >= pool.length ? '查看成绩' : '下一题 →' }}
       </button>
     </div>
-  </div>
+  </template>
 
   <div v-else class="panel" style="text-align:center;padding:34px;">
     <div style="font-size:40px;">🏆</div>
@@ -136,6 +188,55 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.mode-tabs { display: flex; gap: 8px; }
+.mode-btn {
+  flex: 1;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.mode-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.bank-item { border-bottom: 1px dashed var(--border); padding: 6px 0; }
+.bank-item:last-child { border-bottom: none; }
+.bank-q {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  padding: 8px 0;
+}
+.bank-no {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.bank-text { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.5; }
+.bank-toggle { flex-shrink: 0; font-size: 12px; color: var(--text-light); padding-top: 2px; }
+.bank-detail { padding: 4px 0 10px 32px; }
+.bank-opt { font-size: 13px; padding: 5px 10px; border-radius: 8px; background: #f6f9ff; border: 1px solid var(--border); }
+.bank-opt.right { background: #e8f6ee; border-color: #0f766e; color: #0f766e; font-weight: 700; }
+.bank-explain { font-size: 12px; color: var(--text-sub); margin-top: 8px; line-height: 1.6; }
 .opt {
   text-align: left;
   background: #f6f9ff;
