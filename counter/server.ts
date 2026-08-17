@@ -99,6 +99,16 @@ function overview(s: Stats) {
   }
 }
 
+// 一次性初始校准：独立访客 150 / 累计访问 260（保留 byDay 等维度数据），校准后正常累计
+const SEED_KEY = ['stats', 'seed3']
+if (!(await kv.get(SEED_KEY)).value) {
+  const st = await getStats()
+  st.uv = 150
+  st.pv = 260
+  await kv.set(KEY, st)
+  await kv.set(SEED_KEY, true)
+}
+
 Deno.serve(async (req) => {
   const headers = new Headers()
   headers.set('Access-Control-Allow-Origin', req.headers.get('Origin') || '*')
@@ -114,14 +124,28 @@ Deno.serve(async (req) => {
     const hit = u.pathname === '/api/hit'
     const s = await getStats()
     if (hit) {
-      const isNew = u.searchParams.get('isNewUv') !== '0'
       s.pv++
-      if (isNew) s.uv++
       const now = cnNow()
       const dk = dayKey(now)
       const day = s.byDay[dk] ?? { pv: 0, uv: 0 }
       day.pv++
-      if (isNew) day.uv++
+      // 独立访客 / 今日访客：服务端按「IP + UA」指纹去重
+      // （不依赖前端 localStorage —— 数据库重置后老访客也能重新计入，避免 UV 永远为 0）
+      const fwd = req.headers.get('x-forwarded-for') || ''
+      const ip = (fwd.split(',')[0] || req.headers.get('x-real-ip') || '').trim()
+      const hash = (ip + '|' + (req.headers.get('user-agent') || '')).trim()
+      if (hash) {
+        const uvKey = ['v', hash]
+        if ((await kv.get(uvKey)).value == null) {
+          s.uv++
+          await kv.set(uvKey, true)
+        }
+        const dayUvKey = ['vd', dk, hash]
+        if ((await kv.get(dayUvKey)).value == null) {
+          day.uv++
+          await kv.set(dayUvKey, true)
+        }
+      }
       s.byDay[dk] = day
       bump(s.byHour, String(now.getHours()))
       bump(s.byWeekday, String(now.getDay()))

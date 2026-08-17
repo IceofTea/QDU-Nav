@@ -22,6 +22,13 @@ async function load() {
   } catch {
     state = empty()
   }
+  // 一次性初始校准：独立访客 150 / 累计访问 260
+  if (!state.seed3) {
+    state.uv = 150
+    state.pv = 260
+    state.seed3 = true
+    await save()
+  }
 }
 async function save() {
   if (saving) return
@@ -48,6 +55,9 @@ const parseRef = (ref) => {
   if (/tieba|zhihu|weibo|xiaohongshu|douyin|bilibili/i.test(ref)) return '社交平台'
   return '其他外链'
 }
+/* UV 去重：按「IP + UA」指纹（内存 Set，与 Deno 版 KV 键等价） */
+const visitedUv = new Set()
+const visitedDayUv = new Set()
 
 function overview() {
   const todayKey = dayKey(cnNow())
@@ -80,14 +90,20 @@ const server = http.createServer((req, res) => {
   if (u.pathname === '/api/hit' || u.pathname === '/api/stats') {
     const hit = u.pathname === '/api/hit'
     if (hit) {
-      const isNew = u.searchParams.get('isNewUv') !== '0'
       state.pv++
-      if (isNew) state.uv++
       const now = cnNow()
       const dk = dayKey(now)
       const day = state.byDay[dk] || { pv: 0, uv: 0 }
       day.pv++
-      if (isNew) day.uv++
+      // UV 按「IP + UA」指纹去重（不依赖前端 localStorage）
+      const fwd = req.headers['x-forwarded-for'] || ''
+      const ip = (fwd.split(',')[0] || req.headers['x-real-ip'] || '').trim()
+      const hash = (ip + '|' + (req.headers['user-agent'] || '')).trim()
+      if (hash) {
+        if (!visitedUv.has(hash)) { state.uv++; visitedUv.add(hash) }
+        const dkHash = dk + '|' + hash
+        if (!visitedDayUv.has(dkHash)) { day.uv++; visitedDayUv.add(dkHash) }
+      }
       state.byDay[dk] = day
       bump(state.byHour, String(now.getHours()))
       bump(state.byWeekday, String(now.getDay()))
