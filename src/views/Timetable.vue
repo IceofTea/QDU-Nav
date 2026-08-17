@@ -95,7 +95,7 @@ const result = computed(() => {
   return k ? src.filter((x) => x.includes(k)) : src
 })
 
-const resultItems = computed(() => result.value.map((name) => ({ name, count: countOf(name) })))
+const resultItems = computed(() => result.value.map((name) => ({ name, count: counts.value.get(name) || 0 })))
 
 const PAGE_SIZE = 10
 const page = ref(1)
@@ -109,6 +109,34 @@ const shown = computed(() =>
 function toggleExpand() {
   expandAll.value = !expandAll.value
 }
+
+/** 智能页码：页数多时折叠为 首 1 2 3 … 末几页 */
+const pageNos = computed(() => {
+  const total = pageCount.value
+  if (expandAll.value || total <= 7) {
+    return expandAll.value ? [] : Array.from({ length: total }, (_, i) => i + 1)
+  }
+  const cur = page.value
+  const nums = [...new Set([1, 2, total - 1, total, cur - 1, cur, cur + 1])]
+    .filter((p) => p >= 1 && p <= total)
+    .sort((a, b) => a - b)
+  const out = []
+  let prev = 0
+  for (const p of nums) {
+    if (p - prev > 1) out.push('…')
+    out.push(p)
+    prev = p
+  }
+  return out
+})
+const jumpPage = ref('')
+function goPage(n) {
+  const num = Math.floor(Number(n))
+  if (!Number.isFinite(num)) return
+  page.value = Math.max(1, Math.min(pageCount.value, num))
+  jumpPage.value = ''
+}
+
 watch([kw, gradeFilter, profFilter, tab, term], () => {
   page.value = 1
   expandAll.value = false
@@ -138,12 +166,25 @@ async function switchTerm(t) {
   }
 }
 
-function countOf(obj) {
+/** 各班级/教室/教师的一次性计数表（遍历一次 curRows 建 Map，供 resultItems O(1) 查询） */
+const counts = computed(() => {
   const rows = curRows.value
-  if (tab.value === 'class') return rows.filter((r) => clsSplit(r.cls).includes(obj)).length
-  if (tab.value === 'room') return rows.filter((r) => normRoom(r.r) === obj).length
-  return rows.filter((r) => r.t === obj).length
-}
+  const m = new Map()
+  const mode = tab.value
+  if (mode === 'class') {
+    for (const r of rows) {
+      for (const c of clsSplit(r.cls)) m.set(c, (m.get(c) || 0) + 1)
+    }
+  } else if (mode === 'room') {
+    for (const r of rows) {
+      const k = normRoom(r.r)
+      if (k) m.set(k, (m.get(k) || 0) + 1)
+    }
+  } else {
+    for (const r of rows) if (r.t) m.set(r.t, (m.get(r.t) || 0) + 1)
+  }
+  return m
+})
 
 function coursesOf(obj) {
   const rows = curRows.value
@@ -292,15 +333,18 @@ onMounted(loadCourses)
         <div v-if="!resultItems.length" class="muted" style="padding:16px;text-align:center;">没有匹配的{{ sourceName }}，换个关键字或筛选试试</div>
       </div>
       <div v-if="resultItems.length > PAGE_SIZE" class="pager">
-        <button class="tab" :class="{ disabled: page <= 1 || expandAll }" @click="page = Math.max(1, page - 1)">‹ 上一页</button>
-        <button
-          v-for="p in pageCount"
-          :key="p"
-          class="tab"
-          :class="{ active: page === p && !expandAll }"
-          @click="page = p"
-        >{{ p }}</button>
-        <button class="tab" :class="{ disabled: page >= pageCount || expandAll }" @click="page = Math.min(pageCount, page + 1)">下一页 ›</button>
+        <button class="tab" :class="{ disabled: page <= 1 || expandAll }" @click="goPage(1)">«</button>
+        <button class="tab" :class="{ disabled: page <= 1 || expandAll }" @click="goPage(page - 1)">‹ 上一页</button>
+        <template v-for="(p, i) in pageNos" :key="i">
+          <span v-if="p === '…'" class="pager-ellipsis">…</span>
+          <button v-else class="tab" :class="{ active: page === p && !expandAll }" @click="goPage(p)">{{ p }}</button>
+        </template>
+        <button class="tab" :class="{ disabled: page >= pageCount || expandAll }" @click="goPage(page + 1)">下一页 ›</button>
+        <button class="tab" :class="{ disabled: page >= pageCount || expandAll }" @click="goPage(pageCount)">»</button>
+        <span class="pager-jump">
+          <input class="input" v-model="jumpPage" type="number" min="1" :max="pageCount" placeholder="页" :disabled="expandAll" @keyup.enter="goPage(jumpPage)" />
+          <button class="tab" @click="goPage(jumpPage)">跳转</button>
+        </span>
         <button class="tab accent" :class="{ active: expandAll }" @click="toggleExpand">{{ expandAll ? '收起分页' : '展开全部' }}</button>
       </div>
     </div>
@@ -350,6 +394,22 @@ onMounted(loadCourses)
 .pager .tab.disabled {
   opacity: 0.45;
   pointer-events: none;
+}
+.pager-ellipsis {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 0 2px;
+  user-select: none;
+}
+.pager-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pager-jump .input {
+  width: 52px;
+  padding: 5px 8px;
+  text-align: center;
 }
 .week-grid { position: relative; --row: 46px; --tc: 40px; }
 .wg-head-row { display: grid; grid-template-columns: var(--tc,40px) repeat(7, 1fr); }
