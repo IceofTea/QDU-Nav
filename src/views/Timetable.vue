@@ -1,7 +1,7 @@
 <script setup>
 /** 课程表：班级/教室/教师课表查询 + 官方课程总表入口
  *  数据来自本地快照（loadSnap），网关可用时用网关补充元信息 */
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, shallowRef, computed, watch, onMounted } from 'vue'
 import { apiFetch } from '../api/index'
 import { loadSnap } from '../api/localCourse'
 import { loadTimetableMeta, loadTermRows } from '../api/termTimetable'
@@ -14,7 +14,8 @@ const tab = ref('class')
 const kw = ref('')
 const meta = ref(null)
 const snap = ref(null)
-const termRows = ref([])
+/** 当前学期排课（shallowRef：数据只读，避免 Vue 深度代理 5k+ 元素数组拖慢遍历） */
+const termRows = shallowRef([])
 const loading = ref(true)
 const opened = ref(null)
 const term = ref('')
@@ -47,12 +48,8 @@ const semesters = computed(() => {
   return s.length ? s : [semester.value]
 })
 
-const curRows = computed(() => {
-  const rows = termRows.value || []
-  const t = term.value
-  if (!t || t === semester.value) return rows.filter((r) => r.term === semester.value)
-  return rows.filter((r) => r.term === t)
-})
+/** termRows 始终是「当前选中学期」的 rows（onMounted/switchTerm 已按学期载入），直接返回省去重复 filter */
+const curRows = computed(() => termRows.value)
 
 const rooms = computed(() => [...new Set(curRows.value.map((r) => r.r && normRoom(r.r)).filter(Boolean))].sort())
 const teachers = computed(() => [...new Set(curRows.value.map((r) => r.t).filter(Boolean))])

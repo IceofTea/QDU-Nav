@@ -13,6 +13,32 @@ let meta = null
 let metaLoading = null
 const termCache = new Map()
 
+/** 内联 Web Worker：在后台线程 JSON.parse 大文件，避免阻塞主线程（低端机也不卡） */
+const parseWorker = (() => {
+  try {
+    const code =
+      'self.onmessage=(e)=>{try{self.postMessage({ok:true,data:JSON.parse(e.data)})}catch(err){self.postMessage({ok:false,error:String(err)})}}'
+    return new Worker(URL.createObjectURL(new Blob([code], { type: 'application/javascript' })))
+  } catch {
+    return null
+  }
+})()
+
+function parseJSONAsync(text) {
+  return new Promise((resolve) => {
+    if (!parseWorker) {
+      try { resolve(JSON.parse(text)) } catch { resolve({ rows: [] }) }
+      return
+    }
+    const onMsg = (e) => {
+      parseWorker.removeEventListener('message', onMsg)
+      resolve(e.data && e.data.ok ? e.data.data : { rows: [] })
+    }
+    parseWorker.addEventListener('message', onMsg)
+    parseWorker.postMessage(text)
+  })
+}
+
 export async function loadTimetableMeta() {
   if (meta) return meta
   if (metaLoading) return metaLoading
@@ -37,7 +63,9 @@ export async function loadTermRows(file) {
     try {
       const r = await fetch(import.meta.env.BASE_URL + 'data/terms/' + file)
       if (!r.ok) return { rows: [] }
-      return await r.json()
+      const text = await r.text()
+      const d = await parseJSONAsync(text)
+      return d && Array.isArray(d.rows) ? d : { rows: [] }
     } catch {
       return { rows: [] }
     }
