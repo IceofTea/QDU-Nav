@@ -175,13 +175,13 @@ function toggleCampus(name) {
     <section class="section">
       <h3 class="section-title">关于本站</h3>
       <div class="about-card">
-        <VisitStats />
         <div class="about-line"><b>网站开发者：</b>{{ SITE.developer }}</div>
         <div class="about-line"><b>网站版本：</b>v{{ SITE.version }}</div>
         <div class="about-line"><b>数据来源：</b>{{ SITE.aboutSource }}</div>
         <div class="about-line"><b>抓取方式：</b>{{ SITE.aboutCrawl }}</div>
         <div class="about-line"><b>用途与版权：</b>{{ SITE.aboutUsage }}</div>
         <button class="btn ghost small" style="margin-top:10px;" @click="emit('open', 'contributors')">🏆 查看贡献者墙 ›</button>
+        <VisitStats />
       </div>
     </section>
   </div>

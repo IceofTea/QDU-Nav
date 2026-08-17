@@ -1,23 +1,15 @@
 <script setup>
-/** 首页访问统计卡片：Vercount（免费、无登录）站点级独立访客 / 累计访问
- *  会话内缓存先行回填避免闪烁；直连其 API 拉取，节流防连发；不可用时优雅降级。 */
+/** 首页访问统计卡片：独立访客 UV / 累计访问 PV
+ *  数据来自自建计数服务（counter/server.mjs，独立于 QDU-Wiki，详见部署说明）。
+ *  会话内缓存先行回填避免闪烁；服务不可用时降级显示「—」。 */
 import { ref, computed, onMounted } from 'vue'
+import { SITE } from '../config/site'
 
 const STORAGE_KEY = 'qdu-nav-visit-v1'
-const API_URL = 'https://events.vercount.one/api/v2/log'
-const UV_PREFIX = 'vercount_uv_'
-const REFRESH_MS = 5000
+const api = (SITE.counter && SITE.counter.api) || ''
 
 const uv = ref(null)
 const pv = ref(null)
-const failed = ref(false)
-let lastRefresh = 0
-
-const hostKey = () => (location.host || 'unknown-host').replace(/[^a-zA-Z0-9_-]/g, '_')
-const hasUvCookie = () => document.cookie.split('; ').includes(UV_PREFIX + hostKey() + '=1')
-const setUvCookie = () => {
-  document.cookie = UV_PREFIX + hostKey() + '=1; path=/; max-age=31536000; samesite=lax'
-}
 
 const fmt = (n) => (Number(n) || 0).toLocaleString('en-US')
 const uvText = computed(() => (uv.value === null ? '—' : fmt(uv.value)))
@@ -38,47 +30,26 @@ function restore() {
   }
 }
 
-async function fetchVisit() {
-  const url = location.href
-  if (!url || !url.startsWith('http')) return null
-  const isNewUv = !hasUvCookie()
-  if (isNewUv) setUvCookie()
+async function refresh() {
+  restore()
+  if (!api) return
   try {
     const ctrl = new AbortController()
     const timer = setTimeout(() => ctrl.abort(), 8000)
-    const r = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url, isNewUv }),
-      signal: ctrl.signal
-    })
+    const r = await fetch(api + '/api/hit', { signal: ctrl.signal })
     clearTimeout(timer)
-    if (!r.ok) return null
-    const res = await r.json()
-    const data = (res && res.data) || res
-    if (!data || data.site_pv === undefined) return null
-    return { pv: String(data.site_pv), uv: String(data.site_uv) }
+    if (!r.ok) return
+    const d = await r.json()
+    if (!d || d.uv === undefined || d.pv === undefined) return
+    uv.value = d.uv
+    pv.value = d.pv
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(d))
+    } catch {
+      /* noop */
+    }
   } catch {
-    return null
-  }
-}
-
-async function refresh() {
-  restore()
-  const now = Date.now()
-  if (now - lastRefresh < REFRESH_MS) return
-  lastRefresh = now
-  const d = await fetchVisit()
-  if (!d) {
-    failed.value = true
-    return
-  }
-  uv.value = d.uv
-  pv.value = d.pv
-  try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(d))
-  } catch {
-    /* noop */
+    /* 服务不可用：保留「—」占位 */
   }
 }
 
@@ -86,7 +57,7 @@ onMounted(refresh)
 </script>
 
 <template>
-  <div v-if="uv !== null || pv !== null || !failed" class="visit-stats">
+  <div class="visit-stats">
     <div class="vs-item">
       <span class="vs-icon">👀</span>
       <span class="vs-num">{{ uvText }}</span>
@@ -98,7 +69,7 @@ onMounted(refresh)
       <span class="vs-num">{{ pvText }}</span>
       <span class="vs-label">累计访问</span>
     </div>
-    <span class="vs-note">本站累计 · 由 Vercount 统计</span>
+    <span class="vs-note">本站累计 · 自建独立计数</span>
   </div>
 </template>
 
