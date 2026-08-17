@@ -58,9 +58,9 @@ export const SITE = {
     }
   },
 
-  /** 独立访问计数服务（自建，见 counter/server.mjs 部署说明；部署后把 api 换成你的服务地址） */
+  /** 独立访问计数服务（自建，见 counter/server.ts 部署说明） */
   counter: {
-    api: ''
+    api: 'https://qdu-nav.iceoftea.deno.net'
   },
 
   /** 教务系统入口（个人课表等需登录的功能） */
