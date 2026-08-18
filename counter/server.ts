@@ -1,14 +1,16 @@
 // QDU-Nav 独立访问计数服务（Deno Deploy 版 · 多维统计）
 // -----------------------------------------------------------------------------
 // 端点：
-//   GET /api/hit?app=<appId>    本次访问 PV+1（UV 由服务端按「IP+UA」指纹去重），
-//                               按日期/小时/星期/设备/系统/来源/应用自动累计，返回完整统计
-//   GET /api/stats              查询完整统计（不计数）
-//   GET /                       探活文本
+//   GET /api/hit?vid=<匿名ID>&app=<appId>  本次访问 PV+1；UV 按前端匿名访客 ID 去重
+//                                           （vid 缺失时回退「IP+UA」指纹）；
+//                                           按日期/小时/星期/设备/系统/来源/应用自动累计，返回完整统计
+//   GET /api/stats                         查询完整统计（不计数）
+//   GET /                                  探活文本
 // 数据全部存 Deno KV（['stats'] 单 key），免费额度含 KV 持久化，重启不丢。
 // 部署见文件头部注释（console.deno.com：App Directory 根、Dynamic、entrypoint、
 // Build 命令 echo skip、创建并 Attach KV 数据库）。
-// 说明：早期版本由前端传 isNewUv 控制 UV，现改为服务端 IP+UA 指纹去重，参数已弃用。
+// 说明：早期版本按「IP+UA」指纹去重，校园 NAT 共享出口 IP 会把大量真实访客算成
+// 同一人（UV 严重低估）；现改为前端匿名访客 ID（vid）优先、IP+UA 兜底。
 
 const KEY = ['stats']
 const kv = await Deno.openKv()
@@ -130,18 +132,18 @@ Deno.serve(async (req) => {
       const dk = dayKey(now)
       const day = s.byDay[dk] ?? { pv: 0, uv: 0 }
       day.pv++
-      // 独立访客 / 今日访客：服务端按「IP + UA」指纹去重
-      // （不依赖前端 localStorage —— 数据库重置后老访客也能重新计入，避免 UV 永远为 0）
+      // 独立访客 / 今日访客：优先前端匿名访客 ID（vid），缺失时回退「IP + UA」指纹
+      const vid = (u.searchParams.get('vid') || '').trim()
       const fwd = req.headers.get('x-forwarded-for') || ''
       const ip = (fwd.split(',')[0] || req.headers.get('x-real-ip') || '').trim()
-      const hash = (ip + '|' + (req.headers.get('user-agent') || '')).trim()
-      if (hash) {
-        const uvKey = ['v', hash]
+      const fingerprint = vid || ((ip + '|' + (req.headers.get('user-agent') || '')).trim())
+      if (fingerprint) {
+        const uvKey = ['v', fingerprint]
         if ((await kv.get(uvKey)).value == null) {
           s.uv++
           await kv.set(uvKey, true)
         }
-        const dayUvKey = ['vd', dk, hash]
+        const dayUvKey = ['vd', dk, fingerprint]
         if ((await kv.get(dayUvKey)).value == null) {
           day.uv++
           await kv.set(dayUvKey, true)

@@ -87,6 +87,7 @@ function hueOf(i) {
       <li><b>v1.3.1</b> — 校领导测试：35 题多维比对，10 位校领导照片，测出你像谁。</li>
       <li><b>v1.3.2</b> — 深色模式全面修复（顶栏/底部导航/关于本站/按钮类控件）+ 系列 Bug 修复与维护整理，详见 README 版本历史。</li>
       <li><b>v1.3.3</b> — 代码质量加固：通知标题/安全过滤等真实 Bug 修复、公共组件抽取（BarRow/KpiCard/InsightPanel）、tieba Node 回退对齐手机版、杂项清理，详见 README 版本历史。</li>
+      <li><b>v1.3.4</b> — 独立访客统计修正：UV 去重改为前端匿名访客 ID（vid）优先、IP+UA 兜底，解决校园 NAT 下 UV 被严重低估的问题，详见 README 版本历史。</li>
     </ul>
     <p class="muted" style="font-size:12px;margin-top:10px;">
       想加入贡献者墙？给

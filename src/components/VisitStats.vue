@@ -1,10 +1,12 @@
 <script setup>
 /** 首页访问统计卡片：独立访客 UV / 累计访问 PV
  *  数据来自自建计数服务（counter/server.mjs 与 server.ts，独立于 QDU-Wiki）。
- *  UV 去重由服务端按「IP + UA」指纹完成（无需前端标记），本组件每次挂载上报一次
- *  /api/hit；会话内缓存先行回填避免闪烁；服务不可用时降级显示「—」。 */
+ *  UV 去重由服务端按前端匿名访客 ID（vid）完成，缺失时回退「IP + UA」指纹；
+ *  本组件每次挂载上报一次 /api/hit；会话内缓存先行回填避免闪烁；
+ *  服务不可用时降级显示「—」。 */
 import { ref, computed, onMounted } from 'vue'
 import { SITE } from '../config/site'
+import { visitorId } from '../utils/visitor'
 
 const STORAGE_KEY = 'qdu-nav-visit-v1'
 const api = (SITE.counter && SITE.counter.api) || ''
@@ -43,7 +45,7 @@ async function refresh() {
   try {
     const ctrl = new AbortController()
     const timer = setTimeout(() => ctrl.abort(), 8000)
-    const r = await fetch(api + '/api/hit', { signal: ctrl.signal })
+    const r = await fetch(api + '/api/hit?vid=' + encodeURIComponent(visitorId()), { signal: ctrl.signal })
     clearTimeout(timer)
     if (!r.ok) return
     const d = await r.json()

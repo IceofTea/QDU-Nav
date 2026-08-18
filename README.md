@@ -2,7 +2,7 @@
 
 > **🌐 在线访问：<https://IceofTea.github.io/QDU-Nav/>**（由 GitHub Actions 自动构建并部署到 GitHub Pages，见下方「部署」）
 >
-> **🏷️ 当前版本：v1.3.3**（代码质量加固版。版本号在 `src/config/site.js` 中维护，页脚与「关于本站」面板同步展示）
+> **🏷️ 当前版本：v1.3.4**（独立访客统计修正版。版本号在 `src/config/site.js` 中维护，页脚与「关于本站」面板同步展示）
 
 面向青岛大学的校园服务聚合入口（非官方演示站），亮色清新、移动端优先。**本站同时是一套可直接复用的「学习导航站」工程模板**：品牌、文案、配色、应用注册、数据源均已模块化，参考本仓库改造为其他学校 / 其他主题的导航站成本极低（见「二次开发：移植与扩展」）。
 
@@ -194,6 +194,7 @@ QDU-Nav/
 
 | 版本 | 说明 |
 | --- | --- |
+| **v1.3.4** | **独立访客统计修正版**。修复校园网场景 UV 严重低估：原按「出口公网 IP + UA」指纹去重，校园 NAT 下全校共享同几组出口 IP 且手机 UA 雷同，大量真实访客被算成同一人（PV 正常累加、UV 几乎不动）。改为**前端匿名访客 ID（`localStorage['qdu_nav_vid']`，`crypto.randomUUID()` 生成）优先去重，缺失时回退「IP+UA」指纹**：新增 `src/utils/visitor.js`（`visitorId()` 供 `VisitStats.vue` 首页统计与 `router.js` 应用上报共用，均带 `?vid=`），`counter/server.ts`（生产 Deno）与 `counter/server.mjs`（Node 联调）指纹逻辑同步为 vid 优先/IP+UA 兜底。已验证：不同 vid → UV 各 +1、同 vid 多次 → UV 不涨、无 vid → 走 IP+UA 兜底去重。不清除既有 UV/PV 历史数据（旧 KV 键保留），仅新访客按 vid 计入。说明：清浏览器数据/无痕/换设备会被计为新访客（与行业 cookie 统计一致）；vid 为纯匿名随机串不含个人信息。验证：Python 单测 18/18、构建通过、回归 v12–v19 125 项 + 深色 12 项 + 校领导端到端 10 项全绿。 |
 | **v1.3.3** | **代码质量加固版**。P0 真实 Bug：①`server/index.mjs` 通知详情标题 `split('-')` 截断含连字符标题（如「2026-2027学年…」→「2026」）改为剥离尾部站名后缀；②v-html XSS 过滤补强（`on\w+` 事件属性兼容双引号/单引号/无引号/HTML 实体四种写法）；③清理死代码（Timetable `meta` ref、StudentId `form.name`、snapshot.mjs `parseHomeNotices`）；④`validate.py` 学期格式校验（TERM_RE 接上）+ `int()` 异常保护 + `tables[0]` 空防护；⑤`parse_kcb.py` 移除硬编码开发机路径。P1 一致性：⑥`server` 网关 `clsSplit` 与前端一致（展开「[01-04]班」范围）；⑦`BuildingMatch` 手机端挑战难度降列（3 列）；⑧`api/index.js` 注释更正（`/notice` 纯静态下如实降级）；⑨`Canteen` 营业时间魔法数字加注释。P2 可维护性：⑩**公共组件提取** `BarRow` / `KpiCard` / `InsightPanel`（数据洞察/贴吧舆情/本站舆情/生活费复用，CourseStats 内联样式 95→少）；⑪`scripts/tieba.mjs` 重写对齐 Python 手机版方案（mo/q/threadlist + 移动 UA + tl_shadow 结构，Node 回退不再易 403）；⑫`utcnow()` 三处重复抽 `crawler/util.py`；⑬counter 校准标记独立 `.seed3` 文件（不再污染 data.json）+ UV 去重 Map 定期清理防内存增长；⑭`server` cache 超上限清理过期项、`/api/notices?all` 的 cached 语义修正、GET 方法限制、MIME 补 `.txt`；⑮`FoodWheel` 轮盘动画时长抽 `SPIN_MS` 常量、`QuizGame` 每题分数抽 `PER_QUESTION` 常量、`Budget` 记录 id 抽 `newId()`。验证：Python 单测 18/18、构建通过、tieba.mjs 手机版解析与 normDate 单测对齐、回归 v12–v19 125 项 + 深色 12 项 + 校领导端到端 10 项全绿。 |
 | **v1.3.2** | **深色模式修复版**。①**深色模式全面修复**：顶栏与底部导航背景由写死白色改为 `--header-bg`/`--nav-bg` 变量、**「关于本站」卡片**修复 `--card-bg` 未定义变量（此前深色下仍白底）、课程表/分类/体测等按钮（`.tab`/`.chip`/`.seg-btn`/`.year-tab`/`.mini-tile`）与骨架屏、悬停高亮、提示条全部改为语义化变量；②**Bug 修复**：`Canteen.vue` 三处无效 CSS `var(--card)3e0`（修复为 `var(--soft-yellow)`）、8 处 `var(--muted)` 未定义变量统一为 `var(--text-sub)`、课程表分页省略号与弹窗关闭按钮颜色、`termTimetable.js` Web Worker 并发请求消息错配（加请求 id）、生活费计数器编辑状态下按回车误调 `add()` 新增而非 `save()` 保存、`whyText` 用户向量与原型维度标尺不一致；③**维护**：删除根目录冗余 `leader/`（正源为 `public/leader/`）、校领导照片路径拼 `BASE_URL` 兼容子路径部署、`tieba.py` 的 `analyze` 支持注入日期（单测不再随日期失效）、清理死代码、题数文档勘误（校领导测试实际 35 题，非 30）。验证：Python 单测 18/18、构建通过、回归 v12–v19 共 125 项全绿、深色专项回归 12 项全绿、校领导测试端到端（35 题完整作答 → 照片加载成功 → 维度比对正常）。 |
 | **v1.3.0** | **舆情统计版**。①计数服务升级**多维自动采集**（`counter/server.ts`）：按日期 / 小时 / 星期 / 设备 / 系统 / 来源 / 应用自动累计；②新增应用**「本站舆情」**（首页网格可进）：独立访客 / 累计访问 / 今日访客 / 今日访问 四卡 + 近 7 天趋势柱状图 + 24 小时时段分布 + 一周分布 + 设备 / 系统 / 来源占比 + 热门应用 Top；③**纯自动化**：打开任意应用自动上报（`openApp` 节流上报 appId），无需手动操作；④首页统计卡片手机端优化——「本站累计 · 自建独立计数」标注移到数字下方单独一行。 |

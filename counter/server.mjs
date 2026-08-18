@@ -1,6 +1,6 @@
 // QDU-Nav 独立访问计数服务（Node 无依赖 · 多维统计，本地联调版）
 // 与 Deno 版 server.ts 逻辑一致：按日期/小时/星期/设备/系统/来源/应用自动累计。
-// UV 由服务端按「IP + UA」指纹去重（内存 Map，定期清理防无限增长）。
+// UV 优先按前端匿名访客 ID（vid）去重，缺失时回退「IP + UA」指纹（内存 Map 定期清理）。
 // 数据：内存 + 异步落盘 `counter/data.json`；一次性校准标记存 `counter/.seed3`。
 import http from 'node:http'
 import { readFile, writeFile } from 'node:fs/promises'
@@ -110,14 +110,15 @@ const server = http.createServer((req, res) => {
       const dk = dayKey(now)
       const day = state.byDay[dk] || { pv: 0, uv: 0 }
       day.pv++
-      // UV 按「IP + UA」指纹去重（不依赖前端 localStorage）
+      // UV 优先按前端匿名访客 ID（vid）去重，缺失时回退「IP + UA」指纹
+      const vid = (u.searchParams.get('vid') || '').trim()
       const fwd = req.headers['x-forwarded-for'] || ''
       const ip = (fwd.split(',')[0] || req.headers['x-real-ip'] || '').trim()
-      const hash = (ip + '|' + (req.headers['user-agent'] || '')).trim()
-      if (hash) {
+      const fingerprint = vid || ((ip + '|' + (req.headers['user-agent'] || '')).trim())
+      if (fingerprint) {
         const ts = Date.now()
-        if (!visitedUv.has(hash)) { state.uv++; visitedUv.set(hash, ts) }
-        const dkHash = dk + '|' + hash
+        if (!visitedUv.has(fingerprint)) { state.uv++; visitedUv.set(fingerprint, ts) }
+        const dkHash = dk + '|' + fingerprint
         if (!visitedDayUv.has(dkHash)) { day.uv++; visitedDayUv.set(dkHash, ts) }
         pruneUv()
       }

@@ -10,6 +10,7 @@
  */
 import { ref, computed, markRaw } from 'vue'
 import { SITE } from './config/site'
+import { visitorId } from './utils/visitor'
 import Home from './views/Home.vue'
 import CampusNews from './views/CampusNews.vue'
 import Timetable from './views/Timetable.vue'
@@ -114,5 +115,5 @@ function reportApp(id) {
   const now = Date.now()
   if (now - (appReportLast[id] || 0) < 5000) return
   appReportLast[id] = now
-  fetch(api + '/api/hit?app=' + encodeURIComponent(id)).catch(() => {})
+  fetch(api + '/api/hit?vid=' + encodeURIComponent(visitorId()) + '&app=' + encodeURIComponent(id)).catch(() => {})
 }
