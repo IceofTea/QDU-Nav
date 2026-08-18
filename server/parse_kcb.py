@@ -1,7 +1,10 @@
 import zipfile, json, sys, re
 from xml.etree import ElementTree as ET
 sys.stdout.reconfigure(encoding='utf-8')
-XLSX = sys.argv[1] if len(sys.argv) > 1 else r'C:\Users\13111\AppData\Local\Temp\opencode\qdunav\kcb.xlsx'
+XLSX = sys.argv[1] if len(sys.argv) > 1 else ''
+if not XLSX:
+    print('用法: python parse_kcb.py <课程总表.xlsx>', file=sys.stderr)
+    sys.exit(2)
 NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'
 z = zipfile.ZipFile(XLSX)
 ss = []

@@ -12,7 +12,6 @@ import argparse
 import json
 import sys
 from collections import Counter
-from datetime import datetime, timezone
 from pathlib import Path
 
 sys.stdout.reconfigure(encoding='utf-8')
@@ -20,13 +19,10 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from crawler.build_snapshot import norm_room  # noqa: E402
+from crawler.util import utcnow  # noqa: E402
 
 SNAPSHOT = ROOT / 'public' / 'data' / 'snapshot.json'
 OUT = ROOT / 'public' / 'data' / 'course_stats.json'
-
-
-def utcnow():
-    return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
 
 
 def analyze(snap, top=10):

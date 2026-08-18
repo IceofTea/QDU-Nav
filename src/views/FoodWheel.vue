@@ -6,6 +6,8 @@ import CountUp from '../components/CountUp.vue'
 const emit = defineEmits(['back'])
 
 const HUNGRY = { name: '饿着😭', campus: '', zone: '', hall: '' }
+/** 轮盘旋转动画时长（ms），与 .wheel 的 transition 时长保持一致 */
+const SPIN_MS = 3400
 
 const TIERS = [
   { key: 'free', label: '免费', cost: 0, hungry: 0.55, desc: '大概率饿着' },
@@ -73,6 +75,7 @@ function spin() {
   const offset = 360 - target * anglePer.value - anglePer.value / 2
   rotation.value += extra + (((offset - rotation.value) % 360) + 360) % 360
 
+  // 等待 CSS 旋转动画（时长 = SPIN_MS，见 .wheel 的 transition）结束后结算
   setTimeout(() => {
     spinning.value = false
     const hit = segs[target]
@@ -94,7 +97,7 @@ function spin() {
       pushHistory(hall.name, hit.name, tier.value)
       stage.value = 'hall'
     }
-  }, 3400)
+  }, SPIN_MS)
 }
 
 function pushHistory(hall, dish, t) {
@@ -222,6 +225,7 @@ const groupedFoods = computed(() => halls.map((h) => ({ ...h, foods: foods.filte
   border-radius: 50%;
   border: 6px solid var(--card);
   box-shadow: 0 10px 30px rgba(27, 102, 201, 0.2);
+  /* 时长与 JS 常量 SPIN_MS(3400ms) 同步 */
   transition: transform 3.2s cubic-bezier(0.16, 0.85, 0.25, 1);
 }
 .pointer {

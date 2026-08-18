@@ -1,6 +1,7 @@
-// 青岛大学吧舆情分析（Node 版，Python 版 crawler/tieba.py 的回退实现）
-// 尽力抓取百度贴吧「青岛大学吧」公开列表页，做热帖/关键词/话题/趋势分析，
-// 输出 public/data/tieba_stats.json。任何失败都不覆盖上一次的成功数据。
+// 青岛大学吧舆情分析（Node 版，crawler/tieba.py 的回退实现）
+// 与 Python 版保持同一抓取方案：手机版 mo/q/threadlist 接口 + 移动 UA 池，
+// 解析 tl_shadow 条目结构，输出 public/data/tieba_stats.json。
+// 任何失败都不覆盖上一次的成功数据（尽力而为），失败时以非零码退出。
 // 运行：node scripts/tieba.mjs
 import fs from 'node:fs'
 import path from 'node:path'
@@ -11,10 +12,18 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const OUT = path.join(__dirname, '..', 'public', 'data', 'tieba_stats.json')
 const BAR_NAME = '青岛大学'
 const BAR_URL = 'https://tieba.baidu.com/f?kw=' + encodeURIComponent(BAR_NAME)
+const LIST_URL = 'https://tieba.baidu.com/mo/q/threadlist?kw=' + encodeURIComponent(BAR_NAME) + '&pn=%d'
 const PAGES = 4
-const PAGE_SIZE = 50
-const UA =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36'
+const PAGE_SIZE = 30
+const RETRIES = 3
+
+// 手机版接口走 iPhone / Android 移动 UA（桌面版 UA 会被 WAF 拦成 403）
+const UA_POOL = [
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Mobile/15E148 Safari/604.1',
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
+  'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+  'Mozilla/5.0 (Linux; Android 12; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Mobile Safari/537.36'
+]
 const BAIDUID = crypto.randomBytes(16).toString('hex')
 
 const TOPIC_KEYWORDS = {
@@ -25,70 +34,84 @@ const TOPIC_KEYWORDS = {
   就业实习: ['实习', '招聘', '秋招', '春招', '就业', 'offer', '考公', '兼职'],
   吐槽求助: ['吐槽', '求助', '求问', '无语', '离谱', '难受', '崩溃', '郁闷', '踩坑']
 }
-const KEYWORD_DICT = [...new Set(Object.values(TOPIC_KEYWORDS).flat())].sort(
-  (a, b) => b.length - a.length
-)
+const KEYWORD_DICT = [...new Set(Object.values(TOPIC_KEYWORDS).flat())].sort((a, b) => b.length - a.length)
 
-async function fetchList(page) {
-  const url = `${BAR_URL}&ie=utf-8&pn=${page * PAGE_SIZE}`
-  const res = await fetch(url, {
-    headers: {
-      'User-Agent': UA,
-      'Accept-Language': 'zh-CN,zh;q=0.9',
-      Cookie: `BAIDUID=${BAIDUID}`
-    },
-    signal: AbortSignal.timeout(20000)
-  })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  const text = await res.text()
-  if (text.length < 5000 || !text.includes('j_thread_list')) {
-    throw new Error('页面无帖子列表（疑似被反爬拦截）')
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+const rand = (lo, hi) => lo + Math.random() * (hi - lo)
+
+async function fetchListHtml(pageIndex) {
+  const url = LIST_URL.replace('%d', pageIndex * PAGE_SIZE)
+  let lastErr = null
+  for (let attempt = 0; attempt < RETRIES; attempt++) {
+    try {
+      await sleep(rand(600, 1800))
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent': UA_POOL[Math.floor(Math.random() * UA_POOL.length)],
+          'Accept': 'text/html,application/xhtml+xml',
+          'Accept-Language': 'zh-CN,zh;q=0.9',
+          'Referer': BAR_URL,
+          'Cookie': `BAIDUID=${BAIDUID}`
+        },
+        signal: AbortSignal.timeout(20000)
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const text = await res.text()
+      if (text.length < 5000 || !text.includes('j_common ti_item')) {
+        throw new Error('页面无帖子列表（疑似被反爬拦截）')
+      }
+      return text
+    } catch (err) {
+      lastErr = err
+      await sleep(1500 * (attempt + 1))
+    }
   }
-  return text
+  throw new Error('贴吧抓取失败: ' + (lastErr && lastErr.message))
 }
 
-function parseReplies(raw) {
-  const s = String(raw || '').trim().replace(/,/g, '')
-  const w = s.match(/^([\d.]+)\s*万/)
-  if (w) return Math.round(parseFloat(w[1]) * 10000)
-  const n = s.match(/^(\d+)/)
-  return n ? parseInt(n[1], 10) : 0
+// 手机版 threadlist：置顶帖 tl_top / 普通帖 tl_shadow，tid 在 li 上
+const THREAD_LI_RE = /<li class="(?:tl_shadow[^"]*|tl_top[^"]*)"[^>]*data-tid="(\d+)"[^>]*>([\s\S]*?)<\/li>/g
+
+function spanText(block, cls) {
+  const m = block.match(new RegExp(`class="${cls}">\\s*([^<]{1,200}?)\\s*<`))
+  return m ? m[1].trim() : ''
 }
 
 function parseThreads(html) {
   const threads = []
-  const liRe = /<li[^>]*class="[^"]*(?:j_thread_list|threadlist)[^"]*"[^>]*>([\s\S]*?)<\/li>/g
   let m
-  while ((m = liRe.exec(html))) {
-    const block = m[1]
-    const titleM = block.match(/<a[^>]*class="[^"]*j_th_tit[^"]*"[^>]*>([\s\S]*?)<\/a>/)
-    if (!titleM) continue
-    const title = titleM[1].replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&gt;/g, '>').replace(/&lt;/g, '<').trim()
-    const hrefM = block.match(/href="([^"]*\/p\/\d+)"/)
-    const authorM = block.match(/<a[^>]*class="[^"]*frs-author-name[^"]*"[^>]*>([\s\S]*?)<\/a>/)
-    const replyM = block.match(/<span[^>]*class="[^"]*threadlist_reply_num[^"]*"[^>]*>([\s\S]*?)<\/span>/)
-    const dateM = block.match(/<div[^>]*class="[^"]*threadlist_date[^"]*"[^>]*>([\s\S]*?)<\/div>/)
+  while ((m = THREAD_LI_RE.exec(html || ''))) {
+    const tid = m[1]
+    const block = m[2]
+    let title = ''
+    const tm = block.match(/class="ti_title"[^>]*>([\s\S]*?)<\/div>/)
+    if (tm) {
+      title = [...tm[1].matchAll(/<span(?![^>]*class=)[^>]*>\s*([^<]{1,200}?)\s*<\/span>/g)].map((x) => x[1]).join('').trim()
+    }
+    if (!title) continue
+    const repliesM = block.match(/btn_reply[^>]*>[\s\S]*?<span[^>]*>\s*(\d+)\s*<\/span>/)
     threads.push({
       title,
-      author: authorM ? authorM[1].replace(/<[^>]+>/g, '').trim() : '',
-      replies: parseReplies(replyM ? replyM[1] : ''),
-      date: dateM ? dateM[1].replace(/<[^>]+>/g, '').trim() : '',
-      url: hrefM ? 'https://tieba.baidu.com' + hrefM[1] : ''
+      author: spanText(block, 'ti_author'),
+      replies: repliesM ? parseInt(repliesM[1], 10) : 0,
+      date: spanText(block, 'ti_time'),
+      url: 'https://tieba.baidu.com/p/' + tid
     })
   }
   return threads
 }
 
+const pad = (n) => String(n).padStart(2, '0')
 function normDate(raw, today) {
   const s = String(raw || '').trim()
   if (!s) return ''
-  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-  if (['今天', '刚刚', '1分钟前'].includes(s)) return iso(today)
+  const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  if (s === '今天' || s === '刚刚' || s === '1分钟前' || /^\d{1,2}:\d{2}$/.test(s)) return iso(today)
   if (s === '昨天') return iso(new Date(today.getTime() - 86400000))
   let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
-  if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`
+  if (m) return `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`
   m = s.match(/^(\d{1,2})-(\d{1,2})$/)
-  if (m) return `${today.getFullYear()}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`
+  if (m) return `${today.getFullYear()}-${pad(+m[1])}-${pad(+m[2])}`
   return ''
 }
 
@@ -120,24 +143,20 @@ function analyze(threads) {
   const weekTrend = []
   for (let i = 13; i >= 0; i--) {
     const d = new Date(today.getTime() - i * 86400000)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
     weekTrend.push({ label: key.slice(5), count: dayCount[key] || 0 })
   }
   return { topThreads: top, keywords, topics, weekTrend }
 }
 
-function utcNow() {
-  return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z').replace('Z', '') + '.000Z'
-}
-
 async function main() {
   let threads = []
   for (let p = 0; p < PAGES; p++) {
-    threads = threads.concat(parseThreads(await fetchList(p)))
+    threads = threads.concat(parseThreads(await fetchListHtml(p)))
   }
   if (!threads.length) throw new Error('未解析到任何帖子')
   const result = {
-    updatedAt: utcNow(),
+    updatedAt: new Date().toISOString(),
     status: 'ok',
     source: 'tieba',
     barUrl: BAR_URL,

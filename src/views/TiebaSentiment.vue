@@ -1,5 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import KpiCard from '../components/KpiCard.vue'
+import InsightPanel from '../components/InsightPanel.vue'
 
 const emit = defineEmits(['back'])
 
@@ -114,34 +116,13 @@ const insights = computed(() => {
   </div>
 
   <template v-else-if="data">
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;">
-      <div class="panel" style="margin:0;">
-        <div class="muted" style="font-size:12px;">抓取帖数</div>
-        <div style="font-size:22px;font-weight:800;margin-top:4px;">{{ data.total }}</div>
-        <div class="muted" style="font-size:12px;">{{ data.pages }} 页列表</div>
-      </div>
-      <div class="panel" style="margin:0;">
-        <div class="muted" style="font-size:12px;">最热帖回复</div>
-        <div style="font-size:22px;font-weight:800;margin-top:4px;">{{ maxReplies }}</div>
-        <div class="muted" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">《{{ (data.topThreads[0] || {}).title || '—' }}》</div>
-      </div>
-      <div class="panel" style="margin:0;">
-        <div class="muted" style="font-size:12px;">话题覆盖</div>
-        <div style="font-size:22px;font-weight:800;margin-top:4px;">{{ data.topics.length }}</div>
-        <div class="muted" style="font-size:12px;">{{ data.keywords.length }} 个高频关键词</div>
-      </div>
-      <div class="panel" style="margin:0;">
-        <div class="muted" style="font-size:12px;">近 14 天发帖</div>
-        <div style="font-size:22px;font-weight:800;margin-top:4px;">{{ weekSum }}</div>
-        <div class="muted" style="font-size:12px;">日均约 {{ Math.round(weekSum / 14) }} 条</div>
-      </div>
+    <div class="kpi-grid">
+      <KpiCard :value="data.total" label="抓取帖数" :sub="data.pages + ' 页列表'" />
+      <KpiCard :value="maxReplies" label="最热帖回复" :sub="'《' + ((data.topThreads[0] || {}).title || '—') + '》'" />
+      <KpiCard :value="data.topics.length" label="话题覆盖" :sub="data.keywords.length + ' 个高频关键词'" />
+      <KpiCard :value="weekSum" label="近 14 天发帖" :sub="'日均约 ' + Math.round(weekSum / 14) + ' 条'" />
     </div>
-    <div v-if="insights.length" class="panel" style="margin-bottom:16px;background:var(--soft-blue);border-color:var(--bar-bright);">
-      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>一眼看懂这些数据</div>
-      <ul style="margin:0;padding-left:18px;font-size:13px;line-height:2;color:var(--text);">
-        <li v-for="s in insights" :key="s">{{ s }}</li>
-      </ul>
-    </div>
+    <InsightPanel :items="insights" />
 
     <div class="panel" style="margin-bottom:16px;">
       <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>🔥 热帖榜（按回复数 Top 10）</div>
@@ -199,6 +180,7 @@ const insights = computed(() => {
 </template>
 
 <style scoped>
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .tieba-enter {
   display: flex;
   align-items: center;

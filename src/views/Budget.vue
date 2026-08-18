@@ -3,6 +3,7 @@
  *  数据仅存本机浏览器 localStorage（qdu_budget_records），不上传任何数据 */
 import { ref, computed, watch } from 'vue'
 import BudgetSim from './BudgetSim.vue'
+import BarRow from '../components/BarRow.vue'
 
 const emit = defineEmits(['back'])
 
@@ -105,6 +106,9 @@ function fmt(n) {
 const records = ref(load())
 watch(records, () => localStorage.setItem(STORAGE, JSON.stringify(records.value)), { deep: true })
 
+/** 生成不重复的本地记录 id */
+const newId = () => Date.now() + Math.random()
+
 const mode = ref('expense')
 const cat = ref('food')
 const amount = ref('')
@@ -147,7 +151,7 @@ function save() {
     editing.value = null
   } else {
     records.value.unshift({
-      id: Date.now() + Math.random(),
+      id: newId(),
       type: mode.value,
       cat: cat.value,
       amount: Math.round(amt * 100) / 100,
@@ -235,7 +239,7 @@ function csvImport(file) {
       const noteText = get(iNote)
       const dateText = (get(iTime) || '').slice(0, 10)
       added.push({
-        id: Date.now() + Math.random() + added.length,
+        id: newId() + added.length,
         type: kind === '支出' ? 'expense' : 'income',
         cat: guessCat(name),
         amount: amt,
@@ -447,14 +451,7 @@ const monthLabel = computed(() => {
   <div class="panel">
     <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>本月支出构成</div>
     <div v-if="catStats.length" class="cat-stat">
-      <div v-for="c in catStats" :key="c.name" style="margin-bottom:8px;">
-        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
-          <span>{{ c.name }}</span><span class="muted">¥{{ fmt(c.v) }}</span>
-        </div>
-        <div style="background:var(--bar);border-radius:8px;overflow:hidden;">
-          <div style="height:12px;background:linear-gradient(90deg,#b63a46,#e76f51);border-radius:8px;" :style="{ width: Math.round(c.v / maxCat * 100) + '%' }"></div>
-        </div>
-      </div>
+      <BarRow v-for="c in catStats" :key="c.name" :label="c.name" :value="c.v" :max="maxCat" :text="'¥' + fmt(c.v)" color="linear-gradient(90deg,#b63a46,#e76f51)" />
     </div>
     <div v-else class="muted" style="text-align:center;padding:10px;">本月还没有支出</div>
   </div>

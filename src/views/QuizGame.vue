@@ -10,6 +10,8 @@ const bankKw = ref('')
 const bankOpen = ref({})
 
 const QUESTIONS = 10
+/** 每题满分（满分 = QUESTIONS × PER_QUESTION） */
+const PER_QUESTION = 10
 const pool = ref([])
 const index = ref(0)
 const score = ref(0)
@@ -44,7 +46,7 @@ function choose(optIdx) {
   if (picked.value !== null) return
   picked.value = optIdx
   if (optIdx === cur.value.answer) {
-    score.value += 10
+    score.value += PER_QUESTION
     correct.value += 1
   } else {
     wrongList.value.push(cur.value)
@@ -93,7 +95,7 @@ const verdict = computed(() => {
 })
 
 const grade = computed(() => {
-  const p = score.value / (QUESTIONS * 10)
+  const p = score.value / (QUESTIONS * PER_QUESTION)
   if (p >= 0.9) return 'S · 青大活地图！'
   if (p >= 0.7) return 'A · 很了解青大！'
   if (p >= 0.5) return 'B · 有一定了解'
@@ -200,7 +202,7 @@ onMounted(() => {
 
   <div v-else class="panel" style="text-align:center;padding:34px;">
     <div style="font-size:40px;">🏆</div>
-    <div style="font-size:22px;font-weight:800;margin:10px 0;">{{ score }} / {{ QUESTIONS * 10 }}</div>
+    <div style="font-size:22px;font-weight:800;margin:10px 0;">{{ score }} / {{ QUESTIONS * PER_QUESTION }}</div>
     <div style="font-size:15px;font-weight:600;color:var(--primary);">{{ grade }}</div>
     <div class="muted" style="margin:10px 0;">答对 {{ correct }} / {{ QUESTIONS }} 题</div>
     <div style="display:flex;gap:10px;justify-content:center;margin-top:14px;">

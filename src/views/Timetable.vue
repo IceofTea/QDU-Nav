@@ -12,7 +12,6 @@ const emit = defineEmits(['back'])
 
 const tab = ref('class')
 const kw = ref('')
-const meta = ref(null)
 const snap = ref(null)
 /** 当前学期排课（shallowRef：数据只读，避免 Vue 深度代理 5k+ 元素数组拖慢遍历） */
 const termRows = shallowRef([])
@@ -41,7 +40,7 @@ onMounted(async () => {
   loading.value = false
 })
 
-const semester = computed(() => snap.value?.courseTable?.semester || meta.value?.semester || '')
+const semester = computed(() => snap.value?.courseTable?.semester || '')
 
 const semesters = computed(() => {
   const s = snap.value?.courseTables?.map((t) => t.semester) || []

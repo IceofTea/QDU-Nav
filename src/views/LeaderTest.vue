@@ -151,9 +151,9 @@ async function copyShare() {
 
 const feedback = ref(null)
 
-/** 头像：优先官方照片，缺失回退首字母彩色头像 */
 /** 照片路径拼 BASE_URL：兼容 GH Pages 子路径部署（photo 在 data 中存相对路径） */
 const photoUrl = (p) => (p ? import.meta.env.BASE_URL + p : '')
+/** 头像回退：照片缺失时按名字生成首字母彩色头像 */
 function avatarStyle(l) {
   const hue = leaders.indexOf(l) * 46
   return { background: `linear-gradient(135deg, hsl(${hue} 55% 45%), hsl(${hue + 40} 55% 62%))` }

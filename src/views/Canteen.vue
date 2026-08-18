@@ -35,7 +35,7 @@ function peopleOf() {
   return '--'
 }
 
-// 实时营业状态判定（据官方营业时间）
+// 实时营业状态判定（据官方营业时间，分钟制：6:30-8:30 / 10:30-13:00 / 16:30-18:30）
 function basicOpen() {
   const h = now.getHours()
   const m = now.getMinutes()
@@ -43,10 +43,12 @@ function basicOpen() {
   return (t >= 390 && t <= 510) || (t >= 630 && t <= 780) || (t >= 990 && t <= 1110)
 }
 const isFlavorOpen = computed(() => {
+  // 风味档口 6:30-21:30 连续供餐
   const t = now.getHours() * 60 + now.getMinutes()
   return t >= 390 && t <= 1290
 })
 const mealTag = computed(() => {
+  // 按小时档划分供餐时段（0.5 步长代表半小时边界）
   const h = now.getHours()
   if (h < 6) return { t: '未营业', open: false }
   if (h < 9) return { t: '早餐时段', open: true }

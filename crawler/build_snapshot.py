@@ -14,7 +14,6 @@ import re
 import subprocess
 import sys
 import tempfile
-from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urljoin
 
@@ -24,6 +23,7 @@ sys.path.insert(0, str(ROOT))
 
 from crawler import config, parsers  # noqa: E402
 from crawler.fetcher import fetch_bytes, fetch_text  # noqa: E402
+from crawler.util import utcnow  # noqa: E402
 
 VERBOSE = '--verbose' in sys.argv
 
@@ -36,10 +36,6 @@ def norm_room(room):
     if not room:
         return ''
     return room.replace('（智慧）', '').replace('(智慧)', '').strip()
-
-
-def utcnow():
-    return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
 
 
 def parse_kcb_xlsx(data: bytes):

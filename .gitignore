@@ -8,3 +8,4 @@ __pycache__/
 *.pyc
 
 counter/data.json
+counter/.seed3

@@ -16,8 +16,6 @@ const JWC = 'https://jwc.qdu.edu.cn'
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36'
 
-const abs = (p) => (p.startsWith('http') ? p : JWC + '/' + p.replace(/^\//, ''))
-
 async function fetchText(url) {
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), 15000)
@@ -50,19 +48,13 @@ function parseList(html, base) {
   return out
 }
 
-function parseHomeNotices(html) {
-  const out = []
-  const re = /<div class="list-date01"><strong>(\d+)<\/strong><i>(\d{4})\.(\d{2})<\/i><\/div>[\s\S]*?<a href="([^"]+)"[^>]*>\s*<p>([^<]*)<\/p>/g
-  let m
-  while ((m = re.exec(html))) out.push({ date: `${m[2]}-${m[3]}-${m[1]}`, title: m[5].trim(), url: abs(m[4]) })
-  return out
-}
-
 function parseNews(html) {
   const out = []
   const re = /<a href="(info\/[^"]+\.htm)" title="([^"]*)">[\s\S]*?(?:<img src="([^"]+)")?/g
   let m
-  while ((m = re.exec(html))) out.push({ title: m[2], url: abs(m[1]), img: m[3] ? JWC + m[3] : null })
+  while ((m = re.exec(html))) {
+    out.push({ title: m[2], url: new URL(m[1], JWC + '/index.htm').href, img: m[3] ? new URL(m[3], JWC + '/index.htm').href : null })
+  }
   return out
 }
 

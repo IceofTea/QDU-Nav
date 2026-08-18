@@ -31,7 +31,8 @@ MIN_NEWS = 1
 MIN_CALENDAR = 10
 MIN_ROWS = 40000
 MIN_TABLES = 1
-TERM_RE = re.compile(r'^\d{4}年(?:春夏|秋|春|夏季?)')
+# 学期格式：如「2026年春季学期」「2025-2026学年第一学期」（防止脏学期名进入产物）
+TERM_RE = re.compile(r'^(?:\d{4}年(?:春夏|秋|春|夏|冬)?|20\d{2}[-–]20\d{2}学年)')
 
 
 def _is_items(obj):
@@ -97,6 +98,8 @@ def validate_snapshot(snap):
     for t in tables:
         if not all(t.get(k) for k in ('semester', 'title', 'count', 'url')):
             errors.append('课程总表字段不完整: %r' % (t.get('title') or '')[:30])
+        if not TERM_RE.match(t.get('semester', '')):
+            errors.append('课程总表学期格式异常: %r' % (t.get('semester') or '')[:30])
         if t.get('url') and not str(t['url']).startswith('https://' + JWC_HOST):
             errors.append('课程总表 URL 域名异常: %s' % t['url'])
 
@@ -109,9 +112,19 @@ def validate_snapshot(snap):
         if not all(r.get(k) is not None for k in ('c', 't', 'cls', 'd', 's', 'e', 'w', 'r', 'term')):
             errors.append('rows[%d] 字段不完整: %r' % (i, r))
             continue
-        if not 1 <= int(r['d']) <= 7:
+        try:
+            d = int(r['d'])
+        except (TypeError, ValueError):
+            errors.append('rows[%d] 星期非数字: %r' % (i, r['d']))
+            continue
+        if not 1 <= d <= 7:
             errors.append('rows[%d] 星期越界: %r' % (i, r['d']))
-        if not 1 <= int(r['s']) <= int(r['e']) <= 12:
+        try:
+            s, e = int(r['s']), int(r['e'])
+        except (TypeError, ValueError):
+            errors.append('rows[%d] 节次非数字: %r' % (i, (r['s'], r['e'])))
+            continue
+        if not 1 <= s <= e <= 12:
             errors.append('rows[%d] 节次越界: %r' % (i, (r['s'], r['e'])))
         if not r['term']:
             errors.append('rows[%d] 学期为空' % i)
@@ -120,9 +133,10 @@ def validate_snapshot(snap):
 
     # --- courseTable 与 rows 一致性 ---
     ct = snap['courseTable']
-    if ct.get('count') != tables[0].get('count'):
+    latest = tables[0] if tables else {}
+    if ct.get('count') != latest.get('count'):
         errors.append('courseTable.count(%s) 与最新学期 count(%s) 不一致'
-                      % (ct.get('count'), tables[0].get('count')))
+                      % (ct.get('count'), latest.get('count')))
     if ct.get('rooms') != len(rooms):
         errors.append('courseTable.rooms(%s) 与实际去重教室数(%d) 不一致'
                       % (ct.get('rooms'), len(rooms)))

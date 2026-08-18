@@ -3,7 +3,7 @@ import { ref } from 'vue'
 
 const emit = defineEmits(['back'])
 
-const form = ref({ kaoshenghao: '', name: '' })
+const form = ref({ kaoshenghao: '' })
 const error = ref('')
 
 function gotoOfficial() {

@@ -4,6 +4,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { getSiteStats, EMPTY_STATS } from '../api/siteStats'
 import { apps } from '../data/apps'
+import KpiCard from '../components/KpiCard.vue'
 
 const emit = defineEmits(['back'])
 
@@ -39,27 +40,11 @@ onMounted(async () => {
   </div>
 
   <template v-else>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px;">
-      <div class="panel" style="margin:0;text-align:center;">
-        <div class="kpi-icon">👀</div>
-        <div class="kpi-num">{{ stats.uv }}</div>
-        <div class="muted" style="font-size:12px;">独立访客</div>
-      </div>
-      <div class="panel" style="margin:0;text-align:center;">
-        <div class="kpi-icon">📈</div>
-        <div class="kpi-num">{{ stats.pv }}</div>
-        <div class="muted" style="font-size:12px;">累计访问</div>
-      </div>
-      <div class="panel" style="margin:0;text-align:center;">
-        <div class="kpi-icon">📅</div>
-        <div class="kpi-num">{{ stats.today.uv }}</div>
-        <div class="muted" style="font-size:12px;">今日访客</div>
-      </div>
-      <div class="panel" style="margin:0;text-align:center;">
-        <div class="kpi-icon">⚡</div>
-        <div class="kpi-num">{{ stats.today.pv }}</div>
-        <div class="muted" style="font-size:12px;">今日访问</div>
-      </div>
+    <div class="kpi-grid">
+      <KpiCard icon="👀" :value="stats.uv" label="独立访客" />
+      <KpiCard icon="📈" :value="stats.pv" label="累计访问" />
+      <KpiCard icon="📅" :value="stats.today.uv" label="今日访客" />
+      <KpiCard icon="⚡" :value="stats.today.pv" label="今日访问" />
     </div>
 
     <div class="panel" style="margin-bottom:16px;">
@@ -157,8 +142,7 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.kpi-icon { font-size: 24px; }
-.kpi-num { font-size: 26px; font-weight: 800; margin: 4px 0 2px; color: var(--primary); font-variant-numeric: tabular-nums; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .bar-wrap { display: flex; align-items: flex-end; gap: 8px; height: 150px; }
 .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%; }
 .bar-val { font-size: 10px; color: var(--text-sub); min-height: 13px; }

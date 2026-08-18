@@ -86,6 +86,7 @@ function hueOf(i) {
       <li><b>v1.3.0</b> — 本站舆情：多维访问统计可视化（趋势 / 时段 / 设备 / 来源 / 热门应用）。</li>
       <li><b>v1.3.1</b> — 校领导测试：35 题多维比对，10 位校领导照片，测出你像谁。</li>
       <li><b>v1.3.2</b> — 深色模式全面修复（顶栏/底部导航/关于本站/按钮类控件）+ 系列 Bug 修复与维护整理，详见 README 版本历史。</li>
+      <li><b>v1.3.3</b> — 代码质量加固：通知标题/安全过滤等真实 Bug 修复、公共组件抽取（BarRow/KpiCard/InsightPanel）、tieba Node 回退对齐手机版、杂项清理，详见 README 版本历史。</li>
     </ul>
     <p class="muted" style="font-size:12px;margin-top:10px;">
       想加入贡献者墙？给

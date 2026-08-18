@@ -1,9 +1,10 @@
 // QDU-Nav 独立访问计数服务（Node 无依赖 · 多维统计，本地联调版）
 // 与 Deno 版 server.ts 逻辑一致：按日期/小时/星期/设备/系统/来源/应用自动累计。
-// UV 由服务端按「IP + UA」指纹去重（内存 Set，与 Deno 版 KV 键等价）。
-// 数据：内存 + 异步落盘 `counter/data.json`。
+// UV 由服务端按「IP + UA」指纹去重（内存 Map，定期清理防无限增长）。
+// 数据：内存 + 异步落盘 `counter/data.json`；一次性校准标记存 `counter/.seed3`。
 import http from 'node:http'
 import { readFile, writeFile } from 'node:fs/promises'
+import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
@@ -11,6 +12,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data.json')
 const PORT = Number(process.env.PORT) || 8788
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*'
+const SEED_FILE = path.join(__dirname, '.seed3')
 
 const empty = () => ({ uv: 0, pv: 0, byDay: {}, byHour: {}, byWeekday: {}, byDevice: {}, byOs: {}, byRef: {}, byApp: {} })
 let state = empty()
@@ -23,12 +25,17 @@ async function load() {
   } catch {
     state = empty()
   }
+}
+async function seedOnce() {
+  if (fs.existsSync(SEED_FILE)) return
   // 一次性初始校准：独立访客 150 / 累计访问 260
-  if (!state.seed3) {
-    state.uv = 150
-    state.pv = 260
-    state.seed3 = true
-    await save()
+  state.uv = 150
+  state.pv = 260
+  await save()
+  try {
+    fs.writeFileSync(SEED_FILE, '1', 'utf-8')
+  } catch {
+    /* 磁盘不可写时下次再校准 */
   }
 }
 async function save() {
@@ -56,9 +63,16 @@ const parseRef = (ref) => {
   if (/tieba|zhihu|weibo|xiaohongshu|douyin|bilibili/i.test(ref)) return '社交平台'
   return '其他外链'
 }
-/* UV 去重：按「IP + UA」指纹（内存 Set，与 Deno 版 KV 键等价） */
-const visitedUv = new Set()
-const visitedDayUv = new Set()
+/* UV 去重：按「IP + UA」指纹（Map 存最后命中时间，定期清理防长期运行无限增长） */
+const visitedUv = new Map()
+const visitedDayUv = new Map()
+const UV_TTL = 30 * 24 * 3600 * 1000
+const DAY_UV_TTL = 3 * 24 * 3600 * 1000
+function pruneUv() {
+  const now = Date.now()
+  for (const [k, ts] of visitedUv) if (now - ts > UV_TTL) visitedUv.delete(k)
+  for (const [k, ts] of visitedDayUv) if (now - ts > DAY_UV_TTL) visitedDayUv.delete(k)
+}
 
 function overview() {
   const todayKey = dayKey(cnNow())
@@ -101,9 +115,11 @@ const server = http.createServer((req, res) => {
       const ip = (fwd.split(',')[0] || req.headers['x-real-ip'] || '').trim()
       const hash = (ip + '|' + (req.headers['user-agent'] || '')).trim()
       if (hash) {
-        if (!visitedUv.has(hash)) { state.uv++; visitedUv.add(hash) }
+        const ts = Date.now()
+        if (!visitedUv.has(hash)) { state.uv++; visitedUv.set(hash, ts) }
         const dkHash = dk + '|' + hash
-        if (!visitedDayUv.has(dkHash)) { day.uv++; visitedDayUv.add(dkHash) }
+        if (!visitedDayUv.has(dkHash)) { day.uv++; visitedDayUv.set(dkHash, ts) }
+        pruneUv()
       }
       state.byDay[dk] = day
       bump(state.byHour, String(now.getHours()))
@@ -124,5 +140,7 @@ const server = http.createServer((req, res) => {
 })
 
 load().then(() => {
-  server.listen(PORT, () => console.log('QDU-Nav counter listening on :' + PORT))
+  seedOnce().then(() => {
+    server.listen(PORT, () => console.log('QDU-Nav counter listening on :' + PORT))
+  })
 })

@@ -211,7 +211,7 @@ function restart() {
     <div v-else-if="confirmPair && !pickedId" class="found-tip">先点击一张高亮卡片选中，再点击另一张完成配对</div>
     <div v-else-if="confirmPair && pickedId" class="found-tip good">已选中 ✅ 点击另一张高亮卡片配对</div>
 
-    <div class="card-grid" :style="{ gridTemplateColumns: 'repeat(' + DIFFS[diff].cols + ', 1fr)' }">
+    <div class="card-grid" :style="{ '--cols': DIFFS[diff].cols }">
       <button
         v-for="c in cards"
         :key="c.id"
@@ -265,9 +265,13 @@ function restart() {
 <style scoped>
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--cols, 4), 1fr);
   gap: 10px;
   margin-top: 14px;
+}
+/* 手机端降列：挑战 6 列每列过窄（约 55px），统一压到 3 列保证可点 */
+@media (max-width: 640px) {
+  .card-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
 }
 .card {
   aspect-ratio: 4 / 3;

@@ -36,13 +36,22 @@ async function fetchText(url, force) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const text = await res.text()
     cache.set(url, { time: Date.now(), data: text })
+    // 防长期运行内存膨胀：超出上限时清理过期条目
+    if (cache.size > 200) {
+      const now = Date.now()
+      for (const [k, v] of cache) if (now - v.time > TTL) cache.delete(k)
+    }
     return { text, cached: false, ageMs: 0, costMs: Date.now() - start }
   } finally {
     clearTimeout(timer)
   }
 }
 
-const abs = (p) => (p.startsWith('http') ? p : JWC + '/' + p.replace(/^\//, ''))
+/** 相对地址补全为教务处域名绝对地址。
+ *  http(s)///(协议相对)/data: 原样保留；其余（含 / 开头的站内路径）拼到 JWC，
+ *  避免纯静态部署下 /upload/... 被解析到部署域名而 404。 */
+const abs = (p) =>
+  /^(https?:)?\/\//.test(p) || p.startsWith('data:') ? p : JWC + '/' + p.replace(/^\//, '')
 
 function parseList(html, base) {
   const out = []
@@ -71,14 +80,16 @@ function parseNews(html) {
   const re = /<a href="(info\/[^"]+\.htm)" title="([^"]*)">[\s\S]*?(?:<img src="([^"]+)")?/g
   let m
   while ((m = re.exec(html))) {
-    out.push({ title: m[2], url: abs(m[1]), img: m[3] ? JWC + m[3] : null })
+    out.push({ title: m[2], url: abs(m[1]), img: m[3] ? new URL(m[3], JWC + '/index.htm').href : null })
   }
   return out
 }
 
 async function fetchNoticePages(force, pageCount = 4) {
-  const first = (await fetchText(JWC + '/jwtz.htm', force)).text
+  const firstRes = await fetchText(JWC + '/jwtz.htm', force)
+  const first = firstRes.text
   const items = parseList(first, JWC + '/jwtz.htm')
+  let cached = firstRes.cached
   const seen = new Set(items.map((i) => i.url))
   const pager = [...first.matchAll(/href="(jwtz\/(\d+)\.htm)"/g)]
     .map((m) => ({ href: m[1], n: Number(m[2]) }))
@@ -86,7 +97,9 @@ async function fetchNoticePages(force, pageCount = 4) {
     .sort((a, b) => b.n - a.n)
     .filter((p, i, arr) => arr.findIndex((x) => x.n === p.n) === i)
   for (const p of pager.slice(0, pageCount - 1)) {
-    const html = (await fetchText(JWC + '/' + p.href, force)).text
+    const res = await fetchText(JWC + '/' + p.href, force)
+    cached = cached || res.cached
+    const html = res.text
     for (const it of parseList(html, JWC + '/jwtz.htm')) {
       if (!seen.has(it.url)) {
         seen.add(it.url)
@@ -94,12 +107,17 @@ async function fetchNoticePages(force, pageCount = 4) {
       }
     }
   }
-  return items
+  return { items, cached }
 }
 
 function parseNoticeDetail(html) {
+  // 标题取 <title> 全文，仅剥离尾部站名后缀（「-教务处 / -青岛大学」等），
+  // 避免 split('-') 把标题自身含连字符（如「2026-2027学年…」）截断
   const titleRaw = /<title>([^<]*)<\/title>/.exec(html)?.[1] || ''
-  const title = titleRaw.split('-')[0].trim()
+  const title = (titleRaw
+    .replace(/\s*[-—–_]\s*(?:青岛大学)?教务处\s*$/, '')
+    .replace(/\s*[-—–_]\s*(?:青岛大学)?\s*$/, '')
+    .trim() || titleRaw.trim())
   const s = html.indexOf('vsbcontent_start')
   const e = html.indexOf('vsbcontent_end')
   let body = ''
@@ -108,9 +126,11 @@ function parseNoticeDetail(html) {
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
     .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
-    .replace(/\son\w+="[^"]*"/gi, '')
-    .replace(/\son\w+='[^']*'/gi, '')
-  body = body.replace(/(src|href)="(?!https?:|#|\/)([^"]+)"/g, (_, attr, v) => `${attr}="${abs(v)}"`)
+    // 事件属性一律删除：兼容 双引号 / 单引号 / 无引号 / HTML 实体(&quot;) 四种写法，
+    // 防 onerror=alert(1) 之类载荷经 v-html 执行
+    .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    .replace(/\son\w+/gi, '')
+  body = body.replace(/(src|href)="(?!https?:|#|data:)([^"]+)"/g, (_, attr, v) => `${attr}="${abs(v)}"`)
   return { title, body }
 }
 
@@ -131,6 +151,24 @@ async function fetchBuf(url, referer) {
 let courseIndex = null
 const COURSE_TTL = 12 * 60 * 60 * 1000
 const normRoom = (r) => (r || '').replace(/[（(]智慧[)）]/g, '').trim()
+
+/** 拆分「多班合上」班级串并展开「[01-04]班」范围（与 src/utils/course.js 保持一致，
+ *  保证网关查询与静态快照回退的搜索结果一致）。 */
+const clsSplit = (cls) => {
+  const out = []
+  for (const s of (cls || '').split(/[,，、]/)) {
+    const t = s.trim()
+    if (!t) continue
+    const m = t.match(/^(.+?)\[(\d{1,2})\s*[-–]\s*(\d{1,2})\](班)?$/)
+    if (m) {
+      const [, pre, a, b] = m
+      for (let n = +a; n <= +b; n++) out.push(`${pre}${String(n).padStart(2, '0')}班`)
+    } else {
+      out.push(t)
+    }
+  }
+  return out
+}
 
 async function getCourseIndex(force) {
   if (courseIndex && Date.now() - courseIndex.time < COURSE_TTL && !force) return courseIndex
@@ -174,8 +212,8 @@ const routes = {
     const force = q.get('force') === '1'
     const all = q.get('all') === '1'
     if (all) {
-      const items = await fetchNoticePages(force)
-      return { source: JWC, fetchedAt: nowIso(), cached: false, costMs: 0, ttl: TTL, items }
+      const { items, cached: allCached } = await fetchNoticePages(force)
+      return { source: JWC, fetchedAt: nowIso(), cached: allCached, costMs: 0, ttl: TTL, items }
     }
     const { text, cached, ageMs, costMs } = await fetchText(JWC + '/index.htm', force)
     return { source: JWC, fetchedAt: nowIso(), cached, ageMs, costMs, ttl: TTL, items: parseHomeNotices(text) }
@@ -255,7 +293,6 @@ const routes = {
     const kw = (q.get('q') || '').trim()
     if (!kw) return { ok: false, error: 'need q' }
     const idx = await getCourseIndex(force)
-    const clsSplit = (cls) => (cls || '').split(/[,，、]/).map((s) => s.trim()).filter(Boolean)
     const hits = idx.rows.filter((r) => clsSplit(r.cls).includes(kw) || r.c.includes(kw) || r.t.includes(kw))
     return { semester: idx.semester, q: kw, count: hits.length, rows: hits.slice(0, 200) }
   },
@@ -279,7 +316,8 @@ const MIME = {
   '.jpg': 'image/jpeg',
   '.ico': 'image/x-icon',
   '.json': 'application/json',
-  '.woff2': 'font/woff2'
+  '.woff2': 'font/woff2',
+  '.txt': 'text/plain; charset=utf-8'
 }
 
 function serveStatic(req, res, urlPath) {
@@ -317,6 +355,10 @@ function json(res, status, obj) {
 }
 
 const server = http.createServer(async (req, res) => {
+  if (req.method !== 'GET') {
+    res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' })
+    return res.end('Method Not Allowed')
+  }
   const u = new URL(req.url, 'http://localhost')
   const urlPath = u.pathname
   if (urlPath.startsWith('/api/')) {
