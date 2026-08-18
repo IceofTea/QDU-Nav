@@ -17,12 +17,16 @@ function enter() {
   stage.value = 'main'
 }
 
-/* 深色模式：localStorage 记忆 + 跟随系统偏好，<html data-theme> 驱动 */
+/* 深色模式：localStorage 记忆 + 跟随系统偏好，<html data-theme> 驱动。
+ * index.html 已内联首屏脚本预置 data-theme（消除欢迎页/首屏 FOUC），
+ * 此处读取其值初始化，并兜底计算（内联脚本失败时）。 */
 const THEME_KEY = 'qdu_theme'
-const theme = ref('light')
+const theme = ref(document.documentElement.getAttribute('data-theme') || 'light')
 function applyTheme(t) {
   theme.value = t
   document.documentElement.setAttribute('data-theme', t)
+  const meta = document.querySelector('meta[name="theme-color"]')
+  if (meta) meta.setAttribute('content', t === 'dark' ? '#10141b' : '#1b66c9')
   try {
     localStorage.setItem(THEME_KEY, t)
   } catch {
@@ -33,6 +37,7 @@ function toggleTheme() {
   applyTheme(theme.value === 'dark' ? 'light' : 'dark')
 }
 onMounted(() => {
+  if (document.documentElement.getAttribute('data-theme')) return
   let t = 'light'
   try {
     t = localStorage.getItem(THEME_KEY) || ''

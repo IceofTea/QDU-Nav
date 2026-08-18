@@ -99,7 +99,7 @@ class TestTieba(unittest.TestCase):
 
     def test_analyze(self):
         threads = parse_threads(SAMPLE)
-        out = analyze(threads)
+        out = analyze(threads, today=date(2026, 8, 17))
         # 热帖按回复数排序
         self.assertEqual(out['topThreads'][0]['title'], '【求助】金家岭食堂哪家好吃')
         # 话题归桶

@@ -460,7 +460,7 @@ onMounted(loadCourses)
   pointer-events: none;
 }
 .pager-ellipsis {
-  color: var(--muted);
+  color: var(--text-sub);
   font-size: 13px;
   padding: 0 2px;
   user-select: none;
@@ -496,7 +496,7 @@ onMounted(loadCourses)
   width: calc((100% - var(--tc,40px)) / 7 - 5px);
   box-sizing: border-box;
   background: var(--soft-blue);
-  border-left: 3px solid #1b66c9;
+  border-left: 3px solid var(--primary);
   border-radius: 6px;
   padding: 3px 5px;
   overflow: hidden;
@@ -518,7 +518,7 @@ onMounted(loadCourses)
   width: 100%;
   text-align: left;
   border: 1px solid var(--border);
-  border-left: 3px solid #1b66c9;
+  border-left: 3px solid var(--primary);
   border-radius: 10px;
   background: var(--soft);
   padding: 10px 12px;
@@ -555,7 +555,7 @@ onMounted(loadCourses)
 }
 .course-detail-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 .course-detail-title { font-size: 16px; font-weight: 800; flex: 1; }
-.overlay-close { border: none; background: none; font-size: 16px; cursor: pointer; color: var(--muted); }
+.overlay-close { border: none; background: none; font-size: 16px; cursor: pointer; color: var(--text-sub); }
 .course-detail-row { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
 .course-detail-row span { flex: 0 0 52px; color: var(--text-sub); }
 .course-detail-row b { flex: 1; color: var(--text); font-weight: 600; word-break: break-all; }

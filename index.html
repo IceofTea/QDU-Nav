@@ -6,6 +6,21 @@
     <meta name="theme-color" content="#1b66c9" />
     <title>QDU 校园导航 · 青岛大学</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231b66c9'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='%23fff' font-family='sans-serif'%3EQ%3C/text%3E%3C/svg%3E" />
+    <script>
+      /* 首屏即应用主题（欢迎页/首屏渲染前设置 data-theme，消除深色模式 FOUC）。
+         与 App.vue 的 applyTheme 保持同一套键名（qdu_theme）与回退逻辑。 */
+      ;(function () {
+        try {
+          var t = localStorage.getItem('qdu_theme')
+          if (!t) {
+            t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+          }
+          document.documentElement.setAttribute('data-theme', t)
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light')
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>

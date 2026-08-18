@@ -293,9 +293,9 @@ function restart() {
   background: linear-gradient(160deg, rgba(13, 78, 168, 0.18), rgba(4, 32, 78, 0.42));
   pointer-events: none;
 }
-.card.open { background: #f6f9ff; color: var(--text); border-color: var(--primary); }
+.card.open { background: var(--soft-fg); color: var(--text); border-color: var(--primary); }
 .card.open::after { display: none; }
-.card.match { background: #e8f6ee; color: #0f766e; border-color: #0f766e; }
+.card.match { background: var(--soft-green-bg); color: var(--soft-green-text); border-color: var(--soft-green-text); }
 .card.match::after { display: none; }
 .card.confirm {
   border-color: #f5a623;
@@ -307,7 +307,7 @@ function restart() {
 .card:not(.open):not(.match):not(.confirm):hover { transform: translateY(-2px); }
 .card-label { position: relative; z-index: 1; font-size: 13px; font-weight: 800; padding: 0 4px; }
 .card.open .card-label { color: var(--text); }
-.card.match .card-label { color: #0f766e; }
+.card.match .card-label { color: var(--soft-green-text); }
 .card-label.new { color: var(--primary); }
 .card-badge {
   position: relative;
@@ -336,14 +336,14 @@ function restart() {
   margin-top: 12px;
   padding: 8px 12px;
   border-radius: 10px;
-  background: var(--soft-yellow);
-  border: 1px solid #f5c34c;
-  color: #8a5b00;
+  background: var(--notice-bg);
+  border: 1px solid var(--notice-border);
+  color: var(--notice-text);
   font-size: 13px;
   font-weight: 600;
 }
-.found-tip.bad { background: #fdf0f0; border-color: #e6a3a3; color: #b63a46; }
-.found-tip.good { background: #e8f6ee; border-color: #7ec9a0; color: #0f766e; }
+.found-tip.bad { background: var(--soft-red-bg); border-color: var(--soft-red-border); color: var(--soft-red-text); }
+.found-tip.good { background: var(--soft-green-bg); border-color: var(--soft-green-border); color: var(--soft-green-text); }
 .overlay {
   position: fixed;
   inset: 0;
@@ -365,7 +365,7 @@ function restart() {
 }
 .overlay-card p { margin: 0; }
 .cheat-box {
-  background: rgba(255, 255, 255, 0.97);
+  background: var(--card);
   border-radius: 16px;
   padding: 18px 20px;
   max-width: 400px;

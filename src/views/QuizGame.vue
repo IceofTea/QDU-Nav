@@ -160,7 +160,7 @@ onMounted(() => {
   <template v-else-if="!done">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
       <div style="font-weight:800;font-size:15px;">第 {{ index + 1 }} / {{ pool.length }} 题</div>
-      <div style="flex:1;height:8px;background:#eef3fa;border-radius:4px;overflow:hidden;">
+      <div style="flex:1;height:8px;background:var(--soft-gray);border-radius:4px;overflow:hidden;">
         <div
           style="height:100%;background:linear-gradient(90deg,#1b66c9,#3a86e8);transition:width .3s;"
           :style="{ width: ((index + (picked !== null ? 1 : 0)) / pool.length * 100) + '%' }"
@@ -189,7 +189,7 @@ onMounted(() => {
       </button>
     </div>
 
-    <div v-if="picked !== null" class="result-box" :style="{ background: picked === cur.answer ? '#e8f6ee' : '#fdf0f0' }">
+    <div v-if="picked !== null" class="result-box" :style="{ background: picked === cur.answer ? 'var(--soft-green-bg)' : 'var(--soft-red-bg)' }">
       <div style="font-weight:700;">{{ verdict }}</div>
       <div class="muted" style="font-size:13px;margin-top:4px;">{{ cur.explain }}</div>
       <button class="btn" style="margin-top:12px;" @click="next">
@@ -286,12 +286,12 @@ onMounted(() => {
 .bank-text { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.5; }
 .bank-toggle { flex-shrink: 0; font-size: 12px; color: var(--text-light); padding-top: 2px; }
 .bank-detail { padding: 4px 0 10px 32px; }
-.bank-opt { font-size: 13px; padding: 5px 10px; border-radius: 8px; background: #f6f9ff; border: 1px solid var(--border); }
-.bank-opt.right { background: #e8f6ee; border-color: #0f766e; color: #0f766e; font-weight: 700; }
+.bank-opt { font-size: 13px; padding: 5px 10px; border-radius: 8px; background: var(--soft-fg); border: 1px solid var(--border); }
+.bank-opt.right { background: var(--soft-green-bg); border-color: var(--soft-green-text); color: var(--soft-green-text); font-weight: 700; }
 .bank-explain { font-size: 12px; color: var(--text-sub); margin-top: 8px; line-height: 1.6; }
 .opt {
   text-align: left;
-  background: #f6f9ff;
+  background: var(--soft-fg);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 13px 16px;
@@ -323,15 +323,15 @@ onMounted(() => {
   background: var(--primary-soft);
 }
 .opt.correct {
-  background: #e8f6ee;
-  border-color: #0f766e;
-  color: #0f766e;
+  background: var(--soft-green-bg);
+  border-color: var(--soft-green-text);
+  color: var(--soft-green-text);
   font-weight: 700;
 }
 .opt.wrong {
-  background: #fdf0f0;
-  border-color: #b63a46;
-  color: #b63a46;
+  background: var(--soft-red-bg);
+  border-color: var(--soft-red-text);
+  color: var(--soft-red-text);
 }
 .opt.dim {
   opacity: 0.5;

@@ -95,7 +95,7 @@ const insights = computed(() => {
     </p>
   </div>
 
-  <div v-if="loading" class="panel" style="text-align:center;color:var(--muted);padding:40px 16px;">
+  <div v-if="loading" class="panel" style="text-align:center;color:var(--text-sub);padding:40px 16px;">
     正在加载贴吧数据…
   </div>
 
@@ -136,7 +136,7 @@ const insights = computed(() => {
         <div class="muted" style="font-size:12px;">日均约 {{ Math.round(weekSum / 14) }} 条</div>
       </div>
     </div>
-    <div v-if="insights.length" class="panel" style="margin-bottom:16px;background:var(--soft-blue);border-color:#bcd6f5;">
+    <div v-if="insights.length" class="panel" style="margin-bottom:16px;background:var(--soft-blue);border-color:var(--bar-bright);">
       <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>一眼看懂这些数据</div>
       <ul style="margin:0;padding-left:18px;font-size:13px;line-height:2;color:var(--text);">
         <li v-for="s in insights" :key="s">{{ s }}</li>
@@ -216,7 +216,7 @@ const insights = computed(() => {
   height: 42px;
   border-radius: 12px;
   background: var(--card);
-  color: #2f5fb8;
+  color: var(--primary);
   font-weight: 800;
   font-size: 20px;
   display: flex;
@@ -250,7 +250,7 @@ const insights = computed(() => {
 }
 .hot-rank {
   font-weight: 800;
-  color: var(--muted);
+  color: var(--text-sub);
   min-width: 20px;
   text-align: center;
 }
@@ -315,7 +315,7 @@ const insights = computed(() => {
 }
 .kw-tag em {
   font-style: normal;
-  color: var(--muted);
+  color: var(--text-sub);
   font-size: 11px;
   font-weight: 500;
 }
@@ -370,9 +370,9 @@ const insights = computed(() => {
 .trend-tip {
   font-size: 11px;
   font-weight: 700;
-  color: #92400e;
-  background: #fef3c7;
-  border: 1px solid #f5d79a;
+  color: var(--notice-text);
+  background: var(--notice-bg);
+  border: 1px solid var(--notice-border);
   border-radius: 6px;
   padding: 1px 7px;
   opacity: 0;

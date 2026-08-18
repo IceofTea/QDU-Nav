@@ -1,5 +1,6 @@
 // QDU-Nav 独立访问计数服务（Node 无依赖 · 多维统计，本地联调版）
 // 与 Deno 版 server.ts 逻辑一致：按日期/小时/星期/设备/系统/来源/应用自动累计。
+// UV 由服务端按「IP + UA」指纹去重（内存 Set，与 Deno 版 KV 键等价）。
 // 数据：内存 + 异步落盘 `counter/data.json`。
 import http from 'node:http'
 import { readFile, writeFile } from 'node:fs/promises'

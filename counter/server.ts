@@ -1,13 +1,14 @@
 // QDU-Nav 独立访问计数服务（Deno Deploy 版 · 多维统计）
 // -----------------------------------------------------------------------------
 // 端点：
-//   GET /api/hit?isNewUv=1|0&app=<appId>   本次访问 PV+1；isNewUv=1 时 UV+1；
-//                                          按日期/小时/星期/设备/系统/来源/应用自动累计，返回完整统计
-//   GET /api/stats                         查询完整统计（不计数）
-//   GET /                                  探活文本
+//   GET /api/hit?app=<appId>    本次访问 PV+1（UV 由服务端按「IP+UA」指纹去重），
+//                               按日期/小时/星期/设备/系统/来源/应用自动累计，返回完整统计
+//   GET /api/stats              查询完整统计（不计数）
+//   GET /                       探活文本
 // 数据全部存 Deno KV（['stats'] 单 key），免费额度含 KV 持久化，重启不丢。
 // 部署见文件头部注释（console.deno.com：App Directory 根、Dynamic、entrypoint、
 // Build 命令 echo skip、创建并 Attach KV 数据库）。
+// 说明：早期版本由前端传 isNewUv 控制 UV，现改为服务端 IP+UA 指纹去重，参数已弃用。
 
 const KEY = ['stats']
 const kv = await Deno.openKv()

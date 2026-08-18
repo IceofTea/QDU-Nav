@@ -168,10 +168,13 @@ KEYWORD_DICT = sorted(
     key=len, reverse=True)
 
 
-def analyze(threads):
-    """基于帖子列表做轻量舆情分析。"""
+def analyze(threads, today=None):
+    """基于帖子列表做轻量舆情分析。
+
+    today 可注入固定日期（供单测稳定断言），默认取当前日期。
+    """
     top = sorted(threads, key=lambda t: -t['replies'])[:10]
-    today = datetime.now().date()
+    today = today or datetime.now().date()
 
     word_count = {}
     for t in threads:

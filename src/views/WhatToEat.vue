@@ -96,7 +96,7 @@ onMounted(() => {
   <div class="panel" style="margin-bottom:16px;">
     <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>食堂一览（<CountUp :value="halls.length" /> 家）</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;">
-      <div v-for="h in halls" :key="h.name" style="background:#f6f9ff;border-radius:12px;padding:12px;">
+      <div v-for="h in halls" :key="h.name" style="background:var(--soft-fg);border-radius:12px;padding:12px;">
         <b>{{ h.name }}</b>
         <div class="muted" style="font-size:12px;margin-top:4px;">{{ h.campus }} · {{ h.zone }}</div>
       </div>
@@ -135,7 +135,7 @@ onMounted(() => {
 
 <style scoped>
 .food-card {
-  background: #f6f9ff;
+  background: var(--soft-fg);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px;

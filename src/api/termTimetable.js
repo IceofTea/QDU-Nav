@@ -13,16 +13,19 @@ let meta = null
 let metaLoading = null
 const termCache = new Map()
 
-/** 内联 Web Worker：在后台线程 JSON.parse 大文件，避免阻塞主线程（低端机也不卡） */
+/** 内联 Web Worker：在后台线程 JSON.parse 大文件，避免阻塞主线程（低端机也不卡）。
+ *  每个请求带自增 id，worker 原样回传，避免并发请求的消息错配。 */
 const parseWorker = (() => {
   try {
     const code =
-      'self.onmessage=(e)=>{try{self.postMessage({ok:true,data:JSON.parse(e.data)})}catch(err){self.postMessage({ok:false,error:String(err)})}}'
+      'self.onmessage=(e)=>{const m=e.data;try{self.postMessage({id:m.id,ok:true,data:JSON.parse(m.text)})}catch(err){self.postMessage({id:m.id,ok:false,error:String(err)})}}'
     return new Worker(URL.createObjectURL(new Blob([code], { type: 'application/javascript' })))
   } catch {
     return null
   }
 })()
+
+let parseReqId = 0
 
 function parseJSONAsync(text) {
   return new Promise((resolve) => {
@@ -30,12 +33,14 @@ function parseJSONAsync(text) {
       try { resolve(JSON.parse(text)) } catch { resolve({ rows: [] }) }
       return
     }
+    const id = ++parseReqId
     const onMsg = (e) => {
+      if (!e.data || e.data.id !== id) return
       parseWorker.removeEventListener('message', onMsg)
       resolve(e.data && e.data.ok ? e.data.data : { rows: [] })
     }
     parseWorker.addEventListener('message', onMsg)
-    parseWorker.postMessage(text)
+    parseWorker.postMessage({ id, text })
   })
 }
 

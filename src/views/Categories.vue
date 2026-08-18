@@ -69,7 +69,7 @@ const grouped = computed(() => {
   gap: 6px;
   padding: 16px 10px 14px;
   background: var(--card);
-  border: 1px solid #f0f2f5;
+  border: 1px solid var(--border);
   border-radius: 14px;
   cursor: pointer;
   font-family: inherit;

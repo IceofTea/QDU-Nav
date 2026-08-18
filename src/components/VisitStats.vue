@@ -1,12 +1,12 @@
 <script setup>
 /** 首页访问统计卡片：独立访客 UV / 累计访问 PV
- *  数据来自自建计数服务（counter/server.mjs，独立于 QDU-Wiki，详见部署说明）。
- *  会话内缓存先行回填避免闪烁；服务不可用时降级显示「—」。 */
+ *  数据来自自建计数服务（counter/server.mjs 与 server.ts，独立于 QDU-Wiki）。
+ *  UV 去重由服务端按「IP + UA」指纹完成（无需前端标记），本组件每次挂载上报一次
+ *  /api/hit；会话内缓存先行回填避免闪烁；服务不可用时降级显示「—」。 */
 import { ref, computed, onMounted } from 'vue'
 import { SITE } from '../config/site'
 
 const STORAGE_KEY = 'qdu-nav-visit-v1'
-const UV_SEEN_KEY = 'qdu_nav_uv_seen'
 const api = (SITE.counter && SITE.counter.api) || ''
 
 const uv = ref(null)
@@ -41,10 +41,9 @@ async function refresh() {
   restore()
   if (!api) return
   try {
-    const isNew = !localStorage.getItem(UV_SEEN_KEY)
     const ctrl = new AbortController()
     const timer = setTimeout(() => ctrl.abort(), 8000)
-    const r = await fetch(api + '/api/hit?isNewUv=' + (isNew ? '1' : '0'), { signal: ctrl.signal })
+    const r = await fetch(api + '/api/hit', { signal: ctrl.signal })
     clearTimeout(timer)
     if (!r.ok) return
     const d = await r.json()
@@ -53,13 +52,6 @@ async function refresh() {
     pv.value = d.pv
     todayUv.value = d.today ? d.today.uv : null
     todayPv.value = d.today ? d.today.pv : null
-    if (isNew) {
-      try {
-        localStorage.setItem(UV_SEEN_KEY, '1')
-      } catch {
-        /* noop */
-      }
-    }
     try {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(d))
     } catch {
@@ -103,7 +95,7 @@ onMounted(refresh)
   flex-direction: column;
   gap: 8px;
   background: linear-gradient(135deg, var(--soft-blue), var(--soft));
-  border: 1px solid #cfe3fb;
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 10px 14px;
   margin-top: 12px;
@@ -119,7 +111,7 @@ onMounted(refresh)
   gap: 8px;
   padding: 8px 10px;
   background: var(--card);
-  border: 1px solid #dbeafe;
+  border: 1px solid var(--border);
   border-radius: 10px;
 }
 .vs-icon {

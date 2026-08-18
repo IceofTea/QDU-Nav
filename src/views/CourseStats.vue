@@ -91,8 +91,8 @@ const insights = computed(() => {
   <div v-else-if="!stats.periods" class="muted" style="text-align:center;padding:40px;">暂无统计数据</div>
 
   <template v-else>
-    <div v-if="!hasDist" class="panel" style="margin-bottom:16px;background: var(--soft-yellow);border-color:#f5d79a;">
-      <div style="font-size:13px;font-weight:700;color:#92400e;">📌 课程性质 / 校区 / 学院分布数据将在下一次定时抓取后自动补充</div>
+    <div v-if="!hasDist" class="panel" style="margin-bottom:16px;background: var(--notice-bg);border-color:var(--notice-border);">
+      <div style="font-size:13px;font-weight:700;color:var(--notice-text);">📌 课程性质 / 校区 / 学院分布数据将在下一次定时抓取后自动补充</div>
       <p class="muted" style="font-size:12px;margin:6px 0 0;">历史快照未包含这些字段，重新抓取（每 6 小时一次）后本页会展示真实分布。</p>
     </div>
 
@@ -119,7 +119,7 @@ const insights = computed(() => {
       </div>
     </div>
 
-    <div v-if="insights.length" class="panel" style="margin-bottom:16px;background:var(--soft-blue);border-color:#bcd6f5;">
+    <div v-if="insights.length" class="panel" style="margin-bottom:16px;background:var(--soft-blue);border-color:var(--bar-bright);">
       <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>一眼看懂这些数据</div>
       <ul style="margin:0;padding-left:18px;font-size:13px;line-height:2;color:var(--text);">
         <li v-for="s in insights" :key="s">{{ s }}</li>

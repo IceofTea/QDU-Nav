@@ -238,7 +238,7 @@ const activeTableData = computed(() => {
   min-width: 64px;
   text-align: right;
 }
-.score-raw.dim { color: #c2c9d6; }
+.score-raw.dim { color: var(--dim-gray); }
 .score-bar { flex: 1; }
 .table-wrap { overflow-x: auto; }
 .mini-table {
@@ -252,6 +252,6 @@ const activeTableData = computed(() => {
   text-align: left;
 }
 .mini-table th { background: var(--bg); font-weight: 700; }
-.mini-table tr.hit td { background: #e8f2ff; }
+.mini-table tr.hit td { background: var(--blue-bright); }
 .mini-table tr.hit td:first-child { font-weight: 800; color: var(--primary); }
 </style>

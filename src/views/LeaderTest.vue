@@ -121,11 +121,12 @@ const best = computed(() => ranked.value[0] || null)
 const second = computed(() => ranked.value[1] || null)
 const third = computed(() => ranked.value[2] || null)
 
-/** 为什么是这个人：距离最近的三维 + 用户风格倾向最高的两维 */
+/** 为什么是这个人：距离最近的三维 + 用户风格倾向最高的两维
+ *  用户向量归一（-1..1）后映射回 0-10（norm），与原型 vec（0-10）同标尺比较 */
 const whyText = computed(() => {
   if (!best.value || !user.value) return ''
   const nearest = [...DIMS]
-    .map((d) => ({ k: d.key, label: d.label, diff: Math.abs(user.value[d.key] - best.value.vec[d.key]) }))
+    .map((d) => ({ k: d.key, label: d.label, diff: Math.abs(norm(user.value[d.key]) - best.value.vec[d.key]) }))
     .sort((a, b) => a.diff - b.diff)
     .slice(0, 3)
   const topDims = [...DIMS].sort((a, b) => (user.value[b.key] || 0) - (user.value[a.key] || 0)).slice(0, 2)
@@ -135,9 +136,6 @@ const whyText = computed(() => {
 /** 结果条：用户向量中心化（-1..1）映射回 0-10，与原型 vec 同量纲 */
 const norm = (v) => Math.max(0, Math.min(10, Math.round((v + 1) * 5)))
 const pct = (v) => Math.round((v / 10) * 100)
-/** 维度对齐度：用户与原型该维越接近越满 */
-const dimAlign = (d) =>
-  Math.max(0, Math.min(100, Math.round(100 - Math.abs(user.value[d.key] - best.value.vec[d.key]) * 10)))
 
 const shareText = computed(() => (best.value ? shareLine(best.value) : ''))
 const copied = ref(false)
@@ -154,6 +152,8 @@ async function copyShare() {
 const feedback = ref(null)
 
 /** 头像：优先官方照片，缺失回退首字母彩色头像 */
+/** 照片路径拼 BASE_URL：兼容 GH Pages 子路径部署（photo 在 data 中存相对路径） */
+const photoUrl = (p) => (p ? import.meta.env.BASE_URL + p : '')
 function avatarStyle(l) {
   const hue = leaders.indexOf(l) * 46
   return { background: `linear-gradient(135deg, hsl(${hue} 55% 45%), hsl(${hue + 40} 55% 62%))` }
@@ -213,7 +213,7 @@ const initial = (name) => name.charAt(0)
   <div v-else-if="phase === 'result' && best" class="panel result-panel">
     <div class="result-hero">
       <div class="portrait" :style="avatarStyle(best)">
-        <img v-if="best.photo" :src="best.photo" alt="" @error="best.photo = ''" />
+        <img v-if="best.photo" :src="photoUrl(best.photo)" alt="" @error="best.photo = ''" />
         <span v-else class="portrait-initial">{{ initial(best.name) }}</span>
       </div>
       <div class="result-hero-txt">
@@ -252,7 +252,7 @@ const initial = (name) => name.charAt(0)
       <div class="sec-title">最接近的另外两位</div>
       <div v-for="(o, i) in [second, third]" :key="o.name" class="near-row">
         <span class="near-rank">#{{ i + 2 }}</span>
-        <img v-if="o.photo" class="near-img" :src="o.photo" alt="" @error="o.photo = ''" />
+        <img v-if="o.photo" class="near-img" :src="photoUrl(o.photo)" alt="" @error="o.photo = ''" />
         <span v-else class="near-avatar" :style="avatarStyle(o)">{{ initial(o.name) }}</span>
         <div class="near-main">
           <div class="near-name">{{ o.name }}</div>
@@ -320,7 +320,7 @@ const initial = (name) => name.charAt(0)
 .dim-proto { position: absolute; left: 0; top: 0; height: 4px; margin-top: 5px; border-radius: 2px; background: #f59e0b; }
 .near-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--border); }
 .near-row:last-child { border-bottom: none; }
-.near-rank { flex: 0 0 22px; font-weight: 800; color: var(--muted); font-size: 13px; }
+.near-rank { flex: 0 0 22px; font-weight: 800; color: var(--text-sub); font-size: 13px; }
 .near-img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; flex: none; }
 .near-avatar { width: 38px; height: 38px; border-radius: 50%; color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; flex: none; }
 .near-main { flex: 1; min-width: 0; }

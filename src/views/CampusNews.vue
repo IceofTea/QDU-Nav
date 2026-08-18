@@ -51,10 +51,6 @@ const loadAll = async (force) => {
 const refresh = () => loadAll(true)
 
 onMounted(loadAll)
-
-function open(url) {
-  window.open(url, '_blank', 'noopener')
-}
 </script>
 
 <template>

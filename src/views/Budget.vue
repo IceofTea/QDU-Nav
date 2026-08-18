@@ -121,21 +121,6 @@ function pickCat(key) {
   cat.value = key
 }
 
-function add() {
-  const amt = Number(amount.value)
-  if (!amt || amt <= 0) return
-  records.value.unshift({
-    id: Date.now() + Math.random(),
-    type: mode.value,
-    cat: cat.value,
-    amount: Math.round(amt * 100) / 100,
-    note: note.value.trim(),
-    date: date.value || today()
-  })
-  amount.value = ''
-  note.value = ''
-}
-
 /** 编辑 / 纠错：载入一条记录到表单，保存后原地更新 */
 const editing = ref(null)
 function editStart(r) {
@@ -423,10 +408,10 @@ const monthLabel = computed(() => {
       </div>
     </template>
     <div class="input-row" style="margin-top:14px;">
-      <input v-model="amount" class="input amount-input" type="number" inputmode="decimal" placeholder="金额，如 12.5" @keyup.enter="add" />
+      <input v-model="amount" class="input amount-input" type="number" inputmode="decimal" placeholder="金额，如 12.5" @keyup.enter="save" />
       <input v-model="date" class="input date-input" type="date" />
     </div>
-    <input v-model="note" class="input" style="margin-top:10px;" placeholder="备注（可选），如：食堂麻辣香锅" @keyup.enter="add" />
+    <input v-model="note" class="input" style="margin-top:10px;" placeholder="备注（可选），如：食堂麻辣香锅" @keyup.enter="save" />
     <button class="btn accent big" style="margin-top:12px;width:100%;" :disabled="!(Number(amount) > 0)" @click="save">
       {{ editing ? '✓ 保存修改' : '＋ 记入' + (mode === 'expense' ? '支出' : '收入') }}
     </button>
@@ -586,9 +571,9 @@ const monthLabel = computed(() => {
   font-size: 12px;
   padding: 10px;
   background: var(--soft-green);
-  border: 1px solid #bfe6cf;
+  border: 1px solid var(--soft-green-border);
   border-radius: 10px;
-  color: #0f5c3d;
+  color: var(--soft-green-text);
 }
 .ref-toggle {
   width: 100%;
@@ -631,7 +616,7 @@ const monthLabel = computed(() => {
 .rec-amt.in { color: #0f766e; }
 .rec-amt.out { color: #b63a46; }
 .rec-del {
-  border: none; background: none; color: #b9c2d0; font-size: 14px; cursor: pointer; padding: 4px;
+  border: none; background: none; color: var(--text-light); font-size: 14px; cursor: pointer; padding: 4px;
 }
 .rec-del:hover { color: var(--primary); }
 </style>

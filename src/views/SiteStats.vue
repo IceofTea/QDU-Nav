@@ -176,7 +176,7 @@ onMounted(async () => {
 .row-bar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #0891b2, #22d3ee); }
 .app-top { display: flex; flex-direction: column; }
 .app-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
-.app-rank { flex: 0 0 20px; text-align: center; font-weight: 800; color: var(--muted); font-size: 13px; }
+.app-rank { flex: 0 0 20px; text-align: center; font-weight: 800; color: var(--text-sub); font-size: 13px; }
 .app-rank.top { color: #eab308; }
 .app-name { flex: 0 0 96px; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .app-bar { flex: 1; height: 10px; border-radius: 6px; background: var(--bar); overflow: hidden; }

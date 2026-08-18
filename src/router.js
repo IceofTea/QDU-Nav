@@ -114,5 +114,5 @@ function reportApp(id) {
   const now = Date.now()
   if (now - (appReportLast[id] || 0) < 5000) return
   appReportLast[id] = now
-  fetch(api + '/api/hit?isNewUv=0&app=' + encodeURIComponent(id)).catch(() => {})
+  fetch(api + '/api/hit?app=' + encodeURIComponent(id)).catch(() => {})
 }

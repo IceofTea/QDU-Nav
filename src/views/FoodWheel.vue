@@ -220,7 +220,7 @@ const groupedFoods = computed(() => halls.map((h) => ({ ...h, foods: foods.filte
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  border: 6px solid #fff;
+  border: 6px solid var(--card);
   box-shadow: 0 10px 30px rgba(27, 102, 201, 0.2);
   transition: transform 3.2s cubic-bezier(0.16, 0.85, 0.25, 1);
 }
@@ -256,7 +256,7 @@ const groupedFoods = computed(() => halls.map((h) => ({ ...h, foods: foods.filte
   font-size: 11px;
   padding: 3px 9px;
   border-radius: 999px;
-  background: #f6f9ff;
+  background: var(--soft-fg);
   border: 1px solid var(--border);
   color: var(--text);
 }

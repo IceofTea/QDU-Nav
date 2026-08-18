@@ -60,7 +60,7 @@ function gotoOfficial() {
       <input class="input" v-model="form.kaoshenghao" placeholder="考生号（14 位，选填）" maxlength="14" />
       <button class="btn" @click="gotoOfficial">前往官方查询 ↗</button>
     </div>
-    <div v-if="error" class="result-box" style="background:#fdf0f0;color:#b63a46;margin-top:10px;">{{ error }}</div>
+    <div v-if="error" class="result-box" style="background:var(--soft-red-bg);color:var(--soft-red-text);margin-top:10px;">{{ error }}</div>
     <div class="muted" style="margin-top:14px;font-size:12px;line-height:1.8;">
       提示：学号查询涉及个人隐私，须由本人凭录取信息在官方系统核验后获取，本站不做任何代查。
     </div>

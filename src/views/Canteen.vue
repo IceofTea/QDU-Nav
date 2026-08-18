@@ -121,7 +121,7 @@ function toggleFood(name) {
         <button class="canteen-main" @click="toggleFood(c.name)">
           <span style="font-weight: 800; font-size: 14px; white-space: nowrap">{{ c.name }}</span>
           <span class="type-tag" :class="c.type">{{ c.type === 'basic' ? '大众窗口' : '风味档口' }}</span>
-          <span v-if="c.note" class="tag" style="background: var(--card)3e0; color: #e65100">{{ c.note }}</span>
+          <span v-if="c.note" class="tag" style="background:var(--soft-yellow); color: #e65100">{{ c.note }}</span>
           <span class="canteen-area">{{ c.area }} · {{ c.dept }}</span>
           <span class="canteen-toggle">{{ openFood === c.name ? '收起 ▴' : '特色档口 ▾' }}</span>
         </button>
@@ -161,8 +161,8 @@ function toggleFood(name) {
 .stat-pill span { font-size: 10px; color: var(--text-light); }
 .hour-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .hour-tag { font-size: 11px; padding: 4px 10px; border-radius: 999px; }
-.hour-tag.basic { background: var(--soft-blue); color: #1b66c9; }
-.hour-tag.flavor { background: var(--card)3e0; color: #e65100; }
+.hour-tag.basic { background: var(--soft-blue); color: var(--primary); }
+.hour-tag.flavor { background: var(--soft-yellow); color: #e65100; }
 .canteen-row { border-bottom: 1px solid var(--border); padding: 9px 2px; }
 .canteen-row:last-child { border-bottom: none; }
 .canteen-main {
@@ -180,8 +180,8 @@ function toggleFood(name) {
 .canteen-area { font-size: 11px; color: var(--text-light); }
 .canteen-toggle { margin-left: auto; font-size: 11px; color: var(--primary); }
 .type-tag { font-size: 10px; padding: 2px 8px; border-radius: 999px; }
-.type-tag.basic { background: var(--soft-blue); color: #1b66c9; }
-.type-tag.flavor { background: var(--card)3e0; color: #e65100; }
+.type-tag.basic { background: var(--soft-blue); color: var(--primary); }
+.type-tag.flavor { background: var(--soft-yellow); color: #e65100; }
 .canteen-metric {
   margin-top: 6px;
   font-variant-numeric: tabular-nums;

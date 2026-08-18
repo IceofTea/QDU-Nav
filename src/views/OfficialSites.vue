@@ -106,7 +106,7 @@ async function copyMail() {
 <style scoped>
 .mail-helper {
   background: linear-gradient(160deg, var(--soft-blue) 0%, var(--soft) 60%, var(--soft-yellow) 100%);
-  border: 1px solid #cfe3fb;
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 16px;
   margin-bottom: 18px;
@@ -161,7 +161,7 @@ async function copyMail() {
   word-break: break-all;
 }
 .mail-out.empty {
-  color: var(--muted);
+  color: var(--text-sub);
   border-color: var(--border);
   font-weight: 500;
   font-size: 13px;
@@ -169,9 +169,9 @@ async function copyMail() {
 .mail-quip {
   margin-top: 10px;
   font-size: 12px;
-  color: #7c5a12;
-  background: var(--soft-yellow);
-  border: 1px dashed #f2c14e;
+  color: var(--notice-text);
+  background: var(--notice-bg);
+  border: 1px dashed var(--notice-border);
   border-radius: 10px;
   padding: 8px 12px;
   line-height: 1.7;

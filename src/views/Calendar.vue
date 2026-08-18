@@ -102,11 +102,11 @@ onMounted(load)
       <div
         v-for="(it, i) in t.items"
         :key="it.name"
-        style="position:relative;padding-bottom:16px;border-left:2px solid #dce9fb;padding-left:18px;margin-left:8px;"
-        :style="{ borderLeft: i === t.items.length - 1 ? '2px solid transparent' : '2px solid #dce9fb' }"
+        style="position:relative;padding-bottom:16px;border-left:2px solid var(--border);padding-left:18px;margin-left:8px;"
+        :style="{ borderLeft: i === t.items.length - 1 ? '2px solid transparent' : '2px solid var(--border)' }"
       >
         <span
-          style="position:absolute;left:-7px;top:2px;width:12px;height:12px;border-radius:50%;background:#1b66c9;"
+          style="position:absolute;left:-7px;top:2px;width:12px;height:12px;border-radius:50%;background:var(--primary);"
         ></span>
         <div style="font-weight:600;">{{ it.name }}</div>
         <div class="muted" style="font-size:13px;">{{ it.time }}</div>
@@ -114,8 +114,8 @@ onMounted(load)
     </div>
   </div>
 
-  <div class="panel" style="background:#fdf6e7;border-color:#f3e0b5;">
-    <div style="font-weight:700;color:#92400e;">💡 提示</div>
+  <div class="panel" style="background:var(--notice-bg);border-color:var(--notice-border);">
+    <div style="font-weight:700;color:var(--notice-text);">💡 提示</div>
     <div class="muted" style="font-size:13px;margin-top:6px;line-height:1.8;">
       时间线为社区按往年规律整理，仅供参考；官方校历以图片/附件形式发布，请打开上方「官方校历」对应条目，在教务处页面查看并下载校历原图（附件下载需输入验证码）。具体教学周与放假安排请以教务处官网为准。
     </div>
