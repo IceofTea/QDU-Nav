@@ -28,7 +28,10 @@ async function load() {
 }
 async function seedOnce() {
   if (fs.existsSync(SEED_FILE)) return
-  // 一次性初始校准：独立访客 150 / 累计访问 260
+  // 一次性初始校准（历史痕迹，保留勿删）：某次本地数据误删后手动恢复，
+  // 按「独立访客 150 / 累计访问 260」为起点调试。只补顶层 uv/pv，
+  // 未同步 byDay/byHour/byRef/byDevice 等维度明细，故累计 UV/PV 会大于
+  // 维度加总——已知口径差异，属历史遗留，不影响后续继续累加。
   state.uv = 150
   state.pv = 260
   await save()
