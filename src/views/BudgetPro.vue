@@ -7,6 +7,7 @@ import BarRow from '../components/BarRow.vue'
 import PieChart from '../components/PieChart.vue'
 import LineChart from '../components/LineChart.vue'
 import { cleanMerchant } from '../utils/billImport.js'
+import { exportXlsx } from '../utils/xlsxExport.js'
 
 const props = defineProps({
   records: { type: Array, default: () => [] },
@@ -191,12 +192,12 @@ const incAgg = computed(() => {
   const map = {}
   for (const r of inRange.value) {
     if (r.type !== 'income' || r.cat === 'refund') continue
-    const label = INC_LABEL[r.cat] || r.cat
-    map[label] = (map[label] || 0) + r.amount
+    map[r.cat] = (map[r.cat] || 0) + r.amount
   }
-  return Object.entries(map).map(([name, v]) => ({ name, v: Math.round(v * 100) / 100 })).sort((a, b) => b.v - a.v)
+  return Object.entries(map).map(([key, v]) => ({ key, icon: INC_ICON[key] || '📥', name: INC_LABEL[key] || key, v: Math.round(v * 100) / 100 })).sort((a, b) => b.v - a.v)
 })
 const maxCat = computed(() => Math.max(1, ...catAgg.value.map((c) => c.v)))
+const maxInc = computed(() => Math.max(1, ...incAgg.value.map((c) => c.v)))
 
 /* ---- 商户聚合 ---- */
 const merchantAgg = computed(() => {
@@ -209,16 +210,30 @@ const merchantAgg = computed(() => {
   return Object.entries(map).map(([name, v]) => ({ name, icon: '🏪', v: Math.round(v * 100) / 100 })).sort((a, b) => b.v - a.v)
 })
 const maxMerchant = computed(() => Math.max(1, ...merchantAgg.value.map((m) => m.v)))
+const merchantIncAgg = computed(() => {
+  const map = {}
+  for (const r of inRange.value) {
+    if (r.type !== 'income') continue
+    const m = cleanMerchant(r.merchant) || '其他'
+    map[m] = (map[m] || 0) + r.amount
+  }
+  return Object.entries(map).map(([name, v]) => ({ name, icon: '🏪', v: Math.round(v * 100) / 100 })).sort((a, b) => b.v - a.v)
+})
+const maxMerInc = computed(() => Math.max(1, ...merchantIncAgg.value.map((m) => m.v)))
 
 /* ---- 图表类型：条形 / 圆饼 ---- */
 const expChartType = ref('bar')
 const merChartType = ref('bar')
+const incChartType = ref('bar')
+const merIncChartType = ref('bar')
 
 /* ---- 明细：日期范围 + 分类 / 商户筛选 + 排序（可升降）+ 10 条分页 ---- */
 const proSort = ref('date')
 const proDir = ref('desc')
 const catFilterP = ref('all')
 const merchantFilterP = ref('')
+const incFilter = ref('')
+const typeFilterP = ref('all')
 const proPage = ref(1)
 const PAGE = 10
 const filtered = computed(() => {
@@ -229,7 +244,9 @@ const filtered = computed(() => {
       return mk && mk >= rangeStart.value && mk <= rangeEnd.value
     })
   }
+  if (typeFilterP.value !== 'all') list = list.filter((r) => r.type === typeFilterP.value)
   if (catFilterP.value !== 'all') list = list.filter((r) => isExp(r) && r.cat === catFilterP.value)
+  if (incFilter.value) list = list.filter((r) => r.type === 'income' && r.cat === incFilter.value)
   if (merchantFilterP.value) list = list.filter((r) => cleanMerchant(r.merchant) === merchantFilterP.value)
   if (calFilter.value) {
     if (calFilter.value.startsWith('day:')) list = list.filter((r) => r.date === calFilter.value.slice(4))
@@ -250,7 +267,7 @@ const filteredPage = computed(() => {
   return filtered.value.slice(s, s + PAGE)
 })
 const filteredCount = computed(() => Math.max(1, Math.ceil(filtered.value.length / PAGE)))
-watch([rangeStart, rangeEnd, catFilterP, merchantFilterP, proSort], () => { proPage.value = 1 })
+watch([rangeStart, rangeEnd, typeFilterP, catFilterP, incFilter, merchantFilterP, proSort], () => { proPage.value = 1 })
 function switchProSort(k) {
   if (k === 'amount' && proSort.value === 'amount') proDir.value = proDir.value === 'desc' ? 'asc' : 'desc'
   proSort.value = k
@@ -258,47 +275,40 @@ function switchProSort(k) {
 }
 function selectExpCat(label) {
   const found = catAgg.value.find((c) => c.name === label)
-  if (found) { catFilterP.value = found.key; merchantFilterP.value = ''; proPage.value = 1 }
+  if (found) { catFilterP.value = found.key; merchantFilterP.value = ''; incFilter.value = ''; proPage.value = 1 }
+}
+function selectIncCat(label) {
+  const found = incAgg.value.find((c) => c.name === label)
+  if (found) { incFilter.value = found.key; catFilterP.value = 'all'; merchantFilterP.value = ''; proPage.value = 1 }
 }
 function selectMerchant(name) {
   merchantFilterP.value = merchantFilterP.value === name ? '' : name
   catFilterP.value = 'all'
+  incFilter.value = ''
   proPage.value = 1
 }
 
 /* ---- 导出分析文件（CSV，Excel 可直接打开）---- */
 function exportCsv() {
-  const line = (a) => a.map((c) => {
-    const s = String(c == null ? '' : c)
-    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s
-  }).join(',')
-  const rows = []
-  rows.push(['QDU 生活费收支分析导出', new Date().toLocaleString(), `区间 ${rangeStart.value} ~ ${rangeEnd.value}`])
-  rows.push([])
-  rows.push(['累计收入', '累计支出', '结余', '退款冲抵笔数', '退款冲抵金额'])
-  rows.push([fmt(totalInc.value), fmt(totalExp.value), fmt(totalBal.value), refundCount.value, fmt(refundTotal.value)])
-  rows.push([])
-  rows.push(['【分类支出汇总】'])
-  rows.push(['分类', '金额'])
-  for (const c of catAgg.value) rows.push([c.name, c.v])
-  rows.push([])
-  rows.push(['【商户支出 Top 30】'])
-  rows.push(['商户', '金额'])
-  for (const m of merchantAgg.value.slice(0, 30)) rows.push([m.name, m.v])
-  rows.push([])
-  rows.push(['【收支明细】'])
-  rows.push(['日期', '类型', '分类', '商户', '金额', '已退款', '备注'])
-  for (const r of filtered.value) {
-    rows.push([r.date, r.type === 'income' ? '收入' : '支出', (EXP_LABEL[r.cat] || INC_LABEL[r.cat] || r.cat), r.merchant || '', r.amount, r.refunded ? '是' : '', r.note || ''])
-  }
-  const csv = '\uFEFF' + rows.map(line).join('\r\n')
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = `生活费分析_${rangeStart.value}_${rangeEnd.value}.csv`
-  document.body.appendChild(a)
-  a.click()
-  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove() }, 300)
+  exportXlsx({
+    fileName: `生活费分析_${rangeStart.value}_${rangeEnd.value}.xlsx`,
+    inc: totalInc.value,
+    exp: totalExp.value,
+    bal: totalBal.value,
+    refundTotal: refundTotal.value,
+    catExp: catAgg.value.map((c) => ({ name: c.name, v: c.v })),
+    catInc: incAgg.value.map((c) => ({ name: c.name, v: c.v })),
+    merExp: merchantAgg.value.slice(0, 30).map((m) => ({ name: m.name, v: m.v })),
+    merInc: merchantIncAgg.value.slice(0, 30).map((m) => ({ name: m.name, v: m.v })),
+    rows: filtered.value.map((r) => ({
+      date: r.date,
+      type: r.type,
+      cat: EXP_LABEL[r.cat] || INC_LABEL[r.cat] || r.cat,
+      merchant: r.merchant || '',
+      amount: r.amount,
+      note: r.note || ''
+    }))
+  })
 }
 </script>
 
@@ -418,6 +428,7 @@ function exportCsv() {
   </div>
   </div>
 
+  <div class="g2">
   <div class="panel">
     <div class="section-head" style="align-items:center;margin:0 0 10px;">
       <h3 class="section-title" style="margin:0;"><span class="bar"></span>支出分类构成</h3>
@@ -439,6 +450,27 @@ function exportCsv() {
 
   <div class="panel">
     <div class="section-head" style="align-items:center;margin:0 0 10px;">
+      <h3 class="section-title" style="margin:0;"><span class="bar"></span>收入分类构成</h3>
+      <div class="chart-type">
+        <button class="tab" :class="{ active: incChartType === 'bar' }" @click="incChartType = 'bar'">▥ 条形</button>
+        <button class="tab" :class="{ active: incChartType === 'pie' }" @click="incChartType = 'pie'">◔ 圆饼</button>
+      </div>
+    </div>
+    <div v-if="!incAgg.length" class="muted" style="text-align:center;padding:10px;">区间内暂无收入</div>
+    <template v-else>
+      <div v-if="incChartType === 'bar'" class="chart-rows">
+        <button v-for="c in incAgg" :key="c.key" class="chart-row" @click="selectIncCat(c.name)">
+          <BarRow :label="c.icon + ' ' + c.name" :value="c.v" :max="maxInc" :text="'¥' + fmt(c.v) + ' · ' + Math.round(c.v / Math.max(1, incAgg.reduce((s, x) => s + x.v, 0)) * 100) + '%'" color="linear-gradient(90deg,#0d9488,#2dd4bf)" />
+        </button>
+      </div>
+      <PieChart v-else :segments="incAgg" :total="incAgg.reduce((s, x) => s + x.v, 0)" value-prefix="¥" @select="selectIncCat" />
+    </template>
+  </div>
+  </div>
+
+  <div class="g2">
+  <div class="panel">
+    <div class="section-head" style="align-items:center;margin:0 0 10px;">
       <h3 class="section-title" style="margin:0;"><span class="bar"></span>同商户支出排行</h3>
       <div class="chart-type">
         <button class="tab" :class="{ active: merChartType === 'bar' }" @click="merChartType = 'bar'">▥ 条形</button>
@@ -457,23 +489,51 @@ function exportCsv() {
   </div>
 
   <div class="panel">
+    <div class="section-head" style="align-items:center;margin:0 0 10px;">
+      <h3 class="section-title" style="margin:0;"><span class="bar"></span>同商户收入排行</h3>
+      <div class="chart-type">
+        <button class="tab" :class="{ active: merIncChartType === 'bar' }" @click="merIncChartType = 'bar'">▥ 条形</button>
+        <button class="tab" :class="{ active: merIncChartType === 'pie' }" @click="merIncChartType = 'pie'">◔ 圆饼</button>
+      </div>
+    </div>
+    <div v-if="!merchantIncAgg.length" class="muted" style="text-align:center;padding:10px;">区间内暂无收入商户数据</div>
+    <template v-else>
+      <div v-if="merIncChartType === 'bar'" class="chart-rows">
+        <button v-for="m in merchantIncAgg.slice(0, 15)" :key="m.name" class="chart-row" @click="selectMerchant(m.name)">
+          <BarRow :label="'🏪 ' + m.name" :value="m.v" :max="maxMerInc" :text="'¥' + fmt(m.v)" color="linear-gradient(90deg,#2563eb,#60a5fa)" />
+        </button>
+      </div>
+      <PieChart v-else :segments="merchantIncAgg.slice(0, 15)" :total="merchantIncAgg.slice(0, 15).reduce((s, x) => s + x.v, 0)" value-prefix="¥" @select="selectMerchant" />
+    </template>
+  </div>
+  </div>
+
+  <div class="panel">
     <div class="section-head" style="align-items:center;margin:0 0 8px;">
       <h3 class="section-title" style="margin:0;">收支明细</h3>
-      <button class="btn ghost small" @click="exportCsv">⬇️ 导出分析</button>
+      <button class="btn ghost small" @click="exportCsv">⬇️ 导出 Excel</button>
     </div>
     <div class="sort-row">
+      <button class="tab" :class="{ active: typeFilterP === 'all' }" @click="typeFilterP = 'all'; catFilterP = 'all'; incFilter = ''">全部</button>
+      <button class="tab" :class="{ active: typeFilterP === 'expense' }" @click="typeFilterP = 'expense'; catFilterP = 'all'; incFilter = ''">支出</button>
+      <button class="tab" :class="{ active: typeFilterP === 'income' }" @click="typeFilterP = 'income'; incFilter = ''">收入</button>
+      <span class="sep">|</span>
       <button class="tab" :class="{ active: proSort === 'date' }" @click="switchProSort('date')">日期</button>
       <button class="tab" :class="{ active: proSort === 'amount' }" @click="switchProSort('amount')">金额{{ proSort === 'amount' ? (proDir === 'asc' ? ' ↑' : ' ↓') : '' }}</button>
       <button class="tab" :class="{ active: proSort === 'cat' }" @click="switchProSort('cat')">分类</button>
       <span class="muted" style="font-size:10px;margin-left:auto;">{{ filtered.length }} 笔</span>
     </div>
     <div v-if="proSort === 'cat'" class="cat-chips">
-      <button class="chip" :class="{ active: catFilterP === 'all' }" @click="catFilterP = 'all'">全部</button>
+      <button v-if="typeFilterP !== 'income'" class="chip" :class="{ active: catFilterP === 'all' }" @click="catFilterP = 'all'">全部支出</button>
       <button v-for="c in catAgg" :key="c.key" class="chip" :class="{ active: catFilterP === c.key }" @click="catFilterP = c.key">{{ c.icon }}{{ c.name }}</button>
+      <template v-if="typeFilterP === 'income'">
+        <button class="chip" :class="{ active: incFilter === '' }" @click="incFilter = ''">全部收入</button>
+        <button v-for="c in incAgg" :key="c.key" class="chip" :class="{ active: incFilter === c.key }" @click="incFilter = c.key">{{ c.icon }}{{ c.name }}</button>
+      </template>
     </div>
-    <div v-if="catFilterP !== 'all' || merchantFilterP" class="pro-filter-tip">
-      已筛选：<b>{{ catFilterP !== 'all' ? EXP_LABEL[catFilterP] : merchantFilterP }}</b>
-      <button class="btn ghost small" @click="catFilterP = 'all'; merchantFilterP = ''">✕ 清除筛选</button>
+    <div v-if="catFilterP !== 'all' || merchantFilterP || incFilter" class="pro-filter-tip">
+      已筛选：<b>{{ incFilter ? INC_LABEL[incFilter] : catFilterP !== 'all' ? EXP_LABEL[catFilterP] : merchantFilterP }}</b>
+      <button class="btn ghost small" @click="catFilterP = 'all'; merchantFilterP = ''; incFilter = ''">✕ 清除筛选</button>
     </div>
     <div v-if="!filtered.length" class="muted" style="text-align:center;padding:16px;">区间内暂无记录</div>
     <div v-else class="rec-list">
@@ -560,6 +620,7 @@ function exportCsv() {
 
 .sort-row { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
 .sort-row .tab { flex: 0 0 auto; font-size: 12px; }
+.sep { color: var(--text-light); font-size: 12px; }
 .cat-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
 .cat-chips .chip {
   border: 1px solid var(--border);
@@ -605,6 +666,11 @@ function exportCsv() {
 .pro-duo { display: grid; gap: 14px; }
 @media (min-width: 920px) {
   .pro-duo { grid-template-columns: 1fr 1fr; align-items: start; }
+}
+/* 分类 / 商户 收入支出并排 */
+.g2 { display: grid; gap: 14px; margin-bottom: 14px; }
+@media (min-width: 860px) {
+  .g2 { grid-template-columns: 1fr 1fr; align-items: start; }
 }
 
 /* 收支日历 */

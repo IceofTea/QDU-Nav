@@ -35,13 +35,25 @@ onBeforeUnmount(() => { if (ro) ro.disconnect() })
 const plotW = computed(() => vw.value - padL - padR)
 const plotH = computed(() => props.height - padT - padB)
 const totalN = computed(() => (props.series[0] ? props.series[0].data.length : 0))
-const maxV = computed(() => Math.max(1, ...props.series.flatMap((s) => s.data.map((v) => Math.abs(v)))))
+const dataMin = computed(() => Math.min(0, ...props.series.flatMap((s) => s.data.map((v) => Number(v) || 0))))
+const dataMax = computed(() => Math.max(1, ...props.series.flatMap((s) => s.data.map((v) => Number(v) || 0))))
+const hasNeg = computed(() => dataMin.value < 0)
+const span = computed(() => dataMax.value - dataMin.value || 1)
 const xAt = (i) => (totalN.value < 2 ? padL + plotW.value / 2 : padL + (i * plotW.value) / (totalN.value - 1))
-const yAt = (v) => padT + plotH.value - (Math.abs(v) / maxV.value) * plotH.value
+const yAt = (v) =>
+  hasNeg.value ? padT + (1 - (v - dataMin.value) / span.value) * plotH.value : padT + plotH.value - ((v || 0) / dataMax.value) * plotH.value
+const zeroY = computed(() => yAt(0))
 const points = (data) => (data.length < 2 ? '' : data.map((v, i) => `${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`).join(' '))
-const areaPoints = (data) => (data.length < 2 ? '' : `0,${props.height} ${points(data)} ${vw.value},${props.height}`)
+const areaPoints = (data) => {
+  if (data.length < 2) return ''
+  const bottom = hasNeg.value ? zeroY.value : props.height
+  return `0,${bottom} ${points(data)} ${vw.value},${bottom}`
+}
 
-const ticks = computed(() => Array.from({ length: 5 }, (_, i) => Math.round(maxV.value * (i / 4) * 100) / 100))
+const ticks = computed(() => {
+  if (hasNeg.value) return Array.from({ length: 5 }, (_, i) => Math.round((dataMin.value + (span.value * i) / 4) * 100) / 100)
+  return Array.from({ length: 5 }, (_, i) => Math.round((dataMax.value * i) / 4 * 100) / 100)
+})
 const fmtVal = (v) => {
   const n = Math.round(v * 100) / 100
   if (n >= 100000) return (n / 10000).toFixed(1) + '万'
@@ -79,9 +91,11 @@ const xLabels = computed(() => {
   <div class="line-chart" :style="maxWidth ? { maxWidth: maxWidth + 'px' } : {}" ref="boxRef">
     <svg :viewBox="`0 0 ${vw} ${height}`" class="line-svg" :style="{ height: height + 'px' }" @mousemove="updateIdx" @mouseleave="hoverIdx = -1">
       <template v-for="(t, i) in ticks" :key="'g' + i">
-        <line :x1="padL" :x2="padL + plotW" :y1="yAt(t)" :y2="yAt(t)" class="gridline" :class="{ axis: i === 0 }" />
+        <line :x1="padL" :x2="padL + plotW" :y1="yAt(t)" :y2="yAt(t)" class="gridline" :class="{ axis: i === 0 || (hasNeg && t === 0) }" />
         <text :x="padL - 6" :y="yAt(t) + 3" class="y-lab">{{ fmtVal(t) }}</text>
       </template>
+      <!-- 负半轴与正半轴背景分界 -->
+      <rect v-if="hasNeg" :x="padL" :y="zeroY" :width="plotW" :height="plotH - (zeroY - padT)" class="neg-bg" />
       <template v-for="s in series" :key="s.label">
         <polygon v-if="s.fill !== false" :points="areaPoints(s.data)" :fill="s.color" opacity="0.1" />
         <polyline :points="points(s.data)" :stroke="s.color" stroke-width="2.5" fill="none" stroke-linejoin="round" stroke-linecap="round" />
@@ -112,6 +126,7 @@ const xLabels = computed(() => {
 .line-svg { width: 100%; display: block; cursor: crosshair; }
 .gridline { stroke: var(--border); stroke-width: 1; stroke-dasharray: 3 3; }
 .gridline.axis { stroke-dasharray: none; stroke: var(--text-light); }
+.neg-bg { fill: rgba(182, 58, 70, 0.05); }
 .hline { stroke: var(--text-light); stroke-width: 1; stroke-dasharray: 4 3; }
 .y-lab { font-size: 10px; fill: var(--text-sub); text-anchor: end; }
 .x-lab { font-size: 10px; fill: var(--text-sub); text-anchor: middle; }

@@ -126,11 +126,13 @@ function extractMerchant(note, party) {
   return cleanMerchant(note) || cleanMerchant(party) || ''
 }
 
-/** 建行账单：识别账户内部中转 / 提现 / 充值 / 投资等污染项（不应计入收支） */
+/** 建行账单：识别账户内部中转 / 充值 / 投资等污染项（不应计入收支）。
+ *  仅跳过「账户自身资金移动」（余额宝/零钱/充值/还款/投资理财），
+ *  平台收益提现（抖音/快手/平台/签到奖励等）属真实收入，予以保留。 */
 function isCcbTransfer(summary, note) {
   const t = `${summary} ${note}`
-  if (/提现|充值|零钱|余额宝|转入|转出|还款|红包|返现|签到|奖励|金币|抖币|金豆|积分|退款|基金|理财|证券|股票|转账存款|结息/.test(t)) return true
-  if (/龙支付充值|代理付款|支付机构提现/.test(summary)) return true
+  if (/余额宝|零钱通|微信零钱|零钱提现|支付宝|基金|理财|证券|股票|还款|龙支付充值|银行卡转入|银行卡转出|定期/.test(t)) return true
+  if (/充值|转入|转出/.test(summary)) return true
   return false
 }
 /** 建行流水「交易地点/附言」提取真实商户：截取「支付」后、跳过公司/通道段 */
@@ -213,10 +215,13 @@ async function parseCcbBill(bytes) {
     const amt = Math.abs(Math.round(amtNum * 100) / 100)
     let cat = 'other'
     if (kind === 'income') {
-      cat = /利息|结息/.test(summary) ? 'invest' : guessCat(`${note} ${summary}`, '')
-    } else if (/转账/.test(summary)) {
+      if (/利息|结息/.test(summary)) cat = 'invest'
+      else if (/转账|汇款|转入/.test(summary) && /工资|薪|代发|转账/.test(note + summary)) cat = 'transfer'
+      else if (/抖音|快手|平台|签到|奖励|金币|积分|红包|提现成功|活动|佣金|收入/.test(note)) cat = 'prize'
+      else cat = guessCat(`${note} ${summary}`, '')
+    } else if (/转账|汇款|转出/.test(summary)) {
       cat = 'transfer'
-    } else if (/取款|存取|支出/.test(summary) && !/消费/.test(summary)) {
+    } else if (/取款|存取/.test(summary) && !/消费/.test(summary)) {
       cat = 'other'
     } else {
       cat = guessCat(`${note} ${summary}`, '')

@@ -572,7 +572,9 @@ const maxTrend = computed(() => Math.max(1, ...trend.value.map((t) => t.v)))
 /** 明细排序：date 日期倒序 / amount 金额（可升降）/ cat 按分类分组；10 条一页分页 */
 const sortMode = ref('date')
 const sortDir = ref('desc')
+const typeFilter = ref('all')
 const catFilter = ref('all')
+const incCatFilter = ref('all')
 const PAGE_SIZE = 10
 const page = ref(1)
 function switchSort(k) {
@@ -580,9 +582,12 @@ function switchSort(k) {
   sortMode.value = k
   page.value = 1
 }
-watch([catFilter, sortMode], () => { page.value = 1 })
+watch([catFilter, incCatFilter, typeFilter, sortMode], () => { page.value = 1 })
 const sorted = computed(() => {
-  const list = monthRecords.value.filter((r) => catFilter.value === 'all' || r.cat === catFilter.value)
+  let list = monthRecords.value
+  if (typeFilter.value !== 'all') list = list.filter((r) => r.type === typeFilter.value)
+  if (catFilter.value !== 'all') list = list.filter((r) => r.type === 'expense' && r.cat === catFilter.value)
+  if (incCatFilter.value !== 'all') list = list.filter((r) => r.type === 'income' && r.cat === incCatFilter.value)
   const arr = [...list]
   if (sortMode.value === 'amount') arr.sort((a, b) => (sortDir.value === 'asc' ? a.amount - b.amount : b.amount - a.amount) || (a.date < b.date ? 1 : -1))
   else if (sortMode.value === 'cat') arr.sort((a, b) => (catInfo('expense', a.cat) || {}).label?.localeCompare((catInfo('expense', b.cat) || {}).label || '') || (a.date < b.date ? 1 : -1))
@@ -814,14 +819,24 @@ const monthLabel = computed(() => {
       <button v-if="records.length" class="btn ghost small" @click="clearAll">清空全部</button>
     </div>
     <div class="sort-row">
+      <button class="tab" :class="{ active: typeFilter === 'all' }" @click="typeFilter = 'all'; catFilter = 'all'; incCatFilter = 'all'">全部</button>
+      <button class="tab" :class="{ active: typeFilter === 'expense' }" @click="typeFilter = 'expense'; catFilter = 'all'">支出</button>
+      <button class="tab" :class="{ active: typeFilter === 'income' }" @click="typeFilter = 'income'; incCatFilter = 'all'">收入</button>
+      <span class="sep">|</span>
       <button class="tab" :class="{ active: sortMode === 'date' }" @click="switchSort('date')">日期</button>
       <button class="tab" :class="{ active: sortMode === 'amount' }" @click="switchSort('amount')">金额{{ sortMode === 'amount' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : '' }}</button>
       <button class="tab" :class="{ active: sortMode === 'cat' }" @click="switchSort('cat')">分类</button>
       <span class="muted" style="font-size:10px;margin-left:auto;">共 {{ monthRecords.length }} 笔</span>
     </div>
     <div v-if="sortMode === 'cat'" class="cat-chips">
-      <button class="chip" :class="{ active: catFilter === 'all' }" @click="catFilter = 'all'">全部</button>
-      <button v-for="c in CATS.expense" :key="c.key" class="chip" :class="{ active: catFilter === c.key }" @click="catFilter = c.key">{{ c.icon }}{{ c.label }}</button>
+      <template v-if="typeFilter !== 'income'">
+        <button class="chip" :class="{ active: catFilter === 'all' }" @click="catFilter = 'all'">全部支出</button>
+        <button v-for="c in CATS.expense" :key="c.key" class="chip" :class="{ active: catFilter === c.key }" @click="catFilter = c.key">{{ c.icon }}{{ c.label }}</button>
+      </template>
+      <template v-else>
+        <button class="chip" :class="{ active: incCatFilter === 'all' }" @click="incCatFilter = 'all'">全部收入</button>
+        <button v-for="c in CATS.income" :key="c.key" class="chip" :class="{ active: incCatFilter === c.key }" @click="incCatFilter = c.key">{{ c.icon }}{{ c.label }}</button>
+      </template>
     </div>
     <div v-if="!sorted.length" class="muted" style="text-align:center;padding:16px;">本月还没有记录</div>
     <div v-else class="rec-list">
@@ -1117,6 +1132,7 @@ const monthLabel = computed(() => {
 /* 明细排序 / 分类筛选 */
 .sort-row { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
 .sort-row .tab { flex: 0 0 auto; font-size: 12px; }
+.sep { color: var(--text-light); font-size: 12px; }
 .pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 10px; }
 .pager-info { font-size: 12px; color: var(--text-sub); font-weight: 700; }
 .pager-jump { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-sub); }

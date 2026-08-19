@@ -82,6 +82,8 @@ function hueOf(i) {
       <li><b>v1.3.4</b> — 独立访客统计修正：UV 去重改访客 ID。</li>
       <li><b>v1.3.5–v1.3.7</b> — 生活费全面升级：微信/支付宝/建行账单导入、模拟三合一、批量记账、成就墙与彩蛋、默哀模式、专业版。</li>
       <li><b>v1.3.8–v1.3.11</b> — 专业版图表、数据/舆情统计页、工具与分类、饼图与折线展示体系优化。</li>
+      <li><b>v1.3.12</b> — 收支分析增强：结余负半轴、收入构成/收入商户、明细大分类、Excel 分析导出、建行导入增强。</li>
+
     </ul>
     <p class="muted" style="font-size:12px;margin-top:10px;">
       每个版本的完整改动清单见 <a href="https://github.com/IceofTea/QDU-Nav/blob/main/README.md" target="_blank" rel="noopener">README 版本历史</a>。
