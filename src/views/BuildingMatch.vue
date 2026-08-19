@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import CountUp from '../components/CountUp.vue'
 
 const emit = defineEmits(['back'])
@@ -40,6 +40,15 @@ const DIFFS = {
   normal: { label: '普通', pairs: 10, cols: 5 },
   hard: { label: '挑战', pairs: 15, cols: 6 }
 }
+/** 卡背图加载失败记录（弱网/校外环境回退到 emoji 卡片） */
+const broken = ref([])
+onMounted(() => {
+  BACK_IMGS.forEach((u) => {
+    const img = new Image()
+    img.onerror = () => { if (!broken.value.includes(u)) broken.value.push(u) }
+    img.src = u
+  })
+})
 const diff = ref('easy')
 const activePairs = computed(() => PAIRS.slice(0, DIFFS[diff.value].pairs))
 
@@ -223,9 +232,12 @@ function restart() {
           picked: pickedId === c.id,
           shake: noPair && flipped.includes(c.id)
         }"
-        :style="!isOpen(c) ? { backgroundImage: 'url(' + c.img + ')' } : null"
+        :style="!isOpen(c) && !broken.includes(c.img) ? { backgroundImage: 'url(' + c.img + ')' } : null"
         @click="flip(c)"
       >
+        <template v-if="!isOpen(c) && broken.includes(c.img)">
+          <span class="card-fallback">🏫</span>
+        </template>
         <template v-if="isOpen(c)">
           <span class="card-label" :class="{ new: c.newName }">{{ c.label }}</span>
         </template>
@@ -310,6 +322,7 @@ function restart() {
 .card.shake { animation: shake 0.4s ease; }
 .card:not(.open):not(.match):not(.confirm):hover { transform: translateY(-2px); }
 .card-label { position: relative; z-index: 1; font-size: 13px; font-weight: 800; padding: 0 4px; }
+.card-fallback { font-size: 30px; line-height: 1; }
 .card.open .card-label { color: var(--text); }
 .card.match .card-label { color: var(--soft-green-text); }
 .card-label.new { color: var(--primary); }

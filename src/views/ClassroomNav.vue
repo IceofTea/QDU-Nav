@@ -181,7 +181,7 @@ function fallbackRoute(b) {
               <div class="detail-title">🪟 楼层教室</div>
               <div v-for="f in b.floors" :key="f.floor" class="floor-row">
                 <span class="floor-tag">{{ f.floor }}</span>
-                <span class="floor-rooms">{{ f.rooms.join(' · ') }}</span>
+                <span class="floor-rooms"><i v-for="n in f.rooms" :key="n" class="room-chip">{{ n }}</i></span>
               </div>
             </div>
           </div>
@@ -196,3 +196,10 @@ function fallbackRoute(b) {
     </div>
   </template>
 </template>
+
+<style scoped>
+.floor-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.floor-tag { flex: 0 0 56px; font-size: 12px; font-weight: 700; color: var(--primary); }
+.floor-rooms { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; min-width: 0; }
+.room-chip { font-style: normal; font-size: 11px; padding: 1px 6px; border-radius: 6px; background: var(--soft-gray, #eef3fb); color: var(--text-sub); white-space: nowrap; }
+</style>

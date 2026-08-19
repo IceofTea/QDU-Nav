@@ -1,14 +1,14 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { apps, appGroups } from '../data/apps'
+import { apps, appGroups, groupColors } from '../data/apps'
 
 const emit = defineEmits(['back', 'open'])
 const kw = ref('')
 
 const grouped = computed(() => {
-  const k = kw.value.trim()
+  const k = kw.value.trim().toLowerCase()
   return appGroups
-    .map((g) => ({ group: g, items: apps.filter((a) => a.group === g && (!k || (a.title + a.desc).includes(k))) }))
+    .map((g) => ({ group: g, items: apps.filter((a) => a.group === g && (!k || (a.title + a.desc + a.group + g).toLowerCase().includes(k))) }))
     .filter((x) => x.items.length)
 })
 </script>
@@ -27,7 +27,7 @@ const grouped = computed(() => {
 
   <div v-for="g in grouped" :key="g.group" class="cat-group">
     <div class="cat-group-head">
-      <span class="cat-group-dot" :style="{ background: { 学习: '#1b66c9', 新生: '#0284c7', 健康: '#0f766e', 服务: '#7c3aed', 生活: '#ea580c', 游戏: '#d97706' }[g.group] }"></span>
+      <span class="cat-group-dot" :style="{ background: groupColors[g.group] }"></span>
       <span class="cat-group-name">{{ g.group }}</span>
       <span class="cat-group-count">{{ g.items.length }} 个</span>
     </div>

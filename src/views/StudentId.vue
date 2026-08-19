@@ -8,10 +8,11 @@ const error = ref('')
 
 function gotoOfficial() {
   const ksh = form.value.kaoshenghao.trim()
-  if (!/^\d{14}$/.test(ksh)) {
-    error.value = '请输入 14 位考生号（可留空直接前往官方页面）'
+  if (ksh && !/^\d{14}$/.test(ksh)) {
+    error.value = '考生号应为 14 位数字（填错不影响前往，可清空后直接前往官方页面）'
     return
   }
+  error.value = ''
   window.open('https://zhaosheng.qdu.edu.cn/static/front/qdu/basic/html_web/lqcx.html', '_blank', 'noopener')
 }
 </script>
@@ -57,7 +58,7 @@ function gotoOfficial() {
       <li>学号在正式报到、教务系统注册后分配，以录取通知书与学校通知为准</li>
     </ol>
     <div class="input-row">
-      <input class="input" v-model="form.kaoshenghao" placeholder="考生号（14 位，选填）" maxlength="14" />
+      <input class="input" v-model="form.kaoshenghao" placeholder="考生号（14 位，选填，不填可直接前往）" maxlength="14" />
       <button class="btn" @click="gotoOfficial">前往官方查询 ↗</button>
     </div>
     <div v-if="error" class="result-box" style="background:var(--soft-red-bg);color:var(--soft-red-text);margin-top:10px;">{{ error }}</div>
