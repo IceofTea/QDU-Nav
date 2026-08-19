@@ -5,6 +5,7 @@ import { ref, computed, watch } from 'vue'
 import BudgetSim from './BudgetSim.vue'
 import BudgetPro from './BudgetPro.vue'
 import BarRow from '../components/BarRow.vue'
+import PieChart from '../components/PieChart.vue'
 import { parseBillFile } from '../utils/billImport.js'
 
 const emit = defineEmits(['back'])
@@ -538,11 +539,21 @@ const catStats = computed(() => {
     const key = info ? info.label : r.cat
     map[key] = (map[key] || 0) + r.amount
   }
-  return Object.entries(map)
-    .map(([name, v]) => ({ name, v: Math.round(v * 100) / 100 }))
-    .sort((a, b) => b.v - a.v)
+  return Object.entries(map).map(([name, v]) => {
+    const found = CATS.expense.find((c) => c.label === name)
+    return { key: found ? found.key : name, icon: found ? found.icon : '📦', name, v: Math.round(v * 100) / 100 }
+  }).sort((a, b) => b.v - a.v)
 })
 const maxCat = computed(() => Math.max(1, ...catStats.value.map((c) => c.v)))
+/** 本月支出构成图表类型：bar 条形 / pie 圆饼 */
+const catChartType = ref('bar')
+const catChartSegs = computed(() => catStats.value.map((c) => ({ name: c.name, icon: c.icon, v: c.v })))
+function selectCatByLabel(label) {
+  const found = CATS.expense.find((c) => c.label === label)
+  catFilter.value = found ? found.key : 'all'
+  sortMode.value = 'cat'
+  page.value = 1
+}
 
 const trend = computed(() => {
   const arr = []
@@ -558,17 +569,32 @@ const trend = computed(() => {
 })
 const maxTrend = computed(() => Math.max(1, ...trend.value.map((t) => t.v)))
 
-/** 明细排序：date 日期倒序 / amount 金额降序 / cat 按分类分组 */
+/** 明细排序：date 日期倒序 / amount 金额（可升降）/ cat 按分类分组；10 条一页分页 */
 const sortMode = ref('date')
+const sortDir = ref('desc')
 const catFilter = ref('all')
+const PAGE_SIZE = 10
+const page = ref(1)
+function switchSort(k) {
+  if (k === 'amount' && sortMode.value === 'amount') sortDir.value = sortDir.value === 'desc' ? 'asc' : 'desc'
+  sortMode.value = k
+  page.value = 1
+}
+watch([catFilter, sortMode], () => { page.value = 1 })
 const sorted = computed(() => {
   const list = monthRecords.value.filter((r) => catFilter.value === 'all' || r.cat === catFilter.value)
   const arr = [...list]
-  if (sortMode.value === 'amount') arr.sort((a, b) => b.amount - a.amount || (a.date < b.date ? 1 : -1))
+  if (sortMode.value === 'amount') arr.sort((a, b) => (sortDir.value === 'asc' ? a.amount - b.amount : b.amount - a.amount) || (a.date < b.date ? 1 : -1))
   else if (sortMode.value === 'cat') arr.sort((a, b) => (catInfo('expense', a.cat) || {}).label?.localeCompare((catInfo('expense', b.cat) || {}).label || '') || (a.date < b.date ? 1 : -1))
   else arr.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id))
   return arr
 })
+const pageCount = computed(() => Math.max(1, Math.ceil(sorted.value.length / PAGE_SIZE)))
+const paged = computed(() => {
+  const s = (page.value - 1) * PAGE_SIZE
+  return sorted.value.slice(s, s + PAGE_SIZE)
+})
+watch(pageCount, () => { if (page.value > pageCount.value) page.value = pageCount.value })
 
 function balanceMsg() {
   if (!monthRecords.value.length) return '本月还没记一笔，先「记一笔」开始吧'
@@ -754,9 +780,18 @@ const monthLabel = computed(() => {
   </div>
 
   <div class="panel">
-    <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>本月支出构成</div>
-    <div v-if="catStats.length" class="cat-stat">
-      <BarRow v-for="c in catStats" :key="c.name" :label="c.name" :value="c.v" :max="maxCat" :text="'¥' + fmt(c.v)" color="linear-gradient(90deg,#b63a46,#e76f51)" />
+    <div class="section-head" style="align-items:center;margin:0 0 12px;">
+      <h3 class="section-title" style="margin:0;"><span class="bar"></span>本月支出构成</h3>
+      <div class="chart-type">
+        <button class="tab" :class="{ active: catChartType === 'bar' }" @click="catChartType = 'bar'">▥ 条形</button>
+        <button class="tab" :class="{ active: catChartType === 'pie' }" @click="catChartType = 'pie'">◔ 圆饼</button>
+      </div>
+    </div>
+    <div v-if="catStats.length && catChartType === 'bar'" class="cat-stat">
+      <BarRow v-for="c in catStats" :key="c.name" :label="c.icon + ' ' + c.name" :value="c.v" :max="maxCat" :text="'¥' + fmt(c.v)" color="linear-gradient(90deg,#b63a46,#e76f51)" />
+    </div>
+    <div v-else-if="catStats.length && catChartType === 'pie'">
+      <PieChart :segments="catChartSegs" :total="expense" @select="selectCatByLabel" />
     </div>
     <div v-else class="muted" style="text-align:center;padding:10px;">本月还没有支出</div>
   </div>
@@ -778,7 +813,9 @@ const monthLabel = computed(() => {
       <button v-if="records.length" class="btn ghost small" @click="clearAll">清空全部</button>
     </div>
     <div class="sort-row">
-      <button v-for="s in [{ k: 'date', t: '日期' }, { k: 'amount', t: '金额' }, { k: 'cat', t: '分类' }]" :key="s.k" class="tab" :class="{ active: sortMode === s.k }" @click="sortMode = s.k">{{ s.t }}</button>
+      <button class="tab" :class="{ active: sortMode === 'date' }" @click="switchSort('date')">日期</button>
+      <button class="tab" :class="{ active: sortMode === 'amount' }" @click="switchSort('amount')">金额{{ sortMode === 'amount' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : '' }}</button>
+      <button class="tab" :class="{ active: sortMode === 'cat' }" @click="switchSort('cat')">分类</button>
       <span class="muted" style="font-size:10px;margin-left:auto;">共 {{ monthRecords.length }} 笔</span>
     </div>
     <div v-if="sortMode === 'cat'" class="cat-chips">
@@ -787,7 +824,7 @@ const monthLabel = computed(() => {
     </div>
     <div v-if="!sorted.length" class="muted" style="text-align:center;padding:16px;">本月还没有记录</div>
     <div v-else class="rec-list">
-      <div v-for="r in sorted" :key="r.id" class="rec-row">
+      <div v-for="r in paged" :key="r.id" class="rec-row">
         <span class="rec-icon">{{ (catInfo(r.type, r.cat) || {}).icon || '📌' }}</span>
         <span class="rec-main">
           <span class="rec-name">{{ (catInfo(r.type, r.cat) || {}).label || r.cat }}<em v-if="r.merchant"> · {{ r.merchant }}</em><em v-if="r.refunded"> ↩︎已退款</em><em v-if="r.note && r.note !== r.merchant"> · {{ r.note }}</em></span>
@@ -797,6 +834,11 @@ const monthLabel = computed(() => {
         <button class="rec-del" @click="editStart(r)" title="编辑">✎</button>
         <button class="rec-del" @click="remove(r.id)" title="删除">✕</button>
       </div>
+    </div>
+    <div v-if="pageCount > 1" class="pager">
+      <button class="btn ghost small" :disabled="page <= 1" @click="page--">‹ 上页</button>
+      <span class="pager-info">{{ page }} / {{ pageCount }}</span>
+      <button class="btn ghost small" :disabled="page >= pageCount" @click="page++">下页 ›</button>
     </div>
     <p class="muted" style="font-size:11px;margin-top:10px;">记录保存在本机浏览器（localStorage），不会上传任何数据。</p>
 
@@ -819,6 +861,7 @@ const monthLabel = computed(() => {
         </div>
       </div>
       <button v-if="!achExpanded" class="ach-more" @click="achExpanded = true">展开全部成就 ▾</button>
+      <button v-else class="ach-more" @click="achExpanded = false">收起成就 ▴</button>
     </div>
   </div>
   </div>
@@ -1070,6 +1113,10 @@ const monthLabel = computed(() => {
 /* 明细排序 / 分类筛选 */
 .sort-row { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
 .sort-row .tab { flex: 0 0 auto; font-size: 12px; }
+.pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 10px; }
+.pager-info { font-size: 12px; color: var(--text-sub); font-weight: 700; }
+.chart-type { display: flex; gap: 6px; }
+.chart-type .tab { font-size: 11px; }
 .cat-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
 .cat-chips .chip {
   border: 1px solid var(--border);
