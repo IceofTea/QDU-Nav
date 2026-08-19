@@ -1,101 +1,129 @@
 <script setup>
-/** 折线图组件（SVG，无第三方依赖）：多系列折线 + 可选面积填充
- *  props: series [{ label, color, data: [v...] }], labels(横轴), height
- *  鼠标悬浮或点击可查看各节点具体数据；窄屏限宽居中。 */
-import { ref, computed } from 'vue'
+/** 折线图组件（SVG + ResizeObserver，无第三方依赖）
+ *  - 固定显示高度（height px），宽度随容器自适应（viewBox 动态跟随，文字/数据点不变形）
+ *  - 带 Y 轴数值刻度、网格线、X 轴月份标签（自动抽稀）
+ *  - 鼠标悬浮实时跟随显示「水平辅助线 + 数据点高亮 + 数值提示」
+ *  props: series [{ label, color, data }], labels, height, unit, valuePrefix, maxWidth(px, 0=不限) */
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 
 const props = defineProps({
   series: { type: Array, default: () => [] },
   labels: { type: Array, default: () => [] },
-  height: { type: Number, default: 150 }
+  height: { type: Number, default: 160 },
+  unit: { type: String, default: '' },
+  valuePrefix: { type: String, default: '' },
+  maxWidth: { type: Number, default: 0 }
 })
-const W = 300
-const pad = 10
-const maxV = computed(() => Math.max(1, ...props.series.flatMap((s) => s.data.map((v) => Math.abs(v)))))
-const scale = (v) => (props.height - pad * 2) * Math.abs(v) / maxV.value
-function xAt(i) {
-  const n = props.series[0] ? props.series[0].data.length : 0
-  return n < 2 ? W / 2 : i * (W / (n - 1))
-}
-function yAt(v) {
-  return props.height - pad - scale(v)
-}
-function points(data) {
-  if (data.length < 2) return ''
-  return data.map((v, i) => `${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`).join(' ')
-}
-function areaPoints(data) {
-  if (data.length < 2) return ''
-  return `0,${props.height} ${points(data)} ${W},${props.height}`
-}
-const showLabels = computed(() => props.labels.length > 4)
+const padL = 42
+const padR = 12
+const padT = 14
+const padB = 24
 
-/* 交互：悬浮/点击查看节点数据 */
-const hoverIdx = ref(-1)
-const pinned = ref(-1)
+const boxRef = ref(null)
+const vw = ref(360)
+let ro = null
+onMounted(() => {
+  const el = boxRef.value
+  if (!el) return
+  const update = () => { vw.value = Math.max(120, el.clientWidth || 360) }
+  update()
+  ro = new ResizeObserver(update)
+  ro.observe(el)
+})
+onBeforeUnmount(() => { if (ro) ro.disconnect() })
+
+const plotW = computed(() => vw.value - padL - padR)
+const plotH = computed(() => props.height - padT - padB)
 const totalN = computed(() => (props.series[0] ? props.series[0].data.length : 0))
+const maxV = computed(() => Math.max(1, ...props.series.flatMap((s) => s.data.map((v) => Math.abs(v)))))
+const xAt = (i) => (totalN.value < 2 ? padL + plotW.value / 2 : padL + (i * plotW.value) / (totalN.value - 1))
+const yAt = (v) => padT + plotH.value - (Math.abs(v) / maxV.value) * plotH.value
+const points = (data) => (data.length < 2 ? '' : data.map((v, i) => `${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`).join(' '))
+const areaPoints = (data) => (data.length < 2 ? '' : `0,${props.height} ${points(data)} ${vw.value},${props.height}`)
+
+const ticks = computed(() => Array.from({ length: 5 }, (_, i) => Math.round(maxV.value * (i / 4) * 100) / 100))
+const fmtVal = (v) => {
+  const n = Math.round(v * 100) / 100
+  if (n >= 100000) return (n / 10000).toFixed(1) + '万'
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k'
+  return String(n % 1 === 0 ? n : n.toFixed(1))
+}
+const fmt = (n) => (n % 1 === 0 ? String(n) : n.toFixed(2))
+
+/* 交互：鼠标悬浮实时跟随，移动即更新 */
+const hoverIdx = ref(-1)
 function updateIdx(e) {
   const rect = e.currentTarget.getBoundingClientRect()
-  const x = (e.clientX - rect.left) / rect.width * W
-  const idx = Math.round(x / W * (totalN.value - 1))
+  if (!rect.width) return
+  const x = ((e.clientX - rect.left) / rect.width) * vw.value
+  const idx = Math.round(((x - padL) / plotW.value) * (totalN.value - 1))
   hoverIdx.value = Math.max(0, Math.min(totalN.value - 1, idx))
 }
-const shown = computed(() => (pinned.value >= 0 ? pinned.value : hoverIdx.value))
 const tip = computed(() => {
-  const i = shown.value
+  const i = hoverIdx.value
   if (i < 0 || !props.series.length) return null
   return {
     label: props.labels[i] != null ? props.labels[i] : '',
     rows: props.series.map((s) => ({ label: s.label, color: s.color, v: s.data[i] != null ? s.data[i] : 0 }))
   }
 })
-const fmt = (n) => (n % 1 === 0 ? String(n) : n.toFixed(2))
+const xLabels = computed(() => {
+  const n = totalN.value
+  if (n <= 8) return props.labels.map((l, i) => ({ i, l }))
+  const step = Math.ceil(n / 6)
+  return props.labels.map((l, i) => ({ i, l, skip: i % step !== 0 }))
+})
 </script>
 
 <template>
-  <div class="line-chart">
-    <svg :viewBox="`0 0 ${W} ${height}`" preserveAspectRatio="none" class="line-svg" @mousemove="updateIdx" @mouseleave="hoverIdx = -1" @click="pinned = shown >= 0 ? shown : -1">
-      <line v-for="g in [0.25, 0.5, 0.75]" :key="g" :x1="0" :x2="W" :y1="height - (height - pad * 2) * g" :y2="height - (height - pad * 2) * g" class="gridline" />
-      <template v-for="s in series" :key="s.label">
-        <polygon v-if="s.fill !== false" :points="areaPoints(s.data)" :fill="s.color" opacity="0.12" />
-        <polyline :points="points(s.data)" :stroke="s.color" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round" />
-        <circle
-          v-for="(v, i) in s.data"
-          :key="i"
-          :cx="xAt(i)"
-          :cy="yAt(v)"
-          r="3"
-          :fill="s.color"
-          class="pt"
-          :class="{ hi: shown === i }"
-        />
+  <div class="line-chart" :style="maxWidth ? { maxWidth: maxWidth + 'px' } : {}" ref="boxRef">
+    <svg :viewBox="`0 0 ${vw} ${height}`" class="line-svg" :style="{ height: height + 'px' }" @mousemove="updateIdx" @mouseleave="hoverIdx = -1">
+      <template v-for="(t, i) in ticks" :key="'g' + i">
+        <line :x1="padL" :x2="padL + plotW" :y1="yAt(t)" :y2="yAt(t)" class="gridline" :class="{ axis: i === 0 }" />
+        <text :x="padL - 6" :y="yAt(t) + 3" class="y-lab">{{ fmtVal(t) }}</text>
       </template>
+      <template v-for="s in series" :key="s.label">
+        <polygon v-if="s.fill !== false" :points="areaPoints(s.data)" :fill="s.color" opacity="0.1" />
+        <polyline :points="points(s.data)" :stroke="s.color" stroke-width="2.5" fill="none" stroke-linejoin="round" stroke-linecap="round" />
+        <circle v-for="(v, k) in s.data" :key="k" :cx="xAt(k)" :cy="yAt(v)" r="3.5" :fill="s.color" class="pt" :class="{ hi: hoverIdx === k }" />
+      </template>
+      <template v-if="hoverIdx >= 0">
+        <line :x1="padL" :x2="padL + plotW" :y1="yAt(series[0].data[hoverIdx] != null ? series[0].data[hoverIdx] : 0)" :y2="yAt(series[0].data[hoverIdx] != null ? series[0].data[hoverIdx] : 0)" class="hline" />
+        <circle v-for="s in series" :key="'c' + s.label" :cx="xAt(hoverIdx)" :cy="yAt(s.data[hoverIdx] != null ? s.data[hoverIdx] : 0)" r="4.5" fill="#fff" :stroke="s.color" stroke-width="2.5" />
+      </template>
+      <text v-for="xl in xLabels" :key="'x' + xl.i" :x="xAt(xl.i)" :y="height - 6" class="x-lab" :class="{ skip: xl.skip, first: xl.i === 0, last: xl.i === totalN - 1 }">{{ xl.l }}</text>
     </svg>
+
     <div v-if="tip" class="line-tip">
       <b>{{ tip.label }}</b>
       <div v-for="t in tip.rows" :key="t.label" class="tip-row">
         <i :style="{ background: t.color }"></i>
-        {{ t.label }} ¥{{ fmt(t.v) }}
+        {{ t.label }} {{ unit }}{{ valuePrefix }}{{ fmt(t.v) }}
       </div>
     </div>
     <div v-if="series.length" class="line-legend">
       <span v-for="s in series" :key="s.label" class="lg-item"><i :style="{ background: s.color }"></i>{{ s.label }}</span>
     </div>
-    <div v-if="showLabels" class="line-x">
-      <span v-for="(l, i) in labels" :key="i" :class="{ first: i === 0, last: i === labels.length - 1 }">{{ l }}</span>
-    </div>
   </div>
 </template>
 
 <style scoped>
-.line-chart { width: 100%; max-width: 620px; margin: 0 auto; }
-.line-svg { width: 100%; height: auto; display: block; cursor: crosshair; }
+.line-chart { width: 100%; margin: 0 auto; }
+.line-svg { width: 100%; display: block; cursor: crosshair; }
 .gridline { stroke: var(--border); stroke-width: 1; stroke-dasharray: 3 3; }
-.pt { opacity: 0; transition: opacity 0.15s, r 0.15s; }
-.pt.hi { opacity: 1; r: 4.5; }
+.gridline.axis { stroke-dasharray: none; stroke: var(--text-light); }
+.hline { stroke: var(--text-light); stroke-width: 1; stroke-dasharray: 4 3; }
+.y-lab { font-size: 10px; fill: var(--text-sub); text-anchor: end; }
+.x-lab { font-size: 10px; fill: var(--text-sub); text-anchor: middle; }
+.x-lab.first { text-anchor: start; }
+.x-lab.last { text-anchor: end; }
+.x-lab.skip { opacity: 0; }
+.pt { opacity: 0; transition: opacity 0.12s; }
+.pt.hi { opacity: 1; }
 .line-tip {
-  margin-top: 6px;
-  padding: 8px 10px;
+  margin: 6px auto 0;
+  max-width: 92%;
+  padding: 8px 12px;
   border-radius: 10px;
   background: var(--primary-soft);
   border: 1px solid var(--border);
@@ -104,14 +132,11 @@ const fmt = (n) => (n % 1 === 0 ? String(n) : n.toFixed(2))
   display: flex;
   flex-direction: column;
   gap: 3px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
 }
 .tip-row { display: flex; align-items: center; gap: 6px; font-weight: 700; }
 .tip-row i { width: 10px; height: 3px; border-radius: 2px; }
 .line-legend { display: flex; gap: 12px; margin-top: 6px; font-size: 11px; color: var(--text-sub); flex-wrap: wrap; justify-content: center; }
 .lg-item { display: flex; align-items: center; gap: 4px; }
 .lg-item i { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
-.line-x { display: flex; justify-content: space-between; font-size: 9px; color: var(--text-sub); margin-top: 2px; }
-.line-x span { flex: 1; }
-.line-x span.first { text-align: left; }
-.line-x span.last { text-align: right; }
 </style>
