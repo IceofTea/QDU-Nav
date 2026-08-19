@@ -111,5 +111,23 @@ await check('非账单文件：给出明确提示', async () => {
   assert.match(res.msg, /未识别到账单表头/)
 })
 
+await check('微信退款自动冲抵同商户原支出', async () => {
+  const csv = `微信支付账单明细
+----------------------微信支付账单明细列表--------------------
+交易时间|交易类型|交易对方|商品|收/支|金额(元)|支付方式|当前状态|交易单号|商户单号|备注
+2026-08-10 12:00:00|商户消费|麦当劳|麦当劳巨无霸套餐|支出|30.00|零钱|支付成功|W1|M1|/
+2026-08-12 10:00:00|退款|麦当劳|退款-麦当劳巨无霸套餐|收入|30.00|零钱|退款成功|W2|M2|/
+2026-08-13 09:00:00|商户消费|华莱士|华莱士套餐|支出|25.00|零钱|支付成功|W3|M3|/
+`
+  const res = await parseBillFile(fakeFile('refund.csv', csv))
+  assert.equal(res.ok, true)
+  assert.equal(res.added.length, 2)
+  const refunded = res.added.find((r) => r.merchant === '麦当劳巨无霸套餐')
+  assert.ok(refunded, '麦当劳支出应保留')
+  assert.equal(refunded.refunded, true, '麦当劳支出应被标记为已退款')
+  assert.ok(!res.added.some((r) => r.cat === 'refund'), '退款记录应被移除')
+  assert.ok(res.added.find((r) => r.merchant === '华莱士套餐'))
+})
+
 console.log(failed ? `\n${failed} 项失败` : '\n全部通过')
 process.exit(failed ? 1 : 0)

@@ -3,12 +3,13 @@
  *  数据仅存本机浏览器 localStorage（qdu_budget_records），不上传任何数据 */
 import { ref, computed, watch } from 'vue'
 import BudgetSim from './BudgetSim.vue'
+import BudgetPro from './BudgetPro.vue'
 import BarRow from '../components/BarRow.vue'
 import { parseBillFile } from '../utils/billImport.js'
 
 const emit = defineEmits(['back'])
 
-/** 子视图：main 计数器 / sim 生活费模拟 */
+/** 子视图：main 计数器 / sim 生活费模拟 / pro 专业版 */
 const subView = ref('main')
 
 const CATS = {
@@ -344,28 +345,29 @@ function festivalNow() {
 }
 const festival = ref(festivalNow())
 
-/* ---- 隐藏成就墙：20 个徽章，达成即解锁（localStorage qdu_ach 记录已解锁） ---- */
+/* ---- 隐藏成就墙：20 个徽章，支持等级（tiers）与进度显示（localStorage qdu_ach 记录已解锁） ---- */
+const MEDAL = ['🥉 初阶', '🥈 进阶', '🥇 大师', '💎 传奇']
 const ACHIEVEMENTS = [
-  { key: 'tea', icon: '🥤', name: '奶茶品鉴师', desc: '备注含「奶茶」的支出累计 20 笔', check: (all) => all.filter((r) => r.type === 'expense' && (r.note || '').includes('奶茶')).length >= 20 },
-  { key: 'food50', icon: '🍚', name: '干饭人干饭魂', desc: '伙食费累计 50 笔', check: (all) => cnt(all, 'expense', 'food') >= 50 },
-  { key: 'party20', icon: '🍻', name: '干杯！社交达人', desc: '聚餐费累计 20 笔', check: (all) => cnt(all, 'expense', 'party') >= 20 },
-  { key: 'trans20', icon: '🚌', name: '风一样的学生', desc: '交通费累计 20 笔', check: (all) => cnt(all, 'expense', 'transport') >= 20 },
-  { key: 'fruit30', icon: '🍎', name: '水果自由人', desc: '水果零食累计 30 笔', check: (all) => cnt(all, 'expense', 'fruit') >= 30 },
-  { key: 'study10', icon: '📚', name: '卷王本卷', desc: '学习资料累计 10 笔', check: (all) => cnt(all, 'expense', 'study') >= 10 },
-  { key: 'cloth10', icon: '👕', name: '时尚弄潮儿', desc: '衣物鞋帽累计 10 笔', check: (all) => cnt(all, 'expense', 'cloth') >= 10 },
-  { key: 'med5', icon: '💊', name: '养生青年', desc: '医疗保健累计 5 笔', check: (all) => cnt(all, 'expense', 'medical') >= 5 },
-  { key: 'daily20', icon: '🧴', name: '生活小能手', desc: '日常用品累计 20 笔', check: (all) => cnt(all, 'expense', 'daily') >= 20 },
-  { key: 'phone10', icon: '📱', name: '永不失联', desc: '话费 / 网费累计 10 笔', check: (all) => cnt(all, 'expense', 'phone') >= 10 },
-  { key: 'fun30', icon: '🎮', name: '快乐肥宅', desc: '娱乐游戏 + 网络虚拟累计 30 笔', check: (all) => cnt(all, 'expense', 'fun') + cnt(all, 'expense', 'virtual') >= 30 },
-  { key: 'beauty5', icon: '💇', name: '精致生活', desc: '美容美发累计 5 笔', check: (all) => cnt(all, 'expense', 'beauty') >= 5 },
-  { key: 'housing3', icon: '🏠', name: '居家小能手', desc: '房屋住宿累计 3 笔', check: (all) => cnt(all, 'expense', 'housing') >= 3 },
-  { key: 'rec100', icon: '📝', name: '记账达人', desc: '累计记账 100 笔', check: (all) => all.length >= 100 },
-  { key: 'three', icon: '📅', name: '三个月全勤', desc: '连续 3 个月都有记账', check: (all) => activeMonths(all) >= 3 },
-  { key: 'scholar', icon: '🏆', name: '奖学金收割机', desc: '记过一笔奖学金收入', check: (all) => all.some((r) => r.type === 'income' && r.cat === 'scholarship') },
-  { key: 'worker', icon: '💼', name: '卑微打工人', desc: '记过一笔兼职收入', check: (all) => all.some((r) => r.type === 'income' && r.cat === 'parttime') },
-  { key: 'invest', icon: '📈', name: '睡后收入', desc: '记过一笔理财收益', check: (all) => all.some((r) => r.type === 'income' && r.cat === 'invest') },
-  { key: 'rich', icon: '💎', name: '一夜暴富', desc: '单笔收入 ≥ 5000', check: (all) => all.some((r) => r.type === 'income' && r.amount >= 5000) },
-  { key: 'surplus', icon: '💰', name: '月底有余粮', desc: '累计 5 个月结余为正', check: (all) => surplusMonths(all) >= 5 }
+  { key: 'tea', icon: '🥤', name: '奶茶品鉴师', desc: '备注含「奶茶」的支出累计', tiers: [20, 50, 100], progress: (all) => all.filter((r) => r.type === 'expense' && (r.note || '').includes('奶茶')).length },
+  { key: 'food50', icon: '🍚', name: '干饭人干饭魂', desc: '伙食费累计', tiers: [50, 150, 300], progress: (all) => cnt(all, 'expense', 'food') },
+  { key: 'party20', icon: '🍻', name: '干杯！社交达人', desc: '聚餐费累计', tiers: [20, 60, 120], progress: (all) => cnt(all, 'expense', 'party') },
+  { key: 'trans20', icon: '🚌', name: '风一样的学生', desc: '交通费累计', tiers: [20, 60, 120], progress: (all) => cnt(all, 'expense', 'transport') },
+  { key: 'fruit30', icon: '🍎', name: '水果自由人', desc: '水果零食累计', tiers: [30, 80, 150], progress: (all) => cnt(all, 'expense', 'fruit') },
+  { key: 'study10', icon: '📚', name: '卷王本卷', desc: '学习资料累计', tiers: [10, 30, 60], progress: (all) => cnt(all, 'expense', 'study') },
+  { key: 'cloth10', icon: '👕', name: '时尚弄潮儿', desc: '衣物鞋帽累计', tiers: [10, 30, 60], progress: (all) => cnt(all, 'expense', 'cloth') },
+  { key: 'med5', icon: '💊', name: '养生青年', desc: '医疗保健累计', tiers: [5, 15, 30], progress: (all) => cnt(all, 'expense', 'medical') },
+  { key: 'daily20', icon: '🧴', name: '生活小能手', desc: '日常用品累计', tiers: [20, 60, 120], progress: (all) => cnt(all, 'expense', 'daily') },
+  { key: 'phone10', icon: '📱', name: '永不失联', desc: '话费 / 网费累计', tiers: [10, 30, 60], progress: (all) => cnt(all, 'expense', 'phone') },
+  { key: 'fun30', icon: '🎮', name: '快乐肥宅', desc: '娱乐游戏 + 网络虚拟累计', tiers: [30, 80, 150], progress: (all) => cnt(all, 'expense', 'fun') + cnt(all, 'expense', 'virtual') },
+  { key: 'beauty5', icon: '💇', name: '精致生活', desc: '美容美发累计', tiers: [5, 15, 30], progress: (all) => cnt(all, 'expense', 'beauty') },
+  { key: 'housing3', icon: '🏠', name: '居家小能手', desc: '房屋住宿累计', tiers: [3, 10, 20], progress: (all) => cnt(all, 'expense', 'housing') },
+  { key: 'rec100', icon: '📝', name: '记账达人', desc: '累计记账', tiers: [100, 300, 600], progress: (all) => all.length },
+  { key: 'three', icon: '📅', name: '三个月全勤', desc: '有记账记录的月份数', tiers: [3, 6, 12], progress: (all) => activeMonths(all) },
+  { key: 'scholar', icon: '🏆', name: '奖学金收割机', desc: '记过奖学金收入', tiers: [1, 3, 6], progress: (all) => all.filter((r) => r.type === 'income' && r.cat === 'scholarship').length },
+  { key: 'worker', icon: '💼', name: '卑微打工人', desc: '兼职收入笔数', tiers: [1, 5, 15], progress: (all) => all.filter((r) => r.type === 'income' && r.cat === 'parttime').length },
+  { key: 'invest', icon: '📈', name: '睡后收入', desc: '理财收益笔数', tiers: [1, 5, 15], progress: (all) => all.filter((r) => r.type === 'income' && r.cat === 'invest').length },
+  { key: 'rich', icon: '💎', name: '一夜暴富', desc: '单笔收入 ≥ 5000 的笔数', tiers: [1, 3, 6], progress: (all) => all.filter((r) => r.type === 'income' && r.amount >= 5000).length },
+  { key: 'surplus', icon: '💰', name: '月底有余粮', desc: '结余为正的月份数', tiers: [5, 10, 18], progress: (all) => surplusMonths(all) }
 ]
 function cnt(all, type, cat) {
   return all.filter((r) => r.type === type && r.cat === cat).length
@@ -383,12 +385,22 @@ function surplusMonths(all) {
   }
   return Object.values(byM).filter((m) => m.inc - m.exp > 0).length
 }
-const achUnlocked = computed(() => {
+const levelOf = (a, cur) => {
+  let lv = -1
+  a.tiers.forEach((t, i) => { if (cur >= t) lv = i })
+  return lv
+}
+const achStates = computed(() => {
   const map = {}
-  for (const a of ACHIEVEMENTS) map[a.key] = !!a.check(records.value)
+  for (const a of ACHIEVEMENTS) {
+    const cur = a.progress(records.value)
+    const lv = levelOf(a, cur)
+    const next = lv >= 0 && lv < a.tiers.length - 1 ? a.tiers[lv + 1] : a.tiers[a.tiers.length - 1]
+    map[a.key] = { cur, level: lv, unlocked: lv >= 0, next }
+  }
   return map
 })
-const achCount = computed(() => ACHIEVEMENTS.filter((a) => achUnlocked.value[a.key]).length)
+const achCount = computed(() => ACHIEVEMENTS.filter((a) => achStates.value[a.key].unlocked).length)
 const achShown = ref(JSON.parse(localStorage.getItem('qdu_ach') || '{}'))
 function markAch(key) {
   try {
@@ -398,14 +410,24 @@ function markAch(key) {
     achShown.value = m
   } catch { /* noop */ }
 }
-watch(achUnlocked, (cur, prev) => {
+watch(achStates, (cur, prev) => {
   for (const a of ACHIEVEMENTS) {
-    if (cur[a.key] && (!prev || !prev[a.key]) && !achShown.value[a.key]) {
+    if (cur[a.key].unlocked && (!prev || !prev[a.key].unlocked) && !achShown.value[a.key]) {
       markAch(a.key)
-      showToast(`${a.icon} 成就解锁：${a.name}`, 3200)
+      showToast(`${a.icon} 成就解锁：${a.name}（${MEDAL[0]}）`, 3200)
     }
   }
 }, { immediate: true })
+/** 成就墙折叠：展开前只显示 4 个，已解锁优先；可展开全部 */
+const achExpanded = ref(false)
+const achVisible = computed(() => {
+  const list = [...ACHIEVEMENTS]
+  if (!achExpanded.value) {
+    list.sort((a, b) => (achStates.value[b.key].unlocked ? 1 : 0) - (achStates.value[a.key].unlocked ? 1 : 0) || ACHIEVEMENTS.indexOf(a) - ACHIEVEMENTS.indexOf(b))
+    return list.slice(0, 4)
+  }
+  return list
+})
 
 function sum(list, type) {
   return Math.round(list.filter((r) => r.type === type).reduce((s, r) => s + r.amount, 0) * 100) / 100
@@ -536,8 +558,17 @@ const trend = computed(() => {
 })
 const maxTrend = computed(() => Math.max(1, ...trend.value.map((t) => t.v)))
 
-const sorted = computed(() =>
-  [...monthRecords.value].sort((a, b) => (a.date < b.date ? 1 : -1)))
+/** 明细排序：date 日期倒序 / amount 金额降序 / cat 按分类分组 */
+const sortMode = ref('date')
+const catFilter = ref('all')
+const sorted = computed(() => {
+  const list = monthRecords.value.filter((r) => catFilter.value === 'all' || r.cat === catFilter.value)
+  const arr = [...list]
+  if (sortMode.value === 'amount') arr.sort((a, b) => b.amount - a.amount || (a.date < b.date ? 1 : -1))
+  else if (sortMode.value === 'cat') arr.sort((a, b) => (catInfo('expense', a.cat) || {}).label?.localeCompare((catInfo('expense', b.cat) || {}).label || '') || (a.date < b.date ? 1 : -1))
+  else arr.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id))
+  return arr
+})
 
 function balanceMsg() {
   if (!monthRecords.value.length) return '本月还没记一笔，先「记一笔」开始吧'
@@ -576,6 +607,14 @@ const monthLabel = computed(() => {
 
 <template>
   <BudgetSim v-if="subView === 'sim'" @back="subView = 'main'" />
+  <BudgetPro
+    v-else-if="subView === 'pro'"
+    :records="records"
+    :month="month"
+    @update:month="month = $event"
+    @remove="remove"
+    @back="subView = 'main'"
+  />
 
   <template v-else>
   <div class="budget-root" :class="{ cyber: cyberOn }">
@@ -583,7 +622,10 @@ const monthLabel = computed(() => {
     <button class="back-btn" @click="emit('back')">← 返回首页</button>
     <div class="view-title">生活费计数器</div>
     <div class="view-sub">随手记一笔，月底少流一滴泪 · 奖学金、兼职收入也能入账</div>
-    <button class="btn ghost small" style="margin-top:10px;" @click="subView = 'sim'">📊 生活费模拟 · 估算 / 预算分配器 / 账单校准 ›</button>
+    <div class="top-actions">
+      <button class="btn ghost small" @click="subView = 'sim'">📊 生活费模拟 ›</button>
+      <button class="btn ghost small pro-btn" @click="subView = 'pro'">⚙️ 专业版 ›</button>
+    </div>
   </div>
 
   <div class="panel">
@@ -731,16 +773,24 @@ const monthLabel = computed(() => {
   </div>
 
   <div class="panel">
-    <div class="section-head" style="align-items:center;margin:0 0 10px;">
-      <h3 class="section-title" style="margin:0;">明细（{{ monthRecords.length }}）</h3>
+    <div class="section-head" style="align-items:center;margin:0 0 8px;">
+      <h3 class="section-title" style="margin:0;">明细（{{ sorted.length }}）</h3>
       <button v-if="records.length" class="btn ghost small" @click="clearAll">清空全部</button>
+    </div>
+    <div class="sort-row">
+      <button v-for="s in [{ k: 'date', t: '日期' }, { k: 'amount', t: '金额' }, { k: 'cat', t: '分类' }]" :key="s.k" class="tab" :class="{ active: sortMode === s.k }" @click="sortMode = s.k">{{ s.t }}</button>
+      <span class="muted" style="font-size:10px;margin-left:auto;">共 {{ monthRecords.length }} 笔</span>
+    </div>
+    <div v-if="sortMode === 'cat'" class="cat-chips">
+      <button class="chip" :class="{ active: catFilter === 'all' }" @click="catFilter = 'all'">全部</button>
+      <button v-for="c in CATS.expense" :key="c.key" class="chip" :class="{ active: catFilter === c.key }" @click="catFilter = c.key">{{ c.icon }}{{ c.label }}</button>
     </div>
     <div v-if="!sorted.length" class="muted" style="text-align:center;padding:16px;">本月还没有记录</div>
     <div v-else class="rec-list">
       <div v-for="r in sorted" :key="r.id" class="rec-row">
         <span class="rec-icon">{{ (catInfo(r.type, r.cat) || {}).icon || '📌' }}</span>
         <span class="rec-main">
-          <span class="rec-name">{{ (catInfo(r.type, r.cat) || {}).label || r.cat }}<em v-if="r.note"> · {{ r.note }}</em></span>
+          <span class="rec-name">{{ (catInfo(r.type, r.cat) || {}).label || r.cat }}<em v-if="r.merchant"> · {{ r.merchant }}</em><em v-if="r.refunded"> ↩︎已退款</em><em v-if="r.note && r.note !== r.merchant"> · {{ r.note }}</em></span>
           <span class="muted" style="font-size:11px;">{{ r.date }}</span>
         </span>
         <span class="rec-amt" :class="r.type === 'income' ? 'in' : 'out'">{{ r.type === 'income' ? '+' : '-' }}¥{{ fmt(r.amount) }}</span>
@@ -756,12 +806,19 @@ const monthLabel = computed(() => {
         <span class="ach-count">{{ achCount }} / {{ ACHIEVEMENTS.length }}</span>
       </div>
       <div class="ach-grid">
-        <div v-for="a in ACHIEVEMENTS" :key="a.key" class="ach-item" :class="{ on: achUnlocked[a.key] }">
-          <span class="ach-icon">{{ achUnlocked[a.key] ? a.icon : '🔒' }}</span>
-          <span class="ach-name">{{ achUnlocked[a.key] ? a.name : '？？？' }}</span>
-          <span class="ach-desc">{{ achUnlocked[a.key] ? a.desc : '达成条件后解锁' }}</span>
+        <div v-for="a in achVisible" :key="a.key" class="ach-item" :class="{ on: achStates[a.key].unlocked }">
+          <div class="ach-top">
+            <span class="ach-icon">{{ achStates[a.key].unlocked ? a.icon : '🔒' }}</span>
+            <span class="ach-name">{{ achStates[a.key].unlocked ? a.name + (achStates[a.key].level > 0 ? ' · ' + MEDAL[Math.min(achStates[a.key].level, MEDAL.length - 1)] : '') : '？？？' }}</span>
+          </div>
+          <div class="ach-desc">{{ achStates[a.key].unlocked ? a.desc : '达成条件后解锁' }}</div>
+          <div v-if="achStates[a.key].unlocked" class="ach-progress">
+            <div class="ach-bar"><i :style="{ width: Math.min(100, Math.round(achStates[a.key].cur / achStates[a.key].next * 100)) + '%' }"></i></div>
+            <span class="muted" style="font-size:10px;">{{ achStates[a.key].cur }} / {{ achStates[a.key].next }}</span>
+          </div>
         </div>
       </div>
+      <button v-if="!achExpanded" class="ach-more" @click="achExpanded = true">展开全部成就 ▾</button>
     </div>
   </div>
   </div>
@@ -1006,15 +1063,36 @@ const monthLabel = computed(() => {
   padding: 2px 8px;
 }
 
+/* 顶部动作按钮 */
+.top-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.pro-btn { border-color: var(--primary) !important; color: var(--primary) !important; }
+
+/* 明细排序 / 分类筛选 */
+.sort-row { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+.sort-row .tab { flex: 0 0 auto; font-size: 12px; }
+.cat-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.cat-chips .chip {
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-family: inherit;
+  color: var(--text-sub);
+  cursor: pointer;
+}
+.cat-chips .chip.active { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); font-weight: 700; }
+
 /* 隐藏成就墙 */
 .ach-panel { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); }
 .ach-count { font-size: 12px; font-weight: 800; color: var(--primary); }
 .ach-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .ach-item {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 9px 10px;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--card);
@@ -1027,12 +1105,27 @@ const monthLabel = computed(() => {
   border-color: rgba(124, 58, 237, 0.5);
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(79, 70, 229, 0.1));
 }
-.ach-icon { font-size: 20px; flex: none; }
+.ach-top { display: flex; align-items: center; gap: 6px; }
+.ach-icon { font-size: 18px; flex: none; }
 .ach-name { font-size: 12px; font-weight: 700; }
-.ach-desc { font-size: 10px; color: var(--text-sub); margin-top: 2px; }
-.ach-item { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
-.ach-item .ach-icon { font-size: 20px; }
 .ach-item.on .ach-name { color: #6d28d9; }
+.ach-desc { font-size: 10px; color: var(--text-sub); }
+.ach-progress { display: flex; align-items: center; gap: 6px; width: 100%; }
+.ach-bar { flex: 1; height: 6px; border-radius: 4px; background: var(--bar); overflow: hidden; }
+.ach-bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #7c3aed, #a855f7); }
+.ach-more {
+  margin-top: 10px;
+  width: 100%;
+  padding: 8px;
+  border: 1px dashed var(--border);
+  background: none;
+  border-radius: 10px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--text-sub);
+  cursor: pointer;
+}
+.ach-more:hover { color: var(--primary); border-color: var(--primary); }
 
 /* 赛博账本隐藏皮肤：霓虹渐变 + 等宽数字 */
 .budget-root.cyber .balance-banner {

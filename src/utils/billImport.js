@@ -1,11 +1,14 @@
 /**
- * 账单导入解析器：兼容真实微信 / 支付宝账单文件
- *   - 自动识别 xlsx（zip）与文本（CSV/竖线/制表符分隔）
+ * 账单导入解析器：兼容真实微信 / 支付宝 / 建设银行账单文件
+ *   - 自动识别 xlsx（zip）、xls（OLE2/BIFF8）与文本（CSV/竖线/制表符分隔）
  *   - 文本自动探测编码（UTF-8 BOM / UTF-8 / GBK）与分隔符
- *   - 按「收/支」区分收支，忽略「不计收支 / 中性交易 / 关闭 / 失败」等无效记录
- *   - 优先用支付宝「交易分类」归类，微信账单退化为商品名关键词猜测
+ *   - 按「收/支」区分收支，忽略「不计收支 / 中性交易 / 关闭 / 失败 / 提现充值」等无效记录
+ *   - 优先用支付宝「交易分类」归类，微信 / 建行退化为关键词猜测
+ *   - 每条记录附带 merchant（商户名）供「同商户聚合」分析
+ *   - 退款自动冲抵同商户同金额的原支出，避免虚增收支
  *   纯前端本地解析：不发起任何网络请求，数据仅存本机浏览器。
  */
+import { parseXls } from './xlsReader.js'
 const ALIPAY_CAT_MAP = {
   '餐饮美食': 'food',
   '日用百货': 'daily',
@@ -106,6 +109,135 @@ function guessCat(text, category) {
   return 'other'
 }
 
+/** 从商品名 / 备注中提取「商户名」用于同商户聚合（去掉订单编号/外卖订单/括号门店等噪声） */
+const MERCHANT_STOP = ['外卖订单', '订单编号', '订单', '收款方备注', '转账备注', '二维码收款', '经营码', '到店支付', '红包', '返现', '退款', '账单', '付款']
+function cleanMerchant(text) {
+  let s = String(text || '').trim()
+  s = s.replace(/^[·•:：\-—_——\s]+/, '')
+  s = s.replace(/^(退款|退货|售后退款|退款成功)[-—:：\s]*/i, '')
+  for (const w of MERCHANT_STOP) {
+    const i = s.indexOf(w)
+    if (i > 0) s = s.slice(0, i)
+  }
+  s = s.replace(/[（(][^）)]*[）)]/g, '').replace(/[（(].*$/, '')
+  return s.trim().slice(0, 24)
+}
+function extractMerchant(note, party) {
+  return cleanMerchant(note) || cleanMerchant(party) || ''
+}
+
+/** 建行账单：识别账户内部中转 / 提现 / 充值 / 投资等污染项（不应计入收支） */
+function isCcbTransfer(summary, note) {
+  const t = `${summary} ${note}`
+  if (/提现|充值|零钱|余额宝|转入|转出|还款|红包|返现|签到|奖励|金币|抖币|金豆|积分|退款|基金|理财|证券|股票|转账存款|结息/.test(t)) return true
+  if (/龙支付充值|代理付款|支付机构提现/.test(summary)) return true
+  return false
+}
+/** 建行流水「交易地点/附言」提取真实商户：截取「支付」后、跳过公司/通道段 */
+function ccbMerchant(note) {
+  let s = String(note || '').trim()
+  const pi = s.indexOf('支付')
+  if (pi >= 0) s = s.slice(pi + 2)
+  const segs = s.split(/[-_—]/).map((x) => x.trim()).filter(Boolean)
+  if (!segs.length) return ''
+  const noise = /(公司|信息|网络科技|银行|中心|平台|商户|商家|账号|卡)$/
+  let pick = segs[segs.length - 1]
+  for (let i = segs.length - 1; i >= 0; i--) {
+    if (!noise.test(segs[i])) { pick = segs[i]; break }
+  }
+  return pick.slice(0, 24)
+}
+function parseCcbDate(raw) {
+  const m = String(raw == null ? '' : raw).match(/(\d{4})(\d{2})(\d{2})/)
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : todayStr()
+}
+
+/** 退款冲抵：微信「退款」收入自动抵消同商户同金额的原支出（找不到原支出则丢弃退款），避免虚增收支 */
+function applyRefundOffset(added) {
+  const refunds = added.filter((r) => r.type === 'income' && r.cat === 'refund')
+  if (!refunds.length) return 0
+  let used = 0
+  const result = added.filter((r) => !(r.type === 'income' && r.cat === 'refund'))
+  for (const rf of refunds) {
+    const idx = result.findIndex(
+      (r) => r.type === 'expense' && r.cat !== 'transfer' && Math.abs(r.amount - rf.amount) < 0.01 && r.merchant && r.merchant === rf.merchant
+    )
+    if (idx >= 0) {
+      result[idx].refunded = true
+      used++
+    }
+  }
+  if (used) {
+    added.length = 0
+    added.push(...result)
+  }
+  return used
+}
+
+/** 建行（xls）账单解析 */
+async function parseCcbBill(bytes) {
+  let grid
+  try {
+    grid = parseXls(bytes)
+  } catch (e) {
+    return { ok: false, msg: 'xls 文件解析失败：' + (e.message || '无法读取工作簿内容') }
+  }
+  const rows = grid || []
+  let headIdx = -1
+  for (let i = 0; i < Math.min(rows.length, 60); i++) {
+    const cells = rows[i] || []
+    if (cells.some((c) => String(c).includes('摘要')) && cells.some((c) => String(c).includes('交易金额'))) { headIdx = i; break }
+  }
+  if (headIdx < 0) {
+    return { ok: false, msg: '未识别到建行账单表头（需含「摘要」「交易金额」「交易日期」）。' }
+  }
+  const head = rows[headIdx]
+  const iSum = head.findIndex((c) => String(c).includes('摘要'))
+  const iDate = head.findIndex((c) => String(c).includes('交易日期'))
+  const iAmt = head.findIndex((c) => String(c).includes('交易金额'))
+  const iNote = head.findIndex((c) => String(c).includes('附言'))
+  const iParty = head.findIndex((c) => String(c).includes('户名'))
+  const added = []
+  const skipped = { neutral: 0, closed: 0 }
+  for (let i = headIdx + 1; i < rows.length; i++) {
+    const cell = rows[i] || []
+    const get = (j) => (j >= 0 && j < cell.length ? cleanCell(cell[j]) : '')
+    const summary = get(iSum)
+    if (!summary) continue
+    const amtNum = parseFloat(String(get(iAmt)).replace(/[,，\s¥元]/g, ''))
+    if (!Number.isFinite(amtNum) || amtNum === 0) continue
+    const note = get(iNote) || ''
+    const party = get(iParty) || ''
+    if (isCcbTransfer(summary, note)) { skipped.neutral++; continue }
+    const kind = amtNum > 0 ? 'income' : 'expense'
+    const amt = Math.abs(Math.round(amtNum * 100) / 100)
+    let cat = 'other'
+    if (kind === 'income') {
+      cat = /利息|结息/.test(summary) ? 'invest' : guessCat(`${note} ${summary}`, '')
+    } else if (/转账/.test(summary)) {
+      cat = 'transfer'
+    } else if (/取款|存取|支出/.test(summary) && !/消费/.test(summary)) {
+      cat = 'other'
+    } else {
+      cat = guessCat(`${note} ${summary}`, '')
+    }
+    added.push({
+      type: kind,
+      cat,
+      amount: amt,
+      note: note || summary,
+      date: parseCcbDate(get(iDate)),
+      merchant: ccbMerchant(note) || cleanMerchant(party) || cleanMerchant(summary)
+    })
+  }
+  if (!added.length) {
+    return { ok: false, msg: `建行账单中未找到可导入的收支记录（已自动跳过提现 / 充值 / 中转类 ${skipped.neutral} 笔）。` }
+  }
+  const refunded = applyRefundOffset(added)
+  if (refunded) skipped.refunded = refunded
+  return { ok: true, source: 'xls', brand: 'ccb', added, skipped }
+}
+
 function buildHeaderMap(cols) {
   const map = {}
   for (const [field, aliases] of Object.entries(HEADER_ALIASES)) {
@@ -174,7 +306,8 @@ function buildRecords(rows, headIdx, cols, maxCols) {
       cat,
       amount: amt,
       note: note || get('orderNo') || '',
-      date: parseDate(get('time'))
+      date: parseDate(get('time')),
+      merchant: extractMerchant(name, party)
     })
   }
   return { added, skipped, brand }
@@ -255,6 +388,8 @@ function parseTextBill(bytes) {
   }
   const cols = rows[headIdx]
   const { added, skipped, brand } = buildRecords(rows, headIdx, cols)
+  const refunded = applyRefundOffset(added)
+  if (refunded) skipped.refunded = refunded
   return { ok: true, source: 'text', brand, added, skipped }
 }
 
@@ -393,15 +528,20 @@ async function parseXlsx(u8) {
   const rows = parseSheet(sheetXml, shared)
   const headIdx = findHeader(rows, ',')
   if (headIdx < 0) return { ok: false, msg: '未识别到账单表头（需包含「收/支」「金额」列），请确认是微信 / 支付宝导出的账单文件。' }
-const cols = rows[headIdx]
+  const cols = rows[headIdx]
   const { added, skipped, brand } = buildRecords(rows, headIdx, cols)
+  const refunded = applyRefundOffset(added)
+  if (refunded) skipped.refunded = refunded
   return { ok: true, source: 'xlsx', brand, added, skipped }
 }
 
 async function parseBillFile(file) {
   const bytes = new Uint8Array(await file.arrayBuffer())
   const isXlsx = bytes[0] === 0x50 && bytes[1] === 0x4b
-  return isXlsx ? parseXlsx(bytes) : parseTextBill(bytes)
+  if (isXlsx) return parseXlsx(bytes)
+  const isXls = bytes[0] === 0xd0 && bytes[1] === 0xcf && bytes[2] === 0x11 && bytes[3] === 0xe0
+  if (isXls) return parseCcbBill(bytes)
+  return parseTextBill(bytes)
 }
 
-export { parseBillFile, ALIPAY_CAT_MAP, KEYWORDS }
+export { parseBillFile, cleanMerchant, extractMerchant, ALIPAY_CAT_MAP, KEYWORDS }
