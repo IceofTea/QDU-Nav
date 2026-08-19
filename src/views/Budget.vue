@@ -119,6 +119,12 @@ const amount = ref('')
 const note = ref('')
 const date = ref(today())
 const month = ref(curMonth())
+/** 批量记账：一次记入 N 笔相同记录（1~99），编辑模式下忽略 */
+const batchN = ref(1)
+/** 智能清洗：导入时跳过转账 / 红包 / 收款等中转类交易（可开关，localStorage 记忆） */
+const CLEAN_KEY = 'qdu_import_clean'
+const cleanMode = ref(localStorage.getItem(CLEAN_KEY) !== '0')
+watch(cleanMode, (v) => { try { localStorage.setItem(CLEAN_KEY, v ? '1' : '0') } catch { /* noop */ } })
 const showRef = ref(false)
 const importMsg = ref('')
 
@@ -141,9 +147,10 @@ function editStart(r) {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 function save() {
+  if (comboEgg()) return
   const amt = Number(amount.value)
   if (!amt || amt <= 0) return
-  if (comboEgg()) return
+  const n = editing.value ? 1 : Math.max(1, Math.min(99, Math.round(Number(batchN.value) || 1)))
   let saved = null
   if (editing.value) {
     const rec = records.value.find((r) => r.id === editing.value)
@@ -157,20 +164,25 @@ function save() {
     }
     editing.value = null
   } else {
-    saved = {
-      id: newId(),
-      type: mode.value,
-      cat: cat.value,
-      amount: Math.round(amt * 100) / 100,
-      note: note.value.trim(),
-      date: date.value || today()
+    const noteTxt = note.value.trim()
+    for (let i = 0; i < n; i++) {
+      saved = {
+        id: newId(),
+        type: mode.value,
+        cat: cat.value,
+        amount: Math.round(amt * 100) / 100,
+        note: n > 1 ? (noteTxt ? `${noteTxt} #${i + 1}` : `#${i + 1}`) : noteTxt,
+        date: date.value || today()
+      }
+      records.value.unshift(saved)
     }
-    records.value.unshift(saved)
+    if (n > 1) batchN.value = 1
   }
   amount.value = ''
   note.value = ''
   if (amt === 404) showToast('收支未找到，但你的努力已经找到方向了！', 3200)
-  else triggerEggs(saved)
+  else if (n === 1) triggerEggs(saved)
+  bannerEggFlash()
 }
 function cancelEdit() {
   editing.value = null
@@ -192,48 +204,57 @@ function showToast(text, ms = 2400) {
   clearTimeout(toastTimer)
   toastTimer = setTimeout(() => { toast.value = null }, ms)
 }
-/** 彩蛋去重：同一彩蛋 24 小时内只触发一次，避免反复失去惊喜感 */
-const EGG_KEY = 'qdu_eggs'
-function eggOnce(key) {
-  try {
-    const eggs = JSON.parse(localStorage.getItem(EGG_KEY)) || {}
-    const now = Date.now()
-    if (eggs[key] && now - eggs[key] < 86400000) return false
-    eggs[key] = now
-    localStorage.setItem(EGG_KEY, JSON.stringify(eggs))
-    return true
-  } catch { return true }
-}
 
-/** 连击彩蛋：金额 2 + 备注「1+1=」时，快速点「记入」10 次 → 彩蛋；连击期间吞掉重复保存 */
-let comboState = { count: 0, last: 0 }
+/** 连击彩蛋：金额 2 + 备注「1+1=」时，快速按回车（或点记入）10 次 → 彩蛋；连击期间吞掉重复保存。
+ *  用「会话激活」机制：首次触发后即使金额被清空，连击窗口内仍继续计数。 */
+let comboState = { active: false, count: 0, last: 0 }
 function comboEgg() {
-  if (Number(amount.value) !== 2 || note.value.trim() !== '1+1=') { comboState.count = 0; return false }
+  const cond = Number(amount.value) === 2 && note.value.trim() === '1+1='
   const now = Date.now()
-  if (now - comboState.last < 450) comboState.count++
-  else comboState.count = 1
+  if (cond && !comboState.active) {
+    comboState.active = true
+    comboState.count = 1
+    comboState.last = now
+    return false
+  }
+  if (!comboState.active) return false
+  if (now - comboState.last > 450) { comboState.active = false; return false }
+  comboState.count++
   comboState.last = now
   if (comboState.count >= 10) {
-    comboState.count = 0
-    if (eggOnce('egg_combo')) showToast('开发者觉得你很闲，送你个彩蛋')
+    comboState.active = false
+    showToast('开发者觉得你很闲，送你个彩蛋')
     return true
   }
-  return comboState.count > 1
+  return true
 }
 
-/** 保存后按金额 / 类别 / 当月结余触发彩蛋 */
+/** 像素雨：快速点「本月结余」卡片 3 次（间隔 <450ms）触发，90 个像素块全屏下落 */
+let rainHits = 0
+let rainLast = 0
+function rainTap() {
+  const now = Date.now()
+  if (now - rainLast < 450) rainHits++
+  else rainHits = 1
+  rainLast = now
+  if (rainHits >= 3) {
+    rainHits = 0
+    startPxRain()
+  }
+}
+
+/** 单笔金额彩蛋：保存后按金额 / 类别判断（文本彩蛋每次可触发，无冷却） */
 function triggerEggs(r) {
-  const bal = balance.value
   if (r.cat === 'other' && r.type === 'expense' && Math.abs(r.amount - 9876547210.33) < 0.01) {
-    if (eggOnce('egg_bili')) showToast('你买b站手办了？', 3200)
+    showToast('你买b站手办了？', 3200)
     return
   }
   if (r.cat === 'prize' && r.type === 'income' && r.amount === 500000) {
-    if (eggOnce('egg_spy')) showToast('你抓到间谍了🫨？')
+    showToast('你抓到间谍了🫨？')
     return
   }
   if (r.type === 'expense' && r.cat === 'party' && r.amount > 100) {
-    if (eggOnce('egg_party')) showToast('呦，吃了顿漂亮饭😋')
+    showToast('呦，吃了顿漂亮饭😋')
     return
   }
   if (r.type === 'expense' && r.cat === 'trouble') {
@@ -246,24 +267,20 @@ function triggerEggs(r) {
       [100000, '咱有坐牢的风险吗😰']
     ]
     const hit = tiers.find(([hi]) => r.amount <= hi)
-    if (eggOnce('egg_trouble')) showToast(hit ? hit[1] : '吹牛逼呢😅')
-    return
+    showToast(hit ? hit[1] : '吹牛逼呢😅')
   }
-  if (r.type === 'income' && r.cat === 'allowance' && r.amount > 10000 && bal > 100000) {
-    if (eggOnce('egg_brag')) showToast('吹牛逼呢😅')
-    return
-  }
-  if (bal > 100000) {
-    if (eggOnce('egg_brag')) showToast('吹牛逼呢😅')
-    return
-  }
-  if (bal < -1000000) {
-    if (eggOnce('egg_bankrupt')) showToast('百万负翁，吹牛逼呢😅')
-    return
-  }
-  if (bal < -100000) {
-    if (eggOnce('egg_twin')) showToast('你给双子楼炸了😰？')
-  }
+}
+
+/** 月结余彩蛋：当月结余命中极端值 → 结余卡片常驻显示（每次保存后都会刷新提示） */
+const bannerEgg = computed(() => {
+  const bal = balance.value
+  if (bal > 100000) return { emoji: '😅', text: '吹牛逼呢' }
+  if (bal < -1000000) return { emoji: '😅', text: '百万负翁' }
+  if (bal < -100000) return { emoji: '😰', text: '你给双子楼炸了？' }
+  return null
+})
+function bannerEggFlash() {
+  if (bannerEgg.value) showToast(`${bannerEgg.value.emoji} ${bannerEgg.value.text}`, 2600)
 }
 
 /** 隐藏皮肤：连续点「收入/支出」5 次或长按 3 秒解锁「赛博账本」 */
@@ -289,34 +306,25 @@ function holdStart() {
 }
 function holdEnd() { clearTimeout(holdTimer) }
 
-/** 像素雨：快速点「生活费模拟」按钮 3 次触发 */
+/** 像素雨：快速点「记入」3 次触发（见 rainEgg），90 个像素块全屏下落 */
 const pxRain = ref([])
-let pxHits = 0
-let pxLast = 0
 let pxSeq = 0
 const PX_COLORS = ['#f43f5e', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7', '#ec4899']
-function simTap() {
-  const now = Date.now()
-  if (now - pxLast < 450) pxHits++
-  else pxHits = 1
-  pxLast = now
-  if (pxHits >= 3) {
-    pxHits = 0
-    pxSeq++
-    const arr = []
-    for (let i = 0; i < 90; i++) {
-      arr.push({
-        id: `${pxSeq}-${i}`,
-        left: Math.random() * 100,
-        delay: Math.random() * 0.6,
-        dur: 1.4 + Math.random() * 1.2,
-        size: 5 + Math.random() * 7,
-        color: PX_COLORS[Math.floor(Math.random() * PX_COLORS.length)]
-      })
-    }
-    pxRain.value = arr
-    setTimeout(() => { pxRain.value = [] }, 3400)
+function startPxRain() {
+  pxSeq++
+  const arr = []
+  for (let i = 0; i < 90; i++) {
+    arr.push({
+      id: `${pxSeq}-${i}`,
+      left: Math.random() * 100,
+      delay: Math.random() * 0.6,
+      dur: 1.4 + Math.random() * 1.2,
+      size: 5 + Math.random() * 7,
+      color: PX_COLORS[Math.floor(Math.random() * PX_COLORS.length)]
+    })
   }
+  pxRain.value = arr
+  setTimeout(() => { pxRain.value = [] }, 3400)
 }
 
 /** 节日配色：春节 ±3 天 / 愚人节 / 校庆 5-14，结算按钮变色 */
@@ -336,18 +344,68 @@ function festivalNow() {
 }
 const festival = ref(festivalNow())
 
-/** 隐藏成就：奶茶消费累计 20 笔解锁 */
-const milkTeaCount = computed(() =>
-  records.value.filter((r) => r.type === 'expense' && r.cat === 'food' && (r.note || '').includes('奶茶')).length
-)
-const milkTeaUnlocked = ref(localStorage.getItem('qdu_ach_tea') === '1')
-watch(milkTeaCount, (n) => {
-  if (n >= 20 && !milkTeaUnlocked.value) {
-    milkTeaUnlocked.value = true
-    localStorage.setItem('qdu_ach_tea', '1')
-    showToast('🥤 成就解锁：奶茶品鉴师（累计 20 杯）', 3200)
+/* ---- 隐藏成就墙：20 个徽章，达成即解锁（localStorage qdu_ach 记录已解锁） ---- */
+const ACHIEVEMENTS = [
+  { key: 'tea', icon: '🥤', name: '奶茶品鉴师', desc: '备注含「奶茶」的支出累计 20 笔', check: (all) => all.filter((r) => r.type === 'expense' && (r.note || '').includes('奶茶')).length >= 20 },
+  { key: 'food50', icon: '🍚', name: '干饭人干饭魂', desc: '伙食费累计 50 笔', check: (all) => cnt(all, 'expense', 'food') >= 50 },
+  { key: 'party20', icon: '🍻', name: '干杯！社交达人', desc: '聚餐费累计 20 笔', check: (all) => cnt(all, 'expense', 'party') >= 20 },
+  { key: 'trans20', icon: '🚌', name: '风一样的学生', desc: '交通费累计 20 笔', check: (all) => cnt(all, 'expense', 'transport') >= 20 },
+  { key: 'fruit30', icon: '🍎', name: '水果自由人', desc: '水果零食累计 30 笔', check: (all) => cnt(all, 'expense', 'fruit') >= 30 },
+  { key: 'study10', icon: '📚', name: '卷王本卷', desc: '学习资料累计 10 笔', check: (all) => cnt(all, 'expense', 'study') >= 10 },
+  { key: 'cloth10', icon: '👕', name: '时尚弄潮儿', desc: '衣物鞋帽累计 10 笔', check: (all) => cnt(all, 'expense', 'cloth') >= 10 },
+  { key: 'med5', icon: '💊', name: '养生青年', desc: '医疗保健累计 5 笔', check: (all) => cnt(all, 'expense', 'medical') >= 5 },
+  { key: 'daily20', icon: '🧴', name: '生活小能手', desc: '日常用品累计 20 笔', check: (all) => cnt(all, 'expense', 'daily') >= 20 },
+  { key: 'phone10', icon: '📱', name: '永不失联', desc: '话费 / 网费累计 10 笔', check: (all) => cnt(all, 'expense', 'phone') >= 10 },
+  { key: 'fun30', icon: '🎮', name: '快乐肥宅', desc: '娱乐游戏 + 网络虚拟累计 30 笔', check: (all) => cnt(all, 'expense', 'fun') + cnt(all, 'expense', 'virtual') >= 30 },
+  { key: 'beauty5', icon: '💇', name: '精致生活', desc: '美容美发累计 5 笔', check: (all) => cnt(all, 'expense', 'beauty') >= 5 },
+  { key: 'housing3', icon: '🏠', name: '居家小能手', desc: '房屋住宿累计 3 笔', check: (all) => cnt(all, 'expense', 'housing') >= 3 },
+  { key: 'rec100', icon: '📝', name: '记账达人', desc: '累计记账 100 笔', check: (all) => all.length >= 100 },
+  { key: 'three', icon: '📅', name: '三个月全勤', desc: '连续 3 个月都有记账', check: (all) => activeMonths(all) >= 3 },
+  { key: 'scholar', icon: '🏆', name: '奖学金收割机', desc: '记过一笔奖学金收入', check: (all) => all.some((r) => r.type === 'income' && r.cat === 'scholarship') },
+  { key: 'worker', icon: '💼', name: '卑微打工人', desc: '记过一笔兼职收入', check: (all) => all.some((r) => r.type === 'income' && r.cat === 'parttime') },
+  { key: 'invest', icon: '📈', name: '睡后收入', desc: '记过一笔理财收益', check: (all) => all.some((r) => r.type === 'income' && r.cat === 'invest') },
+  { key: 'rich', icon: '💎', name: '一夜暴富', desc: '单笔收入 ≥ 5000', check: (all) => all.some((r) => r.type === 'income' && r.amount >= 5000) },
+  { key: 'surplus', icon: '💰', name: '月底有余粮', desc: '累计 5 个月结余为正', check: (all) => surplusMonths(all) >= 5 }
+]
+function cnt(all, type, cat) {
+  return all.filter((r) => r.type === type && r.cat === cat).length
+}
+function activeMonths(all) {
+  return new Set(all.map((r) => (r.date || '').slice(0, 7)).filter(Boolean)).size
+}
+function surplusMonths(all) {
+  const byM = {}
+  for (const r of all) {
+    const mk = (r.date || '').slice(0, 7)
+    if (!mk) continue
+    if (!byM[mk]) byM[mk] = { inc: 0, exp: 0 }
+    byM[mk][r.type === 'income' ? 'inc' : 'exp'] += r.amount
   }
+  return Object.values(byM).filter((m) => m.inc - m.exp > 0).length
+}
+const achUnlocked = computed(() => {
+  const map = {}
+  for (const a of ACHIEVEMENTS) map[a.key] = !!a.check(records.value)
+  return map
 })
+const achCount = computed(() => ACHIEVEMENTS.filter((a) => achUnlocked.value[a.key]).length)
+const achShown = ref(JSON.parse(localStorage.getItem('qdu_ach') || '{}'))
+function markAch(key) {
+  try {
+    const m = JSON.parse(localStorage.getItem('qdu_ach') || '{}')
+    m[key] = true
+    localStorage.setItem('qdu_ach', JSON.stringify(m))
+    achShown.value = m
+  } catch { /* noop */ }
+}
+watch(achUnlocked, (cur, prev) => {
+  for (const a of ACHIEVEMENTS) {
+    if (cur[a.key] && (!prev || !prev[a.key]) && !achShown.value[a.key]) {
+      markAch(a.key)
+      showToast(`${a.icon} 成就解锁：${a.name}`, 3200)
+    }
+  }
+}, { immediate: true })
 
 function sum(list, type) {
   return Math.round(list.filter((r) => r.type === type).reduce((s, r) => s + r.amount, 0) * 100) / 100
@@ -369,17 +427,65 @@ async function billImport(file) {
     importMsg.value = res.msg
     return
   }
-  const { added, skipped, brand, source } = res
+  let { added, skipped, brand, source } = res
   if (!added.length) {
     importMsg.value = `未找到可导入的收支记录（跳过中性交易/无效记录 ${skipped.neutral + skipped.closed} 笔）。请确认账单文件为微信「用于个人对账」或支付宝「交易明细」导出。`
     return
   }
-  const withId = added.map((r) => ({ id: newId() + Math.random(), ...r }))
-  records.value = withId.concat(records.value)
+
+  /* 智能清洗：跳过「转账/红包/收款」类大额中转（≥1000 元）——
+   * 典型污染场景：别人转几万给你、你又马上转去他另一张卡，一进一出虚增当月收支。
+   * 小额转账（AA 饭钱、党费等）仍保留为「转账」类，不误伤真实支出。 */
+  let cleaned = 0
+  let cleanedAmt = 0
+  if (cleanMode.value) {
+    const keep = added.filter((r) => {
+      if (r.cat === 'transfer' && r.amount >= 1000) { cleaned++; cleanedAmt += r.amount; return false }
+      return true
+    })
+    added = keep
+    if (!added.length) {
+      importMsg.value = `该账单 ${res.added.length} 笔全部为转账 / 红包 / 收款等大额中转，已按「智能清洗」跳过。如需保留可关闭智能清洗后重新导入。`
+      return
+    }
+  }
+
+  /* 导入去重：与现有记录及本批次内按 (日期|金额|收支|类别|备注) 比对，
+   * 重复导入同一账单时不再产生多条相同记录。 */
+  const keyOf = (r) => `${r.date}|${r.amount}|${r.type}|${r.cat}|${r.note}`
+  const existing = new Set(records.value.map(keyOf))
+  const seen = new Set()
+  const fresh = []
+  let dup = 0
+  for (const r of added) {
+    const k = keyOf(r)
+    if (existing.has(k) || seen.has(k)) { dup++; continue }
+    seen.add(k)
+    fresh.push({ id: newId() + Math.random(), ...r })
+  }
+  if (!fresh.length) {
+    importMsg.value = '导入的记录与本机已有记录完全重复，未新增任何条目（可先「清空全部」后重新导入）。'
+    return
+  }
+  records.value = fresh.concat(records.value)
+
+  /* 自动匹配月份：记录按各自交易日期归入对应月份，并切到账单最新月份 */
+  let latest = ''
+  for (const r of fresh) if (r.date > latest) latest = r.date.slice(0, 7)
+  if (latest) month.value = latest
+
   const brandName = brand === 'alipay' ? '支付宝' : '微信'
   const typeName = source === 'xlsx' ? 'Excel(xlsx)' : '表格'
-  const skipMsg = skipped.neutral + skipped.closed ? `已按规则跳过不计收支/失败记录 ${skipped.neutral + skipped.closed} 笔；` : ''
-  importMsg.value = `✅ 已识别为${brandName}账单（${typeName}）并导入 ${added.length} 笔：支出 ¥${fmt(sum(added, 'expense'))} / 收入 ¥${fmt(sum(added, 'income'))}。${skipMsg}支出已按交易分类与商品名自动归类，可在明细中修改。`
+  const byMonth = {}
+  for (const r of fresh) {
+    const mk = r.date.slice(0, 7)
+    byMonth[mk] = (byMonth[mk] || 0) + 1
+  }
+  const monthList = Object.keys(byMonth).sort().map((mk) => `${mk.slice(5)}月 ${byMonth[mk]}笔`).join('、')
+  const skipMsg = skipped.neutral + skipped.closed ? `跳过无效/中性 ${skipped.neutral + skipped.closed} 笔；` : ''
+  const cleanMsg = cleaned ? `智能清洗跳过转账/红包大额中转 ${cleaned} 笔 ¥${fmt(cleanedAmt)}；` : ''
+  const dupMsg = dup ? `去重忽略重复 ${dup} 笔；` : ''
+  importMsg.value = `✅ 已识别为${brandName}账单（${typeName}）并导入 ${fresh.length} 笔：支出 ¥${fmt(sum(fresh, 'expense'))} / 收入 ¥${fmt(sum(fresh, 'income'))}。${skipMsg}${cleanMsg}${dupMsg}已按各自日期归入对应月份（${monthList}），自动切到最新月份，可点「← 上月 / 下月 →」切换查看。`
 }
 
 const monthRecords = computed(() => records.value.filter((r) => r.date.startsWith(month.value)))
@@ -477,7 +583,7 @@ const monthLabel = computed(() => {
     <button class="back-btn" @click="emit('back')">← 返回首页</button>
     <div class="view-title">生活费计数器</div>
     <div class="view-sub">随手记一笔，月底少流一滴泪 · 奖学金、兼职收入也能入账</div>
-    <button class="btn ghost small" style="margin-top:10px;" @click="subView = 'sim'; simTap()">📊 生活费模拟 · 估算 / 预算分配器 / 账单校准 ›</button>
+    <button class="btn ghost small" style="margin-top:10px;" @click="subView = 'sim'">📊 生活费模拟 · 估算 / 预算分配器 / 账单校准 ›</button>
   </div>
 
   <div class="panel">
@@ -486,7 +592,8 @@ const monthLabel = computed(() => {
       <div class="month-title">{{ monthLabel }}</div>
       <button class="btn ghost small" @click="month = monthOffset(month, 1)">下月 →</button>
     </div>
-    <div class="balance-banner" :class="{ negative: balance < 0 }">
+    <div class="balance-banner" :class="{ negative: balance < 0 }" @click="rainTap()">
+      <div v-if="bannerEgg" class="balance-egg">{{ bannerEgg.emoji }} {{ bannerEgg.text }}</div>
       <div class="balance-label">本月结余</div>
       <div class="balance-num"><span class="balance-sym">¥</span>{{ fmt(Math.abs(balance)) }}</div>
       <div class="balance-hint">{{ balanceMsg() }}</div>
@@ -559,8 +666,14 @@ const monthLabel = computed(() => {
       <input v-model="date" class="input date-input" type="date" />
     </div>
     <input v-model="note" class="input" style="margin-top:10px;" placeholder="备注（可选），如：食堂麻辣香锅" @keyup.enter="save" />
+    <div class="batch-row" v-if="!editing">
+      <span class="muted" style="font-size:11px;">批量：</span>
+      <input v-model.number="batchN" type="number" min="1" max="99" class="input batch-input" @keyup.enter="save" />
+      <span class="muted" style="font-size:11px;">笔 × ¥{{ fmt(Number(amount) || 0) }}</span>
+      <span v-if="Number(batchN) > 1" class="batch-tip">一次记 {{ Number(batchN) }} 条相同记录</span>
+    </div>
     <button class="btn accent big" style="margin-top:12px;width:100%;" :class="festival ? 'festival-on ' + festival : ''" :disabled="!(Number(amount) > 0)" @click="save">
-      {{ editing ? '✓ 保存修改' : '＋ 记入' + (mode === 'expense' ? '支出' : '收入') }}
+      {{ editing ? '✓ 保存修改' : '＋ 记入' + (mode === 'expense' ? '支出' : '收入') + (Number(batchN) > 1 ? ' ×' + Number(batchN) : '') }}
     </button>
     <button v-if="editing" class="btn ghost big" style="margin-top:8px;width:100%;" @click="cancelEdit">取消</button>
   </div>
@@ -572,6 +685,10 @@ const monthLabel = computed(() => {
     </p>
     <input id="csv-file" type="file" accept=".csv,.xlsx,text/csv" style="display:none;" @change="billImport($event.target.files[0])" />
     <label for="csv-file" class="btn ghost" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">📄 选择账单文件（CSV / Excel）</label>
+    <div class="clean-toggle">
+      <input id="clean-switch" type="checkbox" v-model="cleanMode" />
+      <label for="clean-switch">智能清洗：自动跳过转账 / 红包 / 收款类<b>大额中转</b>（≥1000 元，如别人转几万给你、你再转去他另一张卡这类过账，避免虚增当月收支；小额 AA 饭钱等转账仍保留）</label>
+    </div>
     <div v-if="importMsg" class="import-msg">{{ importMsg }}</div>
     <div class="privacy-note">
       🔒 隐私说明：本站为纯静态网页（无后端服务器），账单文件只在你自己的浏览器里本地解析，<b>不会上传到任何服务器</b>，也不会被任何服务方获取；导入的记账记录仅保存在本机浏览器 localStorage，可安心试用。清除浏览器数据会一并清空记录。
@@ -632,7 +749,20 @@ const monthLabel = computed(() => {
       </div>
     </div>
     <p class="muted" style="font-size:11px;margin-top:10px;">记录保存在本机浏览器（localStorage），不会上传任何数据。</p>
-    <div v-if="milkTeaUnlocked" class="ach-badge">🥤 隐藏成就：奶茶品鉴师（已解锁）· 累计 {{ milkTeaCount }} 杯</div>
+
+    <div class="ach-panel">
+      <div class="section-head" style="align-items:center;margin:0 0 10px;">
+        <h3 class="section-title" style="margin:0;">🏅 隐藏成就</h3>
+        <span class="ach-count">{{ achCount }} / {{ ACHIEVEMENTS.length }}</span>
+      </div>
+      <div class="ach-grid">
+        <div v-for="a in ACHIEVEMENTS" :key="a.key" class="ach-item" :class="{ on: achUnlocked[a.key] }">
+          <span class="ach-icon">{{ achUnlocked[a.key] ? a.icon : '🔒' }}</span>
+          <span class="ach-name">{{ achUnlocked[a.key] ? a.name : '？？？' }}</span>
+          <span class="ach-desc">{{ achUnlocked[a.key] ? a.desc : '达成条件后解锁' }}</span>
+        </div>
+      </div>
+    </div>
   </div>
   </div>
 
@@ -728,6 +858,19 @@ const monthLabel = computed(() => {
   border-radius: 10px;
   color: var(--soft-green-text);
 }
+.clean-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--text-sub);
+  cursor: pointer;
+}
+.clean-toggle input { margin-top: 2px; accent-color: #0d9488; flex: none; cursor: pointer; }
+.clean-toggle label { cursor: pointer; }
+.clean-toggle b { color: var(--text); }
 .privacy-note {
   margin-top: 10px;
   font-size: 11px;
@@ -828,16 +971,68 @@ const monthLabel = computed(() => {
   100% { transform: translateY(110vh) rotate(360deg); opacity: 0.85; }
 }
 
-.ach-badge {
-  margin-top: 10px;
-  padding: 9px 12px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #7c3aed, #4f46e5);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 700;
-  text-align: center;
+/* 结余卡片彩蛋：月结余命中极端值常驻显示 */
+.balance-egg {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffe9a8;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  animation: egg-pop 0.4s ease;
 }
+@keyframes egg-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* 批量记账行 */
+.batch-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.batch-input { width: 64px; text-align: center; font-weight: 700; }
+.batch-tip {
+  font-size: 11px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border-radius: 8px;
+  padding: 2px 8px;
+}
+
+/* 隐藏成就墙 */
+.ach-panel { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); }
+.ach-count { font-size: 12px; font-weight: 800; color: var(--primary); }
+.ach-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.ach-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  opacity: 0.55;
+  filter: grayscale(0.9);
+}
+.ach-item.on {
+  opacity: 1;
+  filter: none;
+  border-color: rgba(124, 58, 237, 0.5);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(79, 70, 229, 0.1));
+}
+.ach-icon { font-size: 20px; flex: none; }
+.ach-name { font-size: 12px; font-weight: 700; }
+.ach-desc { font-size: 10px; color: var(--text-sub); margin-top: 2px; }
+.ach-item { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
+.ach-item .ach-icon { font-size: 20px; }
+.ach-item.on .ach-name { color: #6d28d9; }
 
 /* 赛博账本隐藏皮肤：霓虹渐变 + 等宽数字 */
 .budget-root.cyber .balance-banner {
