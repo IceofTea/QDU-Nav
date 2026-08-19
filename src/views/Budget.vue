@@ -792,7 +792,7 @@ const monthLabel = computed(() => {
       <BarRow v-for="c in catStats" :key="c.name" :label="c.icon + ' ' + c.name" :value="c.v" :max="maxCat" :text="'¥' + fmt(c.v)" color="linear-gradient(90deg,#b63a46,#e76f51)" />
     </div>
     <div v-else-if="catStats.length && catChartType === 'pie'">
-      <PieChart :segments="catChartSegs" :total="expense" @select="selectCatByLabel" />
+      <PieChart :segments="catChartSegs" :total="expense" value-prefix="¥" @select="selectCatByLabel" />
     </div>
     <div v-else class="muted" style="text-align:center;padding:10px;">本月还没有支出</div>
   </div>

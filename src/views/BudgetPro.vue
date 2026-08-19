@@ -352,14 +352,15 @@ function exportCsv() {
     <LineChart v-else :series="[
       { label: '收入', color: '#0d9488', data: monthly.map((m) => m.inc) },
       { label: '支出', color: '#b63a46', data: monthly.map((m) => m.exp) }
-    ]" :labels="monthly.map((m) => m.label)" :height="160" />
+    ]" :labels="monthly.map((m) => m.label)" :height="160" value-prefix="¥" :max-width="760" />
     <p class="muted" style="font-size:11px;margin-top:8px;">点击月份可跳转到该月主视图 · 绿=收入 红=支出</p>
   </div>
 
+  <div class="pro-duo">
   <div class="panel">
     <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>区间结余趋势</div>
-    <LineChart :series="balanceTrend.series" :labels="balanceTrend.labels" :height="130" />
-    <p class="muted" style="font-size:11px;margin-top:6px;">每月「收入 - 支出」结余，低于 0 表示该月超支</p>
+    <LineChart :series="balanceTrend.series" :labels="balanceTrend.labels" :height="150" value-prefix="¥" />
+    <p class="muted" style="font-size:11px;margin-top:6px;">每月「收入 - 支出」结余，低于 0 表示该月超支 · 悬浮 / 点击查看各节点数值</p>
   </div>
 
   <div class="panel">
@@ -415,6 +416,7 @@ function exportCsv() {
     </template>
     <p class="muted" style="font-size:11px;margin-top:8px;">绿=当日/当周/当月盈利 · 红=亏损 · 点击可筛选下方明细</p>
   </div>
+  </div>
 
   <div class="panel">
     <div class="section-head" style="align-items:center;margin:0 0 10px;">
@@ -431,7 +433,7 @@ function exportCsv() {
           <BarRow :label="c.icon + ' ' + c.name" :value="c.v" :max="maxCat" :text="'¥' + fmt(c.v) + ' · ' + Math.round(c.v / Math.max(1, catAgg.reduce((s, x) => s + x.v, 0)) * 100) + '%'" color="linear-gradient(90deg,#b63a46,#e76f51)" />
         </button>
       </div>
-      <PieChart v-else :segments="catAgg" :total="catAgg.reduce((s, x) => s + x.v, 0)" @select="selectExpCat" />
+      <PieChart v-else :segments="catAgg" :total="catAgg.reduce((s, x) => s + x.v, 0)" value-prefix="¥" @select="selectExpCat" />
     </template>
   </div>
 
@@ -450,7 +452,7 @@ function exportCsv() {
           <BarRow :label="'🏪 ' + m.name" :value="m.v" :max="maxMerchant" :text="'¥' + fmt(m.v)" color="linear-gradient(90deg,#0d9488,#2dd4bf)" />
         </button>
       </div>
-      <PieChart v-else :segments="merchantAgg.slice(0, 15)" :total="merchantAgg.slice(0, 15).reduce((s, x) => s + x.v, 0)" @select="selectMerchant" />
+      <PieChart v-else :segments="merchantAgg.slice(0, 15)" :total="merchantAgg.slice(0, 15).reduce((s, x) => s + x.v, 0)" value-prefix="¥" @select="selectMerchant" />
     </template>
   </div>
 
@@ -599,15 +601,19 @@ function exportCsv() {
 .pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 10px; }
 .pager-info { font-size: 12px; color: var(--text-sub); font-weight: 700; }
 
+/* 宽屏下「结余趋势 + 收支日历」并排，移动端单列 */
+.pro-duo { display: grid; gap: 14px; }
+@media (min-width: 920px) {
+  .pro-duo { grid-template-columns: 1fr 1fr; align-items: start; }
+}
+
 /* 收支日历 */
-.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; max-width: 560px; margin-left: auto; margin-right: auto; }
+.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .cal-title { font-size: 14px; font-weight: 800; }
-.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; max-width: 560px; margin: 0 auto; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
 .cal-wd { text-align: center; font-size: 10px; color: var(--text-sub); padding: 2px 0; }
 .cal-cell {
   aspect-ratio: 1 / 1;
-  max-width: 74px;
-  justify-self: center;
   width: 100%;
   border-radius: 8px;
   border: 1px solid var(--border);
@@ -629,7 +635,7 @@ function exportCsv() {
 .cal-bal { font-size: 8px; color: var(--text-sub); white-space: nowrap; }
 .cal-cell.pos .cal-bal { color: #0f766e; font-weight: 700; }
 .cal-cell.neg .cal-bal { color: #b63a46; font-weight: 700; }
-.cal-week-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-width: 560px; margin: 0 auto; }
+.cal-week-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .cal-week {
   display: flex;
   flex-direction: column;
@@ -650,7 +656,7 @@ function exportCsv() {
 .cal-week.pos .cal-week-val { color: #0f766e; }
 .cal-week.neg { border-color: rgba(182, 58, 70, 0.5); background: rgba(182, 58, 70, 0.12); }
 .cal-week.neg .cal-week-val { color: #b63a46; }
-.cal-grid2 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-width: 560px; margin: 0 auto; }
+.cal-grid2 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .cal-tile {
   display: flex;
   flex-direction: column;
