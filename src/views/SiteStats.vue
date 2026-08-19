@@ -8,6 +8,7 @@ import { apps } from '../data/apps'
 import KpiCard from '../components/KpiCard.vue'
 import LineChart from '../components/LineChart.vue'
 import PieChart from '../components/PieChart.vue'
+import BarRow from '../components/BarRow.vue'
 import InsightPanel from '../components/InsightPanel.vue'
 
 const emit = defineEmits(['back'])
@@ -241,6 +242,16 @@ onMounted(async () => {
         </div>
         <p v-else class="muted" style="text-align:center;padding:10px;">暂无数据 · 打开应用后会自动记录</p>
       </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-head" style="align-items:center;margin:0 0 12px;">
+        <h3 class="section-title" style="margin:0;"><span class="bar"></span>🏆 最受欢迎（点赞榜）</h3>
+      </div>
+      <div v-if="stats.likes.length">
+        <BarRow v-for="(l, i) in stats.likes.slice(0, 8)" :key="l.name" :label="(i + 1) + '. ' + appName(l.name)" :value="l.v" :max="maxBar(stats.likes)" :text="String(l.v) + ' 👍'" color="linear-gradient(90deg,#be185d,#ec4899)" />
+      </div>
+      <p v-else class="muted" style="text-align:center;padding:10px;">暂无点赞 · 回首页给喜欢的应用点个赞吧</p>
     </div>
 
     <p class="muted" style="font-size:12px;text-align:center;padding-bottom:6px;">仅统计访问聚合数据（不含个人身份信息），数据存于本站自建计数服务</p>

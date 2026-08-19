@@ -16,7 +16,8 @@ export const EMPTY_STATS = {
   devices: [],
   os: [],
   refs: [],
-  apps: []
+  apps: [],
+  likes: []
 }
 
 export async function getSiteStats() {

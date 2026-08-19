@@ -9,6 +9,8 @@ import { ref, onMounted } from 'vue'
 import Welcome from './views/Welcome.vue'
 import { SITE } from './config/site'
 import { NAV_APPS, useViewState } from './router'
+import { apps } from './data/apps'
+import { fetchLikes, toggleLike, likedByMe } from './utils/like'
 
 /** 会话级初始页：每次新开浏览器先展示欢迎页，进入后本会话不再打扰 */
 const stage = ref(sessionStorage.getItem('qdu_welcome_seen') ? 'main' : 'welcome')
@@ -52,6 +54,23 @@ onMounted(() => {
 
 const { current, currentComp, openApp, goHome } = useViewState()
 
+/* 应用点赞（数据走自建计数服务，与本站舆情同一套） */
+const appTitle = (id) => (apps.find((a) => a.id === id) || {}).title || id
+const likes = ref({})
+const likedState = ref({})
+async function initLikes() {
+  likes.value = await fetchLikes()
+  const m = {}
+  for (const a of apps) m[a.id] = likedByMe(a.id)
+  likedState.value = m
+}
+async function tapLike(appId) {
+  const res = await toggleLike(appId)
+  likedState.value = { ...likedState.value, [appId]: res.liked }
+  if (res.likes != null) likes.value = { ...likes.value, [appId]: res.likes }
+  else if (likes.value[appId] != null) likes.value = { ...likes.value, [appId]: Math.max(0, (likes.value[appId] || 0) + (res.liked ? 1 : -1)) }
+}
+
 /* 默哀模式：灰白风格 + 顶部哀思条。
  * 触发来源：① 手动后门——部署时向 public/ 上传一个 `mourning` 文件即触发；
  *          ② 自动计时——每年 12 月 13 日南京大屠杀死难者国家公祭日自动变灰白。
@@ -81,6 +100,7 @@ onMounted(() => {
       if (r.ok && !(r.headers.get('content-type') || '').includes('text/html')) enableMourning('manual')
     })
     .catch(() => {})
+  initLikes()
 })
 </script>
 
@@ -105,6 +125,13 @@ onMounted(() => {
     </header>
 
     <main class="main">
+      <div v-if="current && current !== 'home'" class="app-like-bar">
+        <button class="app-like-btn" :class="{ on: likedState[current] }" @click="tapLike(current)">
+          <span>👍</span>
+          <span>给「{{ appTitle(current) }}」点赞</span>
+          <b>{{ likes[current] != null ? likes[current] : '' }}</b>
+        </button>
+      </div>
       <div v-if="mourning" class="mourning-bar">
         {{ mourningCause === 'memorial' ? '🕯 12月13日 · 南京大屠杀死难者国家公祭日 · 铭记历史，吾辈自强' : '🕯 今日为全国哀悼日，本站以灰白页面寄托哀思' }}
       </div>

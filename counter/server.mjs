@@ -14,7 +14,7 @@ const PORT = Number(process.env.PORT) || 8788
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*'
 const SEED_FILE = path.join(__dirname, '.seed3')
 
-const empty = () => ({ uv: 0, pv: 0, byDay: {}, byHour: {}, byWeekday: {}, byDevice: {}, byOs: {}, byRef: {}, byApp: {} })
+const empty = () => ({ uv: 0, pv: 0, byDay: {}, byHour: {}, byWeekday: {}, byDevice: {}, byOs: {}, byRef: {}, byApp: {}, byAppLikes: {}, liked: {} })
 let state = empty()
 let saving = false
 
@@ -94,7 +94,8 @@ function overview() {
     uv: state.uv, pv: state.pv,
     today: { date: todayKey, ...today },
     week, hours, weekdays,
-    devices: toArr(state.byDevice), os: toArr(state.byOs), refs: toArr(state.byRef), apps: toArr(state.byApp)
+    devices: toArr(state.byDevice), os: toArr(state.byOs), refs: toArr(state.byRef), apps: toArr(state.byApp),
+    likes: toArr(state.byAppLikes)
   }
 }
 
@@ -105,6 +106,26 @@ const server = http.createServer((req, res) => {
   if (req.method === 'OPTIONS') { res.writeHead(204); return res.end() }
 
   const u = new URL(req.url, 'http://localhost')
+  if (u.pathname === '/api/like') {
+    const app = (u.searchParams.get('app') || '').trim()
+    const vid = (u.searchParams.get('vid') || '').trim()
+    const on = u.searchParams.get('on') === '1'
+    if (app && vid) {
+      const lk = app + '|' + vid
+      const liked = !!state.liked[lk]
+      if (on && !liked) {
+        state.byAppLikes[app] = (state.byAppLikes[app] || 0) + 1
+        state.liked[lk] = 1
+      } else if (!on && liked) {
+        state.byAppLikes[app] = Math.max(0, (state.byAppLikes[app] || 0) - 1)
+        delete state.liked[lk]
+      }
+      setTimeout(save, 400)
+    }
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify({ app, likes: state.byAppLikes[app] || 0, liked: on }))
+    return
+  }
   if (u.pathname === '/api/hit' || u.pathname === '/api/stats') {
     const hit = u.pathname === '/api/hit'
     if (hit) {

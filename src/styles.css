@@ -257,6 +257,25 @@ body {
   margin: 0 auto;
   padding: 20px 20px calc(var(--nav-h) + 28px);
 }
+.app-like-bar { display: flex; justify-content: center; margin-bottom: 14px; }
+.app-like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 18px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.app-like-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); border-color: var(--primary); }
+.app-like-btn b { font-weight: 800; color: var(--primary); min-width: 12px; text-align: left; }
+.app-like-btn.on { border-color: rgba(225, 29, 72, 0.4); color: #e11d48; background: rgba(225, 29, 72, 0.06); }
+.app-like-btn.on b { color: #e11d48; }
 
 /* ===== 首页 ===== */
 .hero { padding: 6px 0 4px; }

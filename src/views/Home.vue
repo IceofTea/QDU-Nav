@@ -6,6 +6,7 @@ import { campuses } from '../data/campus'
 import { getCourseStats, EMPTY_STATS } from '../api/courseStats'
 import { SITE } from '../config/site'
 import VisitStats from '../components/VisitStats.vue'
+import { fetchLikes, toggleLike, likedByMe } from '../utils/like'
 
 const emit = defineEmits(['open'])
 
@@ -14,6 +15,26 @@ const keyword = ref('')
 const stats = ref(EMPTY_STATS)
 const maxTerm = ref(1)
 
+/* 点赞：各应用 + 本站（site） */
+const likes = ref({})
+const likedState = ref({})
+async function initLikes() {
+  likes.value = await fetchLikes()
+  const m = { site: likedByMe('site') }
+  for (const a of apps) m[a.id] = likedByMe(a.id)
+  likedState.value = m
+}
+async function tapLike(appId, ev) {
+  if (ev) ev.stopPropagation()
+  const res = await toggleLike(appId)
+  likedState.value = { ...likedState.value, [appId]: res.liked }
+  if (res.likes != null) {
+    likes.value = { ...likes.value, [appId]: res.likes }
+  } else if (likes.value[appId] != null) {
+    likes.value = { ...likes.value, [appId]: Math.max(0, (likes.value[appId] || 0) + (res.liked ? 1 : -1)) }
+  }
+}
+
 function barH(v, m) {
   return m ? Math.max(6, Math.round((v / m) * 100)) : 6
 }
@@ -21,6 +42,7 @@ function barH(v, m) {
 onMounted(async () => {
   stats.value = await getCourseStats()
   maxTerm.value = stats.value.terms.reduce((m, t) => Math.max(m, t.count), 1)
+  initLikes()
 })
 
 function greeting() {
@@ -53,6 +75,11 @@ function toggleCampus(name) {
         <span class="search-icon">🔍</span>
         <input v-model="keyword" class="search-input" placeholder="搜一搜你想要的应用" />
       </div>
+      <button class="site-like" :class="{ on: likedState.site }" @click="tapLike('site')">
+        <span class="sl-icon">👍</span>
+        <span class="sl-text">给本站点赞</span>
+        <b class="sl-num">{{ likes.site != null ? likes.site : '' }}</b>
+      </button>
     </section>
 
     <section class="section">
@@ -89,6 +116,9 @@ function toggleCampus(name) {
           <span class="tile-body">
             <span class="tile-title">{{ a.title }}</span>
             <span class="tile-desc">{{ a.desc }}</span>
+          </span>
+          <span class="tile-like" :class="{ on: likedState[a.id] }" title="点赞 / 取消" @click.stop="tapLike(a.id)">
+            👍 <b>{{ likes[a.id] != null ? likes[a.id] : '' }}</b>
           </span>
         </button>
       </div>
@@ -186,3 +216,43 @@ function toggleCampus(name) {
     </section>
   </div>
 </template>
+
+<style scoped>
+.site-like {
+  margin: 12px auto 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.site-like:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1); }
+.site-like.on { border-color: #e11d48; background: rgba(225, 29, 72, 0.08); }
+.site-like .sl-icon { font-size: 16px; }
+.site-like .sl-num { font-weight: 800; color: var(--primary); min-width: 12px; text-align: left; }
+.site-like.on .sl-num { color: #e11d48; }
+.tile-like {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  flex: none;
+  font-size: 12px;
+  color: var(--text-sub);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  user-select: none;
+}
+.tile-like b { min-width: 10px; }
+.tile-like:hover { background: var(--primary-soft); color: var(--primary); }
+.tile-like.on { border-color: rgba(225, 29, 72, 0.4); color: #e11d48; background: rgba(225, 29, 72, 0.06); }
+</style>

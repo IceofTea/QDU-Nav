@@ -4,7 +4,8 @@
 //   GET /api/hit?vid=<匿名ID>&app=<appId>  本次访问 PV+1；UV 按前端匿名访客 ID 去重
 //                                           （vid 缺失时回退「IP+UA」指纹）；
 //                                           按日期/小时/星期/设备/系统/来源/应用自动累计，返回完整统计
-//   GET /api/stats                         查询完整统计（不计数）
+//   GET /api/like?app=<appId>&vid=<vid>&on=1|0   点赞 / 取消（每人每应用限 1 次，可反复切换）
+//   GET /api/stats                         查询完整统计（不计数，含 likes 点赞榜）
 //   GET /                                  探活文本
 // 数据全部存 Deno KV（['stats'] 单 key），免费额度含 KV 持久化，重启不丢。
 // 部署见文件头部注释（console.deno.com：App Directory 根、Dynamic、entrypoint、
@@ -26,10 +27,15 @@ interface Stats {
   byOs: Record<string, number>
   byRef: Record<string, number>
   byApp: Record<string, number>
+  byAppLikes: Record<string, number>
 }
 
 function emptyStats(): Stats {
-  return { uv: 0, pv: 0, byDay: {}, byHour: {}, byWeekday: {}, byDevice: {}, byOs: {}, byRef: {}, byApp: {} }
+  return { uv: 0, pv: 0, byDay: {}, byHour: {}, byWeekday: {}, byDevice: {}, byOs: {}, byRef: {}, byApp: {}, byAppLikes: {} }
+}
+
+function emptyStats(): Stats {
+  return { uv: 0, pv: 0, byDay: {}, byHour: {}, byWeekday: {}, byDevice: {}, byOs: {}, byRef: {}, byApp: {}, byAppLikes: {} }
 }
 
 async function getStats(): Promise<Stats> {
@@ -88,7 +94,7 @@ function overview(s: Stats) {
   }))
   const toArr = (obj: Record<string, number>) =>
     Object.entries(obj).map(([name, v]) => ({ name, v })).sort((a, b) => b.v - a.v)
-  return {
+return {
     uv: s.uv,
     pv: s.pv,
     today: { date: todayKey, ...today },
@@ -98,8 +104,10 @@ function overview(s: Stats) {
     devices: toArr(s.byDevice),
     os: toArr(s.byOs),
     refs: toArr(s.byRef),
-    apps: toArr(s.byApp)
+    apps: toArr(s.byApp),
+    likes: toArr(s.byAppLikes)
   }
+}
 }
 
 // ============================================================
@@ -130,6 +138,26 @@ Deno.serve(async (req) => {
   }
 
   const u = new URL(req.url)
+  if (u.pathname === '/api/like') {
+    const app = (u.searchParams.get('app') || '').trim()
+    const vid = (u.searchParams.get('vid') || '').trim()
+    const on = u.searchParams.get('on') === '1'
+    const s = await getStats()
+    if (app && vid) {
+      const likeKey = ['lk', app, vid]
+      const liked = (await kv.get(likeKey)).value === 1
+      if (on && !liked) {
+        s.byAppLikes[app] = (s.byAppLikes[app] || 0) + 1
+        await kv.set(likeKey, 1)
+      } else if (!on && liked) {
+        s.byAppLikes[app] = Math.max(0, (s.byAppLikes[app] || 0) - 1)
+        await kv.delete(likeKey)
+      }
+      await kv.set(KEY, s)
+    }
+    headers.set('Content-Type', 'application/json')
+    return new Response(JSON.stringify({ app, likes: s.byAppLikes[app] || 0, liked: on }), { headers })
+  }
   if (u.pathname === '/api/hit' || u.pathname === '/api/stats') {
     const hit = u.pathname === '/api/hit'
     const s = await getStats()
