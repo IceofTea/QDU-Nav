@@ -9,3 +9,6 @@ __pycache__/
 
 counter/data.json
 counter/.seed3
+
+# 本机账单样例（含个人隐私）与参考 apk，禁止入库
+example/

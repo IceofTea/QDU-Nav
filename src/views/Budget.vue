@@ -1,9 +1,10 @@
 <script setup>
-/** 生活费计数器：随手记账 + 微信/支付宝账单 CSV 导入 + 奖学金快捷勾选
+/** 生活费计数器：随手记账 + 微信/支付宝账单导入 + 奖学金快捷勾选
  *  数据仅存本机浏览器 localStorage（qdu_budget_records），不上传任何数据 */
 import { ref, computed, watch } from 'vue'
 import BudgetSim from './BudgetSim.vue'
 import BarRow from '../components/BarRow.vue'
+import { parseBillFile } from '../utils/billImport.js'
 
 const emit = defineEmits(['back'])
 
@@ -22,6 +23,12 @@ const CATS = {
     { key: 'daily', icon: '🧴', label: '日常用品', hint: '洗发水 · 纸巾 · 洗衣液' },
     { key: 'phone', icon: '📱', label: '电话费', hint: '话费 · 流量 · 校园网' },
     { key: 'fun', icon: '🎮', label: '娱乐游戏', hint: '游戏 · 电影 · 门票' },
+    { key: 'beauty', icon: '💇', label: '美容美发', hint: '理发 · 美甲 · 护肤' },
+    { key: 'digital', icon: '📱', label: '数码家电', hint: '手机 · 耳机 · 家电' },
+    { key: 'sport', icon: '🏃', label: '运动户外', hint: '健身 · 球类 · 户外' },
+    { key: 'virtual', icon: '🎭', label: '网络虚拟', hint: '游戏充值 · 会员 · 虚拟商品' },
+    { key: 'housing', icon: '🏠', label: '房屋住宿', hint: '房租 · 水电 · 宿舍' },
+    { key: 'transfer', icon: '💸', label: '转账支出', hint: '微信/支付宝转给他人' },
     { key: 'trouble', icon: '💥', label: '闯祸费', hint: '赔了舍友的碗 / 打碎东西' },
     { key: 'other', icon: '📦', label: '其它支出', hint: '说不清的一笔' }
   ],
@@ -31,6 +38,9 @@ const CATS = {
     { key: 'parttime', icon: '💼', label: '兼职', hint: '搬砖收入' },
     { key: 'prize', icon: '🎁', label: '红包/奖金', hint: '意外之财' },
     { key: 'resale', icon: '🏷️', label: '闲置转卖', hint: '断舍离变现' },
+    { key: 'refund', icon: '↩️', label: '退款', hint: '买贵了退回来' },
+    { key: 'invest', icon: '📈', label: '理财收益', hint: '余额宝 · 利息' },
+    { key: 'transfer', icon: '💌', label: '转账收入', hint: '好友转账 · 收款' },
     { key: 'other', icon: '📥', label: '其它收入', hint: '天降横财' }
   ]
 }
@@ -53,19 +63,7 @@ const SCHOLARS = [
   { name: '博学奖学金（发明专利）', amount: 5000 }
 ]
 
-/** 导入账单时按商品名关键词猜测类别 */
-const HINT_CATS = [
-  { key: 'food', words: ['食堂', '餐', '饭', '外卖', '奶茶', '咖啡', '果', '零食', '面', '饺', '烧烤', '火锅', '汉堡', '小吃', '买菜', '菜场'] },
-  { key: 'party', words: ['聚餐', '团建', '约饭'] },
-  { key: 'transport', words: ['公交', '地铁', '打车', '滴滴', '高铁', '火车', '共享', '加油', '停车', '飞机'] },
-  { key: 'study', words: ['书', '教材', '打印', '文具', '资料', '报名', '考研', '考证'] },
-  { key: 'cloth', words: ['衣', '服', '鞋', '裤', '帽', '穿搭'] },
-  { key: 'medical', words: ['药', '医院', '挂号', '体检', '口罩'] },
-  { key: 'daily', words: ['洗发', '纸巾', '洗衣', '牙膏', '毛巾', '日用'] },
-  { key: 'phone', words: ['话费', '流量', '移动', '联通', '电信', '校园网', '宽带'] },
-  { key: 'fun', words: ['游戏', 'steam', '电影', 'ktv', '演出', '门票', '会员', '视频'] }
-]
-
+/** 导入账单时按商品名关键词猜测类别（与 utils/billImport.js 的 KEYWORDS 一致） */
 const REF = [
   { key: 'food', label: '伙食费', lo: 800, hi: 1500 },
   { key: 'party', label: '聚餐费', lo: 200, hi: 600 },
@@ -76,6 +74,12 @@ const REF = [
   { key: 'daily', label: '日常用品', lo: 50, hi: 200 },
   { key: 'phone', label: '电话费', lo: 50, hi: 150 },
   { key: 'fun', label: '娱乐游戏', lo: 0, hi: 300 },
+  { key: 'beauty', label: '美容美发', lo: 0, hi: 150 },
+  { key: 'digital', label: '数码家电', lo: 0, hi: 200 },
+  { key: 'sport', label: '运动户外', lo: 0, hi: 150 },
+  { key: 'virtual', label: '网络虚拟', lo: 0, hi: 150 },
+  { key: 'housing', label: '房屋住宿', lo: 0, hi: 800 },
+  { key: 'transfer', label: '转账支出', lo: 0, hi: 300 },
   { key: 'trouble', label: '闯祸备用金', lo: 0, hi: 500 }
 ]
 
@@ -139,6 +143,8 @@ function editStart(r) {
 function save() {
   const amt = Number(amount.value)
   if (!amt || amt <= 0) return
+  if (comboEgg()) return
+  let saved = null
   if (editing.value) {
     const rec = records.value.find((r) => r.id === editing.value)
     if (rec) {
@@ -147,20 +153,24 @@ function save() {
       rec.amount = Math.round(amt * 100) / 100
       rec.note = note.value.trim()
       rec.date = date.value || today()
+      saved = rec
     }
     editing.value = null
   } else {
-    records.value.unshift({
+    saved = {
       id: newId(),
       type: mode.value,
       cat: cat.value,
       amount: Math.round(amt * 100) / 100,
       note: note.value.trim(),
       date: date.value || today()
-    })
+    }
+    records.value.unshift(saved)
   }
   amount.value = ''
   note.value = ''
+  if (amt === 404) showToast('收支未找到，但你的努力已经找到方向了！', 3200)
+  else triggerEggs(saved)
 }
 function cancelEdit() {
   editing.value = null
@@ -173,6 +183,172 @@ function remove(id) {
   if (editing.value === id) editing.value = null
 }
 
+/* ================= 隐藏彩蛋（不影响正常情绪反馈，详见 AGENTS.md） ================= */
+/** 轻提示：彩蛋文案短暂弹出，自动消失 */
+const toast = ref(null)
+let toastTimer = null
+function showToast(text, ms = 2400) {
+  toast.value = { text, key: Date.now() }
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { toast.value = null }, ms)
+}
+/** 彩蛋去重：同一彩蛋 24 小时内只触发一次，避免反复失去惊喜感 */
+const EGG_KEY = 'qdu_eggs'
+function eggOnce(key) {
+  try {
+    const eggs = JSON.parse(localStorage.getItem(EGG_KEY)) || {}
+    const now = Date.now()
+    if (eggs[key] && now - eggs[key] < 86400000) return false
+    eggs[key] = now
+    localStorage.setItem(EGG_KEY, JSON.stringify(eggs))
+    return true
+  } catch { return true }
+}
+
+/** 连击彩蛋：金额 2 + 备注「1+1=」时，快速点「记入」10 次 → 彩蛋；连击期间吞掉重复保存 */
+let comboState = { count: 0, last: 0 }
+function comboEgg() {
+  if (Number(amount.value) !== 2 || note.value.trim() !== '1+1=') { comboState.count = 0; return false }
+  const now = Date.now()
+  if (now - comboState.last < 450) comboState.count++
+  else comboState.count = 1
+  comboState.last = now
+  if (comboState.count >= 10) {
+    comboState.count = 0
+    if (eggOnce('egg_combo')) showToast('开发者觉得你很闲，送你个彩蛋')
+    return true
+  }
+  return comboState.count > 1
+}
+
+/** 保存后按金额 / 类别 / 当月结余触发彩蛋 */
+function triggerEggs(r) {
+  const bal = balance.value
+  if (r.cat === 'other' && r.type === 'expense' && Math.abs(r.amount - 9876547210.33) < 0.01) {
+    if (eggOnce('egg_bili')) showToast('你买b站手办了？', 3200)
+    return
+  }
+  if (r.cat === 'prize' && r.type === 'income' && r.amount === 500000) {
+    if (eggOnce('egg_spy')) showToast('你抓到间谍了🫨？')
+    return
+  }
+  if (r.type === 'expense' && r.cat === 'party' && r.amount > 100) {
+    if (eggOnce('egg_party')) showToast('呦，吃了顿漂亮饭😋')
+    return
+  }
+  if (r.type === 'expense' && r.cat === 'trouble') {
+    const tiers = [
+      [50, '给谁暖壶踢倒了😄？'],
+      [100, '碎碎平安😁'],
+      [500, '还不如充三国杀呢😡'],
+      [1000, '😨'],
+      [10000, '你给人车撞了？'],
+      [100000, '咱有坐牢的风险吗😰']
+    ]
+    const hit = tiers.find(([hi]) => r.amount <= hi)
+    if (eggOnce('egg_trouble')) showToast(hit ? hit[1] : '吹牛逼呢😅')
+    return
+  }
+  if (r.type === 'income' && r.cat === 'allowance' && r.amount > 10000 && bal > 100000) {
+    if (eggOnce('egg_brag')) showToast('吹牛逼呢😅')
+    return
+  }
+  if (bal > 100000) {
+    if (eggOnce('egg_brag')) showToast('吹牛逼呢😅')
+    return
+  }
+  if (bal < -1000000) {
+    if (eggOnce('egg_bankrupt')) showToast('百万负翁，吹牛逼呢😅')
+    return
+  }
+  if (bal < -100000) {
+    if (eggOnce('egg_twin')) showToast('你给双子楼炸了😰？')
+  }
+}
+
+/** 隐藏皮肤：连续点「收入/支出」5 次或长按 3 秒解锁「赛博账本」 */
+const cyberOn = ref(localStorage.getItem('qdu_cyber') === '1')
+let segHits = 0
+let segTimer = null
+let holdTimer = null
+function unlockCyber() {
+  if (cyberOn.value) return
+  cyberOn.value = true
+  localStorage.setItem('qdu_cyber', '1')
+  showToast('⚡ 解锁隐藏皮肤：赛博账本', 3000)
+}
+function segTap() {
+  segHits++
+  clearTimeout(segTimer)
+  segTimer = setTimeout(() => { segHits = 0 }, 1300)
+  if (segHits >= 5) unlockCyber()
+}
+function holdStart() {
+  clearTimeout(holdTimer)
+  holdTimer = setTimeout(unlockCyber, 3000)
+}
+function holdEnd() { clearTimeout(holdTimer) }
+
+/** 像素雨：快速点「生活费模拟」按钮 3 次触发 */
+const pxRain = ref([])
+let pxHits = 0
+let pxLast = 0
+let pxSeq = 0
+const PX_COLORS = ['#f43f5e', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7', '#ec4899']
+function simTap() {
+  const now = Date.now()
+  if (now - pxLast < 450) pxHits++
+  else pxHits = 1
+  pxLast = now
+  if (pxHits >= 3) {
+    pxHits = 0
+    pxSeq++
+    const arr = []
+    for (let i = 0; i < 90; i++) {
+      arr.push({
+        id: `${pxSeq}-${i}`,
+        left: Math.random() * 100,
+        delay: Math.random() * 0.6,
+        dur: 1.4 + Math.random() * 1.2,
+        size: 5 + Math.random() * 7,
+        color: PX_COLORS[Math.floor(Math.random() * PX_COLORS.length)]
+      })
+    }
+    pxRain.value = arr
+    setTimeout(() => { pxRain.value = [] }, 3400)
+  }
+}
+
+/** 节日配色：春节 ±3 天 / 愚人节 / 校庆 5-14，结算按钮变色 */
+const SPRING_FEST = {
+  2024: '02-10', 2025: '01-29', 2026: '02-17', 2027: '02-06', 2028: '01-26',
+  2029: '02-13', 2030: '02-03', 2031: '01-23', 2032: '02-11', 2033: '01-31'
+}
+function festivalNow() {
+  const d = new Date()
+  const y = d.getFullYear()
+  const md = `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  if (md === '04-01') return 'festival-april'
+  if (md === '05-14') return 'festival-qdu'
+  const sf = SPRING_FEST[y] || SPRING_FEST[y - 1]
+  if (sf && Math.abs((new Date(`${y}-${sf}`) - d) / 86400000) <= 3) return 'festival-spring'
+  return ''
+}
+const festival = ref(festivalNow())
+
+/** 隐藏成就：奶茶消费累计 20 笔解锁 */
+const milkTeaCount = computed(() =>
+  records.value.filter((r) => r.type === 'expense' && r.cat === 'food' && (r.note || '').includes('奶茶')).length
+)
+const milkTeaUnlocked = ref(localStorage.getItem('qdu_ach_tea') === '1')
+watch(milkTeaCount, (n) => {
+  if (n >= 20 && !milkTeaUnlocked.value) {
+    milkTeaUnlocked.value = true
+    localStorage.setItem('qdu_ach_tea', '1')
+    showToast('🥤 成就解锁：奶茶品鉴师（累计 20 杯）', 3200)
+  }
+})
+
 function sum(list, type) {
   return Math.round(list.filter((r) => r.type === type).reduce((s, r) => s + r.amount, 0) * 100) / 100
 }
@@ -184,78 +360,26 @@ function pickScholar(s) {
   note.value = s.name
 }
 
-function guessCat(name) {
-  const n = (name || '').toLowerCase()
-  for (const h of HINT_CATS) {
-    if (h.words.some((w) => n.includes(w))) return h.key
-  }
-  return 'other'
-}
-
-function csvImport(file) {
+/** 导入微信 / 支付宝账单文件（csv/xlsx 均支持，全部在浏览器本地解析） */
+async function billImport(file) {
   importMsg.value = ''
   if (!file) return
-  const reader = new FileReader()
-  reader.onload = () => {
-    const text = String(reader.result || '')
-    const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/)
-    let head = -1
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].includes('收/支')) { head = i; break }
-    }
-    if (head < 0) {
-      importMsg.value = '未识别到账单表头（需包含「收/支」「金额」列），请确认是微信/支付宝导出的账单 CSV。'
-      return
-    }
-    const cols = lines[head].split(',')
-    const idx = (name) => {
-      const exact = cols.findIndex((c) => c.trim() === name)
-      if (exact >= 0) return exact
-      return cols.findIndex((c) => c.includes(name))
-    }
-    const iTime = idx('交易时间') >= 0 ? idx('交易时间') : idx('交易创建时间')
-    const iKind = idx('收/支')
-    const iAmt = idx('金额')
-    const iName = idx('商品') >= 0 ? idx('商品') : idx('商品名称')
-    const iStatus = idx('当前状态') >= 0 ? idx('当前状态') : idx('交易状态')
-    const iNote = idx('备注')
-    if (iKind < 0 || iAmt < 0) {
-      importMsg.value = '账单缺少「收/支」或「金额」列，无法导入。'
-      return
-    }
-    const added = []
-    for (let i = head + 1; i < lines.length; i++) {
-      const line = lines[i].trim()
-      if (!line || !line.includes(',')) continue
-      const cell = line.split(',')
-      const get = (j) => (j >= 0 && j < cell.length ? cell[j].trim() : '')
-      const kind = get(iKind)
-      const status = get(iStatus)
-      if (status && !status.includes('成功') && !status.includes('支付')) continue
-      const amtRaw = get(iAmt).replace(/[^\d.]/g, '')
-      const amt = Math.round(Number(amtRaw || 0) * 100) / 100
-      if (!amt || amt <= 0 || (kind !== '支出' && kind !== '收入')) continue
-      const name = get(iName)
-      const noteText = get(iNote)
-      const dateText = (get(iTime) || '').slice(0, 10)
-      added.push({
-        id: newId() + added.length,
-        type: kind === '支出' ? 'expense' : 'income',
-        cat: guessCat(name),
-        amount: amt,
-        note: noteText || name,
-        date: dateText || today()
-      })
-    }
-    if (!added.length) {
-      importMsg.value = '未找到可导入的收支记录，请确认账单格式。'
-      return
-    }
-    records.value = added.concat(records.value)
-    importMsg.value = `✅ 已导入 ${added.length} 笔记录（金额合计 ¥${fmt(sum(added, 'expense'))} 支出 / ¥${fmt(sum(added, 'income'))} 收入）。支出已按商品名自动归类，可在明细中修改。`
+  const res = await parseBillFile(file)
+  if (!res.ok) {
+    importMsg.value = res.msg
+    return
   }
-  reader.onerror = () => { importMsg.value = '文件读取失败。' }
-  reader.readAsText(file, 'utf-8')
+  const { added, skipped, brand, source } = res
+  if (!added.length) {
+    importMsg.value = `未找到可导入的收支记录（跳过中性交易/无效记录 ${skipped.neutral + skipped.closed} 笔）。请确认账单文件为微信「用于个人对账」或支付宝「交易明细」导出。`
+    return
+  }
+  const withId = added.map((r) => ({ id: newId() + Math.random(), ...r }))
+  records.value = withId.concat(records.value)
+  const brandName = brand === 'alipay' ? '支付宝' : '微信'
+  const typeName = source === 'xlsx' ? 'Excel(xlsx)' : '表格'
+  const skipMsg = skipped.neutral + skipped.closed ? `已按规则跳过不计收支/失败记录 ${skipped.neutral + skipped.closed} 笔；` : ''
+  importMsg.value = `✅ 已识别为${brandName}账单（${typeName}）并导入 ${added.length} 笔：支出 ¥${fmt(sum(added, 'expense'))} / 收入 ¥${fmt(sum(added, 'income'))}。${skipMsg}支出已按交易分类与商品名自动归类，可在明细中修改。`
 }
 
 const monthRecords = computed(() => records.value.filter((r) => r.date.startsWith(month.value)))
@@ -348,11 +472,12 @@ const monthLabel = computed(() => {
   <BudgetSim v-if="subView === 'sim'" @back="subView = 'main'" />
 
   <template v-else>
+  <div class="budget-root" :class="{ cyber: cyberOn }">
   <div class="view-top">
     <button class="back-btn" @click="emit('back')">← 返回首页</button>
     <div class="view-title">生活费计数器</div>
     <div class="view-sub">随手记一笔，月底少流一滴泪 · 奖学金、兼职收入也能入账</div>
-    <button class="btn ghost small" style="margin-top:10px;" @click="subView = 'sim'">🧮 生活费模拟 · 青岛一个月多少生活费合适 ›</button>
+    <button class="btn ghost small" style="margin-top:10px;" @click="subView = 'sim'; simTap()">📊 生活费模拟 · 估算 / 预算分配器 / 账单校准 ›</button>
   </div>
 
   <div class="panel">
@@ -384,8 +509,26 @@ const monthLabel = computed(() => {
     <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ editing ? '✏️ 修改记录' : '记一笔' }}</div>
     <button v-if="editing" class="btn ghost small" style="margin-bottom:10px;" @click="cancelEdit">← 取消修改</button>
     <div class="seg">
-      <button class="seg-btn" :class="{ active: mode === 'expense' }" @click="mode = 'expense'; cat = 'food'">💸 支出</button>
-      <button class="seg-btn" :class="{ active: mode === 'income' }" @click="mode = 'income'; cat = 'allowance'">💵 收入</button>
+      <button
+        class="seg-btn"
+        :class="{ active: mode === 'expense' }"
+        @click="mode = 'expense'; cat = 'food'; segTap()"
+        @mousedown="holdStart"
+        @mouseup="holdEnd"
+        @mouseleave="holdEnd"
+        @touchstart="holdStart"
+        @touchend="holdEnd"
+      >💸 支出</button>
+      <button
+        class="seg-btn"
+        :class="{ active: mode === 'income' }"
+        @click="mode = 'income'; cat = 'allowance'; segTap()"
+        @mousedown="holdStart"
+        @mouseup="holdEnd"
+        @mouseleave="holdEnd"
+        @touchstart="holdStart"
+        @touchend="holdEnd"
+      >💵 收入</button>
     </div>
     <div class="cat-grid">
       <button
@@ -416,7 +559,7 @@ const monthLabel = computed(() => {
       <input v-model="date" class="input date-input" type="date" />
     </div>
     <input v-model="note" class="input" style="margin-top:10px;" placeholder="备注（可选），如：食堂麻辣香锅" @keyup.enter="save" />
-    <button class="btn accent big" style="margin-top:12px;width:100%;" :disabled="!(Number(amount) > 0)" @click="save">
+    <button class="btn accent big" style="margin-top:12px;width:100%;" :class="festival ? 'festival-on ' + festival : ''" :disabled="!(Number(amount) > 0)" @click="save">
       {{ editing ? '✓ 保存修改' : '＋ 记入' + (mode === 'expense' ? '支出' : '收入') }}
     </button>
     <button v-if="editing" class="btn ghost big" style="margin-top:8px;width:100%;" @click="cancelEdit">取消</button>
@@ -425,11 +568,14 @@ const monthLabel = computed(() => {
   <div class="panel">
     <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>📥 导入微信 / 支付宝账单</div>
     <p class="muted" style="font-size:12px;margin-bottom:10px;">
-      支持微信支付账单明细、支付宝账单明细导出的 CSV：在「微信支付 → 账单下载 → 用于个人对账」或「支付宝 → 我的账单 → 导出」下载后选择文件，金额按「收/支」自动记入，支出按商品名自动归类。
+      直接选择从微信 / 支付宝下载的账单文件即可自动识别：微信「支付 → 钱包 → 账单 → 常见问题 → 下载账单 → 用于个人对账」或支付宝「我的 → 账单 → 右上角 ⋯ → 开具交易流水证明 / 导出」，下载的 CSV 或 Excel(xlsx) 都能识别。金额按「收/支」自动记入，支出按交易分类与商品名自动归类。
     </p>
-    <input id="csv-file" type="file" accept=".csv,text/csv" style="display:none;" @change="csvImport($event.target.files[0])" />
-    <label for="csv-file" class="btn ghost" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">📄 选择账单 CSV 文件</label>
+    <input id="csv-file" type="file" accept=".csv,.xlsx,text/csv" style="display:none;" @change="billImport($event.target.files[0])" />
+    <label for="csv-file" class="btn ghost" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">📄 选择账单文件（CSV / Excel）</label>
     <div v-if="importMsg" class="import-msg">{{ importMsg }}</div>
+    <div class="privacy-note">
+      🔒 隐私说明：本站为纯静态网页（无后端服务器），账单文件只在你自己的浏览器里本地解析，<b>不会上传到任何服务器</b>，也不会被任何服务方获取；导入的记账记录仅保存在本机浏览器 localStorage，可安心试用。清除浏览器数据会一并清空记录。
+    </div>
   </div>
 
   <div class="panel">
@@ -486,6 +632,16 @@ const monthLabel = computed(() => {
       </div>
     </div>
     <p class="muted" style="font-size:11px;margin-top:10px;">记录保存在本机浏览器（localStorage），不会上传任何数据。</p>
+    <div v-if="milkTeaUnlocked" class="ach-badge">🥤 隐藏成就：奶茶品鉴师（已解锁）· 累计 {{ milkTeaCount }} 杯</div>
+  </div>
+  </div>
+
+  <transition name="egg-fade">
+    <div v-if="toast" :key="toast.key" class="egg-toast">{{ toast.text }}</div>
+  </transition>
+
+  <div v-if="pxRain.length" class="px-rain">
+    <span v-for="p in pxRain" :key="p.id" class="px-drop" :style="{ left: p.left + '%', width: p.size + 'px', height: p.size + 'px', background: p.color, animationDelay: p.delay + 's', animationDuration: p.dur + 's' }"></span>
   </div>
   </template>
 </template>
@@ -572,6 +728,16 @@ const monthLabel = computed(() => {
   border-radius: 10px;
   color: var(--soft-green-text);
 }
+.privacy-note {
+  margin-top: 10px;
+  font-size: 11px;
+  line-height: 1.7;
+  padding: 10px;
+  background: var(--primary-soft);
+  border: 1px dashed var(--primary);
+  border-radius: 10px;
+  color: var(--text-sub);
+}
 .ref-toggle {
   width: 100%;
   display: flex;
@@ -616,4 +782,98 @@ const monthLabel = computed(() => {
   border: none; background: none; color: var(--text-light); font-size: 14px; cursor: pointer; padding: 4px;
 }
 .rec-del:hover { color: var(--primary); }
+
+/* ================= 隐藏彩蛋样式 ================= */
+.egg-toast {
+  position: fixed;
+  left: 50%;
+  top: 46%;
+  transform: translateX(-50%);
+  z-index: 300;
+  max-width: 82vw;
+  padding: 14px 22px;
+  border-radius: 16px;
+  background: rgba(17, 24, 39, 0.92);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.egg-fade-enter-active, .egg-fade-leave-active { transition: opacity 0.3s, transform 0.3s; }
+.egg-fade-enter-from, .egg-fade-leave-to { opacity: 0; transform: translateX(-50%) scale(0.85); }
+
+.px-rain {
+  position: fixed;
+  inset: 0;
+  z-index: 290;
+  pointer-events: none;
+  overflow: hidden;
+}
+.px-drop {
+  position: absolute;
+  top: -20px;
+  border-radius: 2px;
+  animation-name: px-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  opacity: 0.9;
+}
+@keyframes px-fall {
+  0% { transform: translateY(-10px) rotate(0deg); opacity: 0; }
+  8% { opacity: 0.95; }
+  100% { transform: translateY(110vh) rotate(360deg); opacity: 0.85; }
+}
+
+.ach-badge {
+  margin-top: 10px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* 赛博账本隐藏皮肤：霓虹渐变 + 等宽数字 */
+.budget-root.cyber .balance-banner {
+  background: linear-gradient(135deg, #0f172a, #312e81 55%, #0f766e);
+  border: 1px solid rgba(34, 211, 238, 0.6);
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.25), inset 0 0 40px rgba(168, 85, 247, 0.15);
+}
+.budget-root.cyber .balance-num,
+.budget-root.cyber .balance-live,
+.budget-root.cyber .rec-amt {
+  font-family: 'Consolas', 'Courier New', monospace;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.75);
+}
+.budget-root.cyber .balance-num { color: #67e8f9; }
+.budget-root.cyber .balance-live-bar i { background: linear-gradient(90deg, #22d3ee, #a855f7); }
+.budget-root.cyber .balance-banner.negative {
+  background: linear-gradient(135deg, #1c1917, #7f1d1d 55%, #831843);
+  border-color: rgba(244, 63, 94, 0.6);
+}
+.budget-root.cyber .panel { border-color: rgba(34, 211, 238, 0.25); }
+
+/* 节日结算按钮配色 */
+.btn.festival-on.festival-spring {
+  background: linear-gradient(135deg, #dc2626, #f59e0b) !important;
+  box-shadow: 0 6px 22px rgba(220, 38, 38, 0.4);
+  animation: fest-pulse 1.6s ease-in-out infinite;
+}
+.btn.festival-on.festival-april {
+  background: linear-gradient(135deg, #ec4899, #8b5cf6, #22d3ee, #f59e0b) !important;
+  background-size: 300% 300%;
+  animation: fest-rainbow 4s ease infinite;
+}
+.btn.festival-on.festival-qdu {
+  background: linear-gradient(135deg, #0f3d33, #155e54, #1b66c9) !important;
+  box-shadow: 0 6px 22px rgba(21, 94, 84, 0.45);
+}
+@keyframes fest-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+@keyframes fest-rainbow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 </style>

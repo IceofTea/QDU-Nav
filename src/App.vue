@@ -51,6 +51,37 @@ onMounted(() => {
 })
 
 const { current, currentComp, openApp, goHome } = useViewState()
+
+/* 默哀模式：灰白风格 + 顶部哀思条。
+ * 触发来源：① 手动后门——部署时向 public/ 上传一个 `mourning` 文件即触发；
+ *          ② 自动计时——每年 12 月 13 日南京大屠杀死难者国家公祭日自动变灰白。
+ * 不依赖后端，进入/离开公祭日由每分钟定时器自动切换，可随时手动开关。 */
+const mourning = ref(false)
+const mourningCause = ref('')
+function enableMourning(cause) {
+  if (mourning.value && mourningCause.value === 'memorial') return
+  mourning.value = true
+  mourningCause.value = cause === 'memorial' ? 'memorial' : 'manual'
+  document.documentElement.classList.add('mourning')
+}
+function disableMourning() {
+  mourning.value = false
+  mourningCause.value = ''
+  document.documentElement.classList.remove('mourning')
+}
+onMounted(() => {
+  const inMemorial = () => { const n = new Date(); return n.getMonth() === 11 && n.getDate() === 13 }
+  if (inMemorial()) enableMourning('memorial')
+  setInterval(() => {
+    if (inMemorial()) enableMourning('memorial')
+    else if (mourningCause.value === 'memorial') disableMourning()
+  }, 60000)
+  fetch(import.meta.env.BASE_URL + 'mourning')
+    .then((r) => {
+      if (r.ok && !(r.headers.get('content-type') || '').includes('text/html')) enableMourning('manual')
+    })
+    .catch(() => {})
+})
 </script>
 
 <template>
@@ -74,6 +105,9 @@ const { current, currentComp, openApp, goHome } = useViewState()
     </header>
 
     <main class="main">
+      <div v-if="mourning" class="mourning-bar">
+        {{ mourningCause === 'memorial' ? '🕯 12月13日 · 南京大屠杀死难者国家公祭日 · 铭记历史，吾辈自强' : '🕯 今日为全国哀悼日，本站以灰白页面寄托哀思' }}
+      </div>
       <component :is="currentComp" @open="openApp" @back="goHome" />
     </main>
 

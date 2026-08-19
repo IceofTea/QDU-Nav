@@ -983,3 +983,25 @@ table.data th { background: var(--primary-soft); color: var(--primary-dark); fon
   .result-hint { width: 100%; margin-left: 0; }
   .field-split { grid-column: span 1; }
 }
+
+/* ===== 默哀模式 =====
+ * 部署时向 public/ 上传一个 `mourning` 文件（任意内容）即触发，全站灰白、保留可读性。
+ * 逐区块应用 filter，避免在 html 根上 filter 导致 fixed 导航定位失效。 */
+.mourning-bar {
+  max-width: 1080px;
+  margin: 0 auto 12px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 12px;
+  text-align: center;
+}
+html[data-theme='dark'] .mourning-bar { background: #1f2937; color: #d1d5db; }
+html.mourning .welcome,
+html.mourning .header,
+html.mourning .main,
+html.mourning .footer,
+html.mourning .bottom-nav {
+  filter: grayscale(1);
+}
