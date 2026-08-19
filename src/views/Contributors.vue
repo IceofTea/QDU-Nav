@@ -88,6 +88,7 @@ function hueOf(i) {
       <li><b>v1.3.2</b> — 深色模式全面修复（顶栏/底部导航/关于本站/按钮类控件）+ 系列 Bug 修复与维护整理，详见 README 版本历史。</li>
       <li><b>v1.3.3</b> — 代码质量加固：通知标题/安全过滤等真实 Bug 修复、公共组件抽取（BarRow/KpiCard/InsightPanel）、tieba Node 回退对齐手机版、杂项清理，详见 README 版本历史。</li>
       <li><b>v1.3.4</b> — 独立访客统计修正：UV 去重改为前端匿名访客 ID（vid）优先、IP+UA 兜底，解决校园 NAT 下 UV 被严重低估的问题，详见 README 版本历史。</li>
+      <li><b>v1.3.5</b> — 账单导入完全对齐微信/支付宝真实格式（纯本地解析，金额与官方统计逐笔一致）、生活费模拟升级三合一（估算 / 预算分配器 / 真实账单校准）、隐藏彩蛋（赛博账本皮肤 / 像素雨 / 节日变色 / 奶茶成就）与默哀模式（上传 mourning 文件或 12·13 公祭日自动灰白），详见 README 版本历史。</li>
     </ul>
     <p class="muted" style="font-size:12px;margin-top:10px;">
       想加入贡献者墙？给

@@ -40,9 +40,10 @@
 2. **前端构建**：`npm run build`，确认无报错、JS 体积合理。
 3. **回归**：用 `node server/index.mjs` 起服务（端口 8787），跑 CDP 回归脚本 `regress_v*.mjs`（基线见 `C:\Users\13111\AppData\Local\Temp\opencode\qdunav\`），确认全绿。
 4. **更新 README**：功能表 / 数据来源 / 版权说明如有变化需同步；版本历史追加一行。
-5. **更新版本号**：按 `x.y.z`——小更新（bug 修复 / 文案 / 维护性改动）只加 z（如 1.1.1→1.1.2）；功能迭代 / 新功能等大更新加 y 并归零 z（如 1.1.x→1.2.0）。版本号只在 `src/config/site.js` 维护，README 头部版本行同步。
-6. **追加本文件「更新日志」**：写清楚改了什么、为什么、验证结果。
-7. **提交并推送**：commit message 用 `feat:` / `fix:` / `data:` 前缀；push 前先 `git fetch` 处理定时任务的自动提交（需要时 rebase）。
+5. **更新贡献者墙**：`Contributors.vue` 的「社区贡献记录」务必追加一条新版本简介（与 README 版本历史同步），这是每次版本更新的固定动作。
+6. **更新版本号**：按 `x.y.z`——小更新（bug 修复 / 文案 / 维护性改动）只加 z（如 1.1.1→1.1.2）；功能迭代 / 新功能等大更新加 y 并归零 z（如 1.1.x→1.2.0）。版本号只在 `src/config/site.js` 维护，README 头部版本行同步。
+7. **追加本文件「更新日志」**：写清楚改了什么、为什么、验证结果。
+8. **提交并推送**：commit message 用 `feat:` / `fix:` / `data:` 前缀；push 前先 `git fetch` 处理定时任务的自动提交（需要时 rebase）。
 
 ## 五、红线
 
