@@ -25,10 +25,6 @@ const maxKind = ref(1)
 const maxCampus = ref(1)
 const maxCol = ref(1)
 
-function pct(v, max) {
-  return max ? Math.round((v / max) * 100) : 0
-}
-
 onMounted(async () => {
   stats.value = await getCourseStats()
   const s = stats.value
@@ -101,7 +97,7 @@ const insights = computed(() => {
     </div>
 
     <div class="kpi-grid">
-      <KpiCard :value="colCount ? stats.campusDist.length : 0" label="已标注校区" sub="浮山 / 金家岭 / 松山" />
+      <KpiCard :value="stats.campusDist.length" label="已标注校区" sub="浮山 / 金家岭 / 松山" />
       <KpiCard :value="topCampus ? topCampus.name : '—'" label="最忙校区" :sub="topCampus ? topCampus.count + ' 条 · ' + share(topCampus.count) + '%' : '—'" />
       <KpiCard :value="topDay ? topDay.day : '—'" label="最忙星期" :sub="topDay ? topDay.count + ' 节' : '—'" />
       <KpiCard :value="colCount" label="开课学院" :sub="'开课最忙的是「' + ((labeledDist(stats.colDist)[0] || {}).name || '—') + '」'" />
@@ -111,11 +107,7 @@ const insights = computed(() => {
 
     <div class="panel" style="margin-bottom:16px;">
       <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>学期趋势（近 {{ stats.terms.length }} 个学期）</div>
-      <div v-for="t in stats.terms" :key="t.semester" class="term-row">
-        <div class="term-label">{{ t.semester }}</div>
-        <div class="term-track"><i :style="{ width: pct(t.count, maxTerm) + '%' }"></i></div>
-        <div class="term-val">{{ t.count }}</div>
-      </div>
+      <BarRow v-for="t in stats.terms" :key="t.semester" :label="t.semester" :value="t.count" :max="maxTerm" :text="String(t.count)" color="linear-gradient(90deg,#1b66c9,#3b82f6)" />
       <p class="muted" style="font-size:12px;margin-top:8px;">课程总表随学期更替更新，可以看到开课规模的变化。</p>
     </div>
 
@@ -180,9 +172,4 @@ const insights = computed(() => {
 <style scoped>
 .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .panel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 16px; }
-.term-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.term-label { width: 130px; font-size: 12px; flex-shrink: 0; }
-.term-track { flex: 1; height: 20px; background: var(--bar); border-radius: 8px; overflow: hidden; }
-.term-track i { display: block; height: 100%; background: linear-gradient(90deg, #1b66c9, #3b82f6); border-radius: 8px; }
-.term-val { width: 64px; text-align: right; font-size: 12px; color: var(--text-sub); flex-shrink: 0; }
 </style>

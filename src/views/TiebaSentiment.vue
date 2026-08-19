@@ -2,6 +2,8 @@
 import { ref, computed, onMounted } from 'vue'
 import KpiCard from '../components/KpiCard.vue'
 import InsightPanel from '../components/InsightPanel.vue'
+import BarRow from '../components/BarRow.vue'
+import LineChart from '../components/LineChart.vue'
 
 const emit = defineEmits(['back'])
 
@@ -9,8 +11,6 @@ const loading = ref(true)
 const status = ref('loading')
 const data = ref(null)
 const errMsg = ref('')
-/** 当前悬停/点选的趋势柱子下标（-1 表示无） */
-const activeTrend = ref(-1)
 
 const TOPIC_ICONS = {
   考研升学: '🎓',
@@ -56,10 +56,17 @@ const maxReplies = computed(() => data.value?.topThreads?.[0]?.replies || 1)
 const hotBar = (r) => Math.round((r / maxReplies.value) * 100)
 const maxKw = computed(() => maxCount(data.value?.keywords || [], 'count') || 1)
 const maxTopic = computed(() => maxCount(data.value?.topics || [], 'count') || 1)
-const maxTrend = computed(() => maxCount(data.value?.weekTrend || [], 'count') || 1)
 const topicTotal = computed(() => (data.value?.topics || []).reduce((s, t) => s + t.count, 0) || 1)
 const weekSum = computed(() => (data.value?.weekTrend || []).reduce((s, p) => s + p.count, 0))
 const topTopic = computed(() => data.value?.topics?.[0] || null)
+/** 近 14 天趋势：默认柱状（hover 显示当天帖数），可切换折线 */
+const trendChartType = ref('bar')
+const trendHover = ref(-1)
+const maxTrend = computed(() => maxCount(data.value?.weekTrend || [], 'count') || 1)
+const trendLine = computed(() => ({
+  labels: (data.value?.weekTrend || []).map((p) => p.label),
+  series: [{ label: '发帖', color: '#0891b2', data: (data.value?.weekTrend || []).map((p) => p.count) }]
+}))
 const topKw = computed(() => data.value?.keywords?.[0] || null)
 
 /** 自动生成的文字洞察（数据驱动，无数据时自动降级为空） */
@@ -153,28 +160,33 @@ const insights = computed(() => {
 
       <div class="panel">
         <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>🗂️ 话题分布</div>
-        <div class="topic-row" v-for="t in data.topics" :key="t.name">
-          <span class="kw-word">{{ TOPIC_ICONS[t.name] || '·' }} {{ t.name }}</span>
-          <span class="kw-bar"><i :style="{ width: (t.count / maxCount(data.topics) * 100) + '%' }"></i></span>
-          <span class="kw-count muted">{{ Math.round((t.count / topicTotal) * 100) }}%</span>
+        <div v-if="data.topics.length">
+          <BarRow v-for="t in data.topics" :key="t.name" :label="(TOPIC_ICONS[t.name] || '·') + ' ' + t.name" :value="t.count" :max="maxTopic" :text="Math.round((t.count / topicTotal) * 100) + '%'" color="linear-gradient(90deg,#0d9488,#2dd4bf)" />
         </div>
         <p v-if="!data.topics.length" class="muted" style="font-size:13px;">暂无话题归类。</p>
       </div>
     </div>
 
     <div class="panel">
-      <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>📈 近 14 天发帖趋势（日均 {{ Math.round(weekSum / 14) }} 条）</div>
-<div class="trend" v-if="data.weekTrend && data.weekTrend.length">
-        <div v-for="(p, i) in data.weekTrend" :key="p.label" class="trend-col"
-          :title="p.label + '：' + p.count + ' 帖'" :class="{ active: activeTrend === i }"
-          @mouseenter="activeTrend = i" @mouseleave="activeTrend = -1" @click="activeTrend = activeTrend === i ? -1 : i">
-          <div class="trend-tip" :class="{ show: activeTrend === i }">{{ p.count }} 帖</div>
-          <div class="trend-bar"><i :style="{ height: (p.count / maxTrend * 100 || 0) + '%' }"></i></div>
-          <span class="trend-label muted">{{ p.label }}</span>
+      <div class="section-head" style="align-items:center;margin:0 0 12px;">
+        <h3 class="section-title" style="margin:0;"><span class="bar"></span>📈 近 14 天发帖趋势（日均 {{ Math.round(weekSum / 14) }} 条）</h3>
+        <div class="chart-type">
+          <button class="tab" :class="{ active: trendChartType === 'bar' }" @click="trendChartType = 'bar'">▥ 柱状</button>
+          <button class="tab" :class="{ active: trendChartType === 'line' }" @click="trendChartType = 'line'">📈 折线</button>
         </div>
       </div>
+      <template v-if="data.weekTrend && data.weekTrend.length">
+        <div v-if="trendChartType === 'bar'" class="mini-bar-chart">
+          <div v-for="(p, i) in data.weekTrend" :key="p.label" class="mb-col" @mouseenter="trendHover = i" @mouseleave="trendHover = -1">
+            <div class="mb-tip" :class="{ show: trendHover === i }">{{ p.count }} 帖</div>
+            <div class="mb-bar" :class="{ hi: trendHover === i }"><i :style="{ height: Math.max(3, Math.round(p.count / maxTrend * 100)) + '%' }"></i></div>
+            <span class="mb-label">{{ p.label }}</span>
+          </div>
+        </div>
+        <LineChart v-else :series="trendLine.series" :labels="trendLine.labels" :height="150" :max-width="640" />
+      </template>
       <p v-else class="muted" style="font-size:13px;">暂无趋势数据。</p>
-      <p class="muted" style="font-size:12px;margin-top:6px;">💡 鼠标悬停或点击柱子可查看当天发帖数；窄屏可左右滑动。</p>
+      <p class="muted" style="font-size:12px;margin-top:6px;">💡 柱状按天查看热度；切折线后可悬浮查看每天具体数值。</p>
     </div>
   </template>
 </template>
@@ -274,13 +286,6 @@ const insights = computed(() => {
   color: var(--text);
   font-weight: 700;
 }
-.kw-row,
-.topic-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 0;
-}
 .kw-cloud {
   display: flex;
   flex-wrap: wrap;
@@ -301,55 +306,13 @@ const insights = computed(() => {
   font-size: 11px;
   font-weight: 500;
 }
-.kw-word {
-  flex: 0 0 96px;
-  font-size: 13px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.kw-bar {
-  flex: 1;
-  height: 10px;
-  border-radius: 6px;
-  background: var(--border);
-  overflow: hidden;
-}
-.kw-bar i {
-  display: block;
-  height: 100%;
-  border-radius: 6px;
-  background: linear-gradient(90deg, #1677ff, #69b1ff);
-}
-.kw-count {
-  flex: 0 0 34px;
-  font-size: 12px;
-  text-align: right;
-}
-.trend {
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  height: 150px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  -webkit-overflow-scrolling: touch;
-}
-.trend-col {
-  flex: 1;
-  min-width: 34px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 3px;
-  height: 100%;
-  cursor: pointer;
-}
-.trend-col.active .trend-bar i {
-  background: linear-gradient(180deg, #f59e0b, #fbbf24);
-}
-.trend-tip {
+.chart-type { display: flex; gap: 6px; }
+.chart-type .tab { font-size: 11px; }
+.mini-bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 150px; overflow-x: auto; }
+.mb-col { flex: 1; min-width: 34px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; cursor: pointer; position: relative; }
+.mb-tip {
+  position: absolute;
+  top: 0;
   font-size: 11px;
   font-weight: 700;
   color: var(--notice-text);
@@ -361,26 +324,12 @@ const insights = computed(() => {
   transition: opacity 0.15s;
   line-height: 1.6;
   white-space: nowrap;
+  pointer-events: none;
 }
-.trend-tip.show {
-  opacity: 1;
-}
-.trend-bar {
-  flex: 1;
-  width: 100%;
-  display: flex;
-  align-items: flex-end;
-}
-.trend-bar i {
-  display: block;
-  width: 70%;
-  margin: 0 auto;
-  border-radius: 5px 5px 0 0;
-  background: linear-gradient(180deg, #1677ff, #69b1ff);
-}
-.trend-label {
-  font-size: 11px;
-  transform: scale(0.85);
-  transform-origin: center;
-}
+.mb-tip.show { opacity: 1; }
+.mb-bar { width: 100%; max-width: 34px; height: 118px; display: flex; align-items: flex-end; background: var(--bar); border-radius: 6px 6px 0 0; overflow: hidden; transition: background 0.15s; }
+.mb-bar i { width: 100%; background: linear-gradient(180deg, #22d3ee, #0891b2); border-radius: 6px 6px 0 0; transition: background 0.15s; }
+.mb-bar.hi { background: rgba(245, 158, 11, 0.25); }
+.mb-bar.hi i { background: linear-gradient(180deg, #fbbf24, #f59e0b); }
+.mb-label { font-size: 9px; color: var(--text-sub); }
 </style>

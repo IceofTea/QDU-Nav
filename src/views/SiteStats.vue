@@ -1,10 +1,14 @@
 <script setup>
 /** 本站舆情：独立访客 / 累计访问 + 访问行为图表
- *  数据来自自建计数服务（Deno Deploy + KV），纯自动化采集（访问/打开应用自动上报）。 */
+ *  数据来自自建计数服务（Deno Deploy + KV），纯自动化采集（访问/打开应用自动上报）。
+ *  默认展示与经典版一致的柱状/条形图（含金色序号），另增「一眼看懂」洞察与折线/圆饼切换。 */
 import { ref, computed, onMounted } from 'vue'
 import { getSiteStats, EMPTY_STATS } from '../api/siteStats'
 import { apps } from '../data/apps'
 import KpiCard from '../components/KpiCard.vue'
+import LineChart from '../components/LineChart.vue'
+import PieChart from '../components/PieChart.vue'
+import InsightPanel from '../components/InsightPanel.vue'
 
 const emit = defineEmits(['back'])
 
@@ -18,9 +22,42 @@ const appName = (id) => APP_NAMES[id] || id
 
 const max7 = computed(() => Math.max(1, ...stats.value.week.map((w) => w.pv)))
 const maxHour = computed(() => Math.max(1, ...stats.value.hours.map((h) => h.v)))
-const maxWd = computed(() => Math.max(1, ...stats.value.weekdays.map((w) => w.v)))
 const maxBar = (arr) => Math.max(1, ...arr.map((x) => x.v))
 const pct = (v, m) => Math.round((v / m) * 100)
+const sumArr = (arr) => arr.reduce((s, x) => s + x.v, 0)
+const pctOf = (arr, v) => Math.round(v / Math.max(1, sumArr(arr)) * 100)
+const maxItem = (arr, k) => (arr.length ? arr.reduce((a, b) => (b.v > a.v ? b : a), arr[0]) : null)
+
+/* 图表类型：近 7 天 / 24h 支持 柱状/折线/圆饼（默认柱状）；横条类支持 条形/圆饼 */
+const chartTypes = ref({ week: 'bar', hour: 'bar', week2: 'bar', device: 'bar', os: 'bar', ref: 'bar', app: 'bar' })
+
+/* 近 7 天 / 24h 折线（可选） */
+const weekLine = computed(() => ({
+  labels: stats.value.week.map((w) => w.label),
+  series: [{ label: '访问', color: '#0891b2', data: stats.value.week.map((w) => w.pv) }]
+}))
+const hourLine = computed(() => ({
+  labels: stats.value.hours.map((h) => h.label),
+  series: [{ label: '访问', color: '#7c3aed', data: stats.value.hours.map((h) => h.v) }]
+}))
+
+/* 自动洞察（一眼看懂数据） */
+const insights = computed(() => {
+  const arr = []
+  const peakHour = maxItem(stats.value.hours, 'label')
+  if (peakHour) arr.push(`访问高峰集中在 ${peakHour.label}，占全天 ${pctOf(stats.value.hours, peakHour.v)}%`)
+  const topDay = maxItem(stats.value.weekdays, 'label')
+  if (topDay) arr.push(`一周中 ${topDay.label} 访问最多（${topDay.v} 次）`)
+  const topDev = maxItem(stats.value.devices, 'name')
+  if (topDev) arr.push(`主力设备是「${topDev.name}」，占 ${pctOf(stats.value.devices, topDev.v)}%`)
+  const topOs = maxItem(stats.value.os, 'name')
+  if (topOs) arr.push(`最常见系统：${topOs.name}（${pctOf(stats.value.os, topOs.v)}%）`)
+  const topRef = maxItem(stats.value.refs, 'name')
+  if (topRef) arr.push(`主要来源：${topRef.name}`)
+  const topApp = stats.value.apps[0]
+  if (topApp) arr.push(`最常用应用：${appName(topApp.name)}（${topApp.v} 次）`)
+  return arr
+})
 
 onMounted(async () => {
   stats.value = await getSiteStats()
@@ -47,91 +84,160 @@ onMounted(async () => {
       <KpiCard icon="⚡" :value="stats.today.pv" label="今日访问" />
     </div>
 
+    <InsightPanel :items="insights" title="一眼看懂这些数据" />
+
     <div class="panel" style="margin-bottom:16px;">
-      <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>近 7 天访问趋势</div>
-      <div class="bar-wrap" v-if="stats.week.length">
-        <div v-for="w in stats.week" :key="w.label" class="bar-col">
-          <div class="bar-val">{{ w.pv ? w.pv : '' }}</div>
-          <div class="bar-box"><i :style="{ height: pct(w.pv, max7) + '%' }"></i></div>
-          <div class="bar-label">{{ w.label }}</div>
+      <div class="section-head" style="align-items:center;margin:0 0 12px;">
+        <h3 class="section-title" style="margin:0;"><span class="bar"></span>近 7 天访问趋势</h3>
+        <div class="chart-type">
+          <button class="tab" :class="{ active: chartTypes.week === 'bar' }" @click="chartTypes.week = 'bar'">▥ 柱状</button>
+          <button class="tab" :class="{ active: chartTypes.week === 'line' }" @click="chartTypes.week = 'line'">📈 折线</button>
+          <button class="tab" :class="{ active: chartTypes.week === 'pie' }" @click="chartTypes.week = 'pie'">◔ 圆饼</button>
         </div>
+      </div>
+      <div v-if="stats.week.length">
+        <div v-if="chartTypes.week === 'bar'" class="bar-wrap">
+          <div v-for="w in stats.week" :key="w.label" class="bar-col">
+            <div class="bar-val">{{ w.pv ? w.pv : '' }}</div>
+            <div class="bar-box"><i :style="{ height: Math.max(3, pct(w.pv, max7)) + '%' }"></i></div>
+            <div class="bar-label">{{ w.label }}</div>
+          </div>
+        </div>
+        <LineChart v-else-if="chartTypes.week === 'line'" :series="weekLine.series" :labels="weekLine.labels" :height="150" :max-width="720" />
+        <PieChart v-else :segments="stats.week.map((w) => ({ name: w.label, icon: '', v: w.pv }))" :total="sumArr(stats.week.map((w) => ({ name: w.label, v: w.pv })))" />
       </div>
       <p v-else class="muted" style="text-align:center;padding:10px;">暂无访问数据</p>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:16px;">
+    <div class="duo-grid">
       <div class="panel">
-        <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>访问时段（24 小时）</div>
-        <div class="mini-bars" v-if="stats.hours.length">
-          <div v-for="h in stats.hours" :key="h.label" class="mini-col" :title="h.label + '：' + h.v">
-            <div class="mini-bar"><i :style="{ height: pct(h.v, maxHour) + '%' }"></i></div>
-            <span class="mini-label">{{ (h.label + '').replace('点', '') }}</span>
+        <div class="section-head" style="align-items:center;margin:0 0 12px;">
+          <h3 class="section-title" style="margin:0;"><span class="bar"></span>访问时段（24 小时）</h3>
+          <div class="chart-type">
+            <button class="tab" :class="{ active: chartTypes.hour === 'bar' }" @click="chartTypes.hour = 'bar'">▥ 柱状</button>
+            <button class="tab" :class="{ active: chartTypes.hour === 'line' }" @click="chartTypes.hour = 'line'">📈 折线</button>
+            <button class="tab" :class="{ active: chartTypes.hour === 'pie' }" @click="chartTypes.hour = 'pie'">◔ 圆饼</button>
           </div>
+        </div>
+        <div v-if="stats.hours.length">
+          <div v-if="chartTypes.hour === 'bar'" class="mini-bars">
+            <div v-for="h in stats.hours" :key="h.label" class="mini-col" :title="h.label + '：' + h.v">
+              <div class="mini-bar"><i :style="{ height: Math.max(3, pct(h.v, maxHour)) + '%' }"></i></div>
+              <span class="mini-label">{{ (h.label + '').replace('点', '') }}</span>
+            </div>
+          </div>
+          <LineChart v-else-if="chartTypes.hour === 'line'" :series="hourLine.series" :labels="hourLine.labels" :height="150" :max-width="560" />
+          <PieChart v-else :segments="stats.hours.map((h) => ({ name: h.label, icon: '', v: h.v }))" :total="sumArr(stats.hours)" />
         </div>
         <p v-else class="muted" style="text-align:center;padding:10px;">暂无数据</p>
       </div>
 
       <div class="panel">
-        <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>一周分布</div>
-        <div class="row-list" v-if="stats.weekdays.length">
-          <div v-for="d in stats.weekdays" :key="d.label" class="row-item">
-            <span style="flex:0 0 44px;font-size:12px;">{{ d.label }}</span>
-            <span class="row-bar"><i :style="{ width: pct(d.v, maxWd) + '%' }"></i></span>
-            <span class="muted" style="flex:0 0 30px;text-align:right;font-size:12px;">{{ d.v }}</span>
+        <div class="section-head" style="align-items:center;margin:0 0 12px;">
+          <h3 class="section-title" style="margin:0;"><span class="bar"></span>一周分布</h3>
+          <div class="chart-type">
+            <button class="tab" :class="{ active: chartTypes.week2 === 'bar' }" @click="chartTypes.week2 = 'bar'">▥</button>
+            <button class="tab" :class="{ active: chartTypes.week2 === 'pie' }" @click="chartTypes.week2 = 'pie'">◔</button>
           </div>
         </div>
-        <p v-else class="muted" style="text-align:center;padding:10px;">暂无数据</p>
-      </div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:16px;">
-      <div class="panel">
-        <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>设备占比</div>
-        <div class="row-list" v-if="stats.devices.length">
-          <div v-for="d in stats.devices" :key="d.name" class="row-item">
-            <span style="flex:0 0 56px;font-size:12px;">{{ d.name }}</span>
-            <span class="row-bar"><i :style="{ width: pct(d.v, maxBar(stats.devices)) + '%' }"></i></span>
-            <span class="muted" style="flex:0 0 40px;text-align:right;font-size:12px;">{{ d.v }}</span>
+        <div v-if="stats.weekdays.length">
+          <div v-if="chartTypes.week2 === 'bar'" class="row-list">
+            <div v-for="d in stats.weekdays" :key="d.label" class="row-item">
+              <span class="row-label">{{ d.label }}</span>
+              <span class="row-bar"><i :style="{ width: pct(d.v, maxBar(stats.weekdays)) + '%' }"></i></span>
+              <span class="row-val">{{ d.v }}</span>
+            </div>
           </div>
-        </div>
-        <p v-else class="muted" style="text-align:center;padding:10px;">暂无数据</p>
-      </div>
-
-      <div class="panel">
-        <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>系统占比</div>
-        <div class="row-list" v-if="stats.os.length">
-          <div v-for="d in stats.os" :key="d.name" class="row-item">
-            <span style="flex:0 0 72px;font-size:12px;">{{ d.name }}</span>
-            <span class="row-bar"><i :style="{ width: pct(d.v, maxBar(stats.os)) + '%' }"></i></span>
-            <span class="muted" style="flex:0 0 40px;text-align:right;font-size:12px;">{{ d.v }}</span>
-          </div>
+          <PieChart v-else :segments="stats.weekdays.map((d) => ({ name: d.label, icon: '', v: d.v }))" :total="sumArr(stats.weekdays)" />
         </div>
         <p v-else class="muted" style="text-align:center;padding:10px;">暂无数据</p>
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:16px;">
+    <div class="duo-grid">
       <div class="panel">
-        <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>来源分布</div>
-        <div class="row-list" v-if="stats.refs.length">
-          <div v-for="d in stats.refs" :key="d.name" class="row-item">
-            <span style="flex:0 0 80px;font-size:12px;">{{ d.name }}</span>
-            <span class="row-bar"><i :style="{ width: pct(d.v, maxBar(stats.refs)) + '%' }"></i></span>
-            <span class="muted" style="flex:0 0 40px;text-align:right;font-size:12px;">{{ d.v }}</span>
+        <div class="section-head" style="align-items:center;margin:0 0 12px;">
+          <h3 class="section-title" style="margin:0;"><span class="bar"></span>设备占比</h3>
+          <div class="chart-type">
+            <button class="tab" :class="{ active: chartTypes.device === 'bar' }" @click="chartTypes.device = 'bar'">▥</button>
+            <button class="tab" :class="{ active: chartTypes.device === 'pie' }" @click="chartTypes.device = 'pie'">◔</button>
           </div>
+        </div>
+        <div v-if="stats.devices.length">
+          <div v-if="chartTypes.device === 'bar'" class="row-list">
+            <div v-for="d in stats.devices" :key="d.name" class="row-item">
+              <span class="row-label">{{ d.name }}</span>
+              <span class="row-bar purple"><i :style="{ width: pct(d.v, maxBar(stats.devices)) + '%' }"></i></span>
+              <span class="row-val">{{ d.v }} · {{ pctOf(stats.devices, d.v) }}%</span>
+            </div>
+          </div>
+          <PieChart v-else :segments="stats.devices.map((d) => ({ name: d.name, icon: '', v: d.v }))" :total="sumArr(stats.devices)" />
         </div>
         <p v-else class="muted" style="text-align:center;padding:10px;">暂无数据</p>
       </div>
 
       <div class="panel">
-        <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>热门应用 Top</div>
-        <div v-if="stats.apps.length" class="app-top">
-          <div v-for="(a, i) in stats.apps.slice(0, 6)" :key="a.name" class="app-row">
-            <span class="app-rank" :class="{ top: i < 3 }">{{ i + 1 }}</span>
-            <span class="app-name">{{ appName(a.name) }}</span>
-            <span class="app-bar"><i :style="{ width: pct(a.v, maxBar(stats.apps)) + '%' }"></i></span>
-            <span class="muted" style="font-size:12px;flex:0 0 34px;text-align:right;">{{ a.v }}</span>
+        <div class="section-head" style="align-items:center;margin:0 0 12px;">
+          <h3 class="section-title" style="margin:0;"><span class="bar"></span>系统占比</h3>
+          <div class="chart-type">
+            <button class="tab" :class="{ active: chartTypes.os === 'bar' }" @click="chartTypes.os = 'bar'">▥</button>
+            <button class="tab" :class="{ active: chartTypes.os === 'pie' }" @click="chartTypes.os = 'pie'">◔</button>
           </div>
+        </div>
+        <div v-if="stats.os.length">
+          <div v-if="chartTypes.os === 'bar'" class="row-list">
+            <div v-for="d in stats.os" :key="d.name" class="row-item">
+              <span class="row-label">{{ d.name }}</span>
+              <span class="row-bar orange"><i :style="{ width: pct(d.v, maxBar(stats.os)) + '%' }"></i></span>
+              <span class="row-val">{{ d.v }} · {{ pctOf(stats.os, d.v) }}%</span>
+            </div>
+          </div>
+          <PieChart v-else :segments="stats.os.map((d) => ({ name: d.name, icon: '', v: d.v }))" :total="sumArr(stats.os)" />
+        </div>
+        <p v-else class="muted" style="text-align:center;padding:10px;">暂无数据</p>
+      </div>
+    </div>
+
+    <div class="duo-grid">
+      <div class="panel">
+        <div class="section-head" style="align-items:center;margin:0 0 12px;">
+          <h3 class="section-title" style="margin:0;"><span class="bar"></span>来源分布</h3>
+          <div class="chart-type">
+            <button class="tab" :class="{ active: chartTypes.ref === 'bar' }" @click="chartTypes.ref = 'bar'">▥</button>
+            <button class="tab" :class="{ active: chartTypes.ref === 'pie' }" @click="chartTypes.ref = 'pie'">◔</button>
+          </div>
+        </div>
+        <div v-if="stats.refs.length">
+          <div v-if="chartTypes.ref === 'bar'" class="row-list">
+            <div v-for="d in stats.refs" :key="d.name" class="row-item">
+              <span class="row-label">{{ d.name }}</span>
+              <span class="row-bar"><i :style="{ width: pct(d.v, maxBar(stats.refs)) + '%' }"></i></span>
+              <span class="row-val">{{ d.v }} · {{ pctOf(stats.refs, d.v) }}%</span>
+            </div>
+          </div>
+          <PieChart v-else :segments="stats.refs.map((d) => ({ name: d.name, icon: '', v: d.v }))" :total="sumArr(stats.refs)" />
+        </div>
+        <p v-else class="muted" style="text-align:center;padding:10px;">暂无数据</p>
+      </div>
+
+      <div class="panel">
+        <div class="section-head" style="align-items:center;margin:0 0 12px;">
+          <h3 class="section-title" style="margin:0;"><span class="bar"></span>热门应用 Top</h3>
+          <div class="chart-type">
+            <button class="tab" :class="{ active: chartTypes.app === 'bar' }" @click="chartTypes.app = 'bar'">▥</button>
+            <button class="tab" :class="{ active: chartTypes.app === 'pie' }" @click="chartTypes.app = 'pie'">◔</button>
+          </div>
+        </div>
+        <div v-if="stats.apps.length">
+          <div v-if="chartTypes.app === 'bar'" class="app-top">
+            <div v-for="(a, i) in stats.apps.slice(0, 6)" :key="a.name" class="app-row">
+              <span class="app-rank" :class="{ top: i < 3 }">{{ i + 1 }}</span>
+              <span class="app-name">{{ appName(a.name) }}</span>
+              <span class="app-bar"><i :style="{ width: pct(a.v, maxBar(stats.apps)) + '%' }"></i></span>
+              <span class="app-val">{{ a.v }}</span>
+            </div>
+          </div>
+          <PieChart v-else :segments="stats.apps.map((a) => ({ name: appName(a.name), icon: '', v: a.v }))" :total="sumArr(stats.apps)" />
         </div>
         <p v-else class="muted" style="text-align:center;padding:10px;">暂无数据 · 打开应用后会自动记录</p>
       </div>
@@ -143,21 +249,33 @@ onMounted(async () => {
 
 <style scoped>
 .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.duo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 16px; }
+.chart-type { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.chart-type .tab { font-size: 11px; padding: 3px 8px; }
+
+/* 近 7 天柱状（经典样式） */
 .bar-wrap { display: flex; align-items: flex-end; gap: 8px; height: 150px; }
 .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%; }
 .bar-val { font-size: 10px; color: var(--text-sub); min-height: 13px; }
 .bar-box { width: 100%; height: 100px; display: flex; align-items: flex-end; background: var(--bar); border-radius: 7px; overflow: hidden; }
 .bar-box i { width: 100%; background: linear-gradient(180deg, #0891b2, #06b6d4); border-radius: 7px; }
 .bar-label { font-size: 11px; color: var(--text-sub); }
+/* 24h 柱状（经典样式） */
 .mini-bars { display: flex; align-items: flex-end; gap: 3px; height: 110px; overflow-x: auto; }
 .mini-col { flex: 1; min-width: 14px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; }
 .mini-bar { width: 100%; height: 90px; display: flex; align-items: flex-end; background: var(--bar); border-radius: 4px; overflow: hidden; }
 .mini-bar i { width: 100%; background: linear-gradient(180deg, #7c3aed, #a78bfa); border-radius: 4px; }
 .mini-label { font-size: 9px; color: var(--text-sub); }
+/* 横条类（经典样式） */
 .row-list { display: flex; flex-direction: column; gap: 8px; }
 .row-item { display: flex; align-items: center; gap: 8px; }
+.row-label { flex: 0 0 64px; font-size: 12px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row-bar { flex: 1; height: 10px; border-radius: 6px; background: var(--bar); overflow: hidden; }
 .row-bar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #0891b2, #22d3ee); }
+.row-bar.purple i { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+.row-bar.orange i { background: linear-gradient(90deg, #d97706, #f59e0b); }
+.row-val { flex: 0 0 auto; font-size: 12px; color: var(--text-sub); white-space: nowrap; }
+/* 热门应用（经典样式，金色序号） */
 .app-top { display: flex; flex-direction: column; }
 .app-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
 .app-rank { flex: 0 0 20px; text-align: center; font-weight: 800; color: var(--text-sub); font-size: 13px; }
@@ -165,4 +283,5 @@ onMounted(async () => {
 .app-name { flex: 0 0 96px; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .app-bar { flex: 1; height: 10px; border-radius: 6px; background: var(--bar); overflow: hidden; }
 .app-bar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #d97706, #f59e0b); }
+.app-val { flex: 0 0 auto; font-size: 12px; color: var(--text-sub); }
 </style>
