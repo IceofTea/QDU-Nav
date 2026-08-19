@@ -207,6 +207,30 @@ const PARTTIME = [
   { name: '咖啡店 / 餐饮兼职', tip: '时薪 15-25，缺点占时间，适合周末', tag: '灵活' },
   { name: '假期实习 / 竞赛拿奖', tip: '寒暑假实习 + 奖学金（优秀奖学金 1000/600/400·学期），一次顶半年生活费', tag: '收益大' }
 ]
+
+const QD_PRICES = [
+  { icon: '🍚', name: '食堂一餐', v: '8 ~ 15 元' },
+  { icon: '🍱', name: '外卖一餐', v: '18 ~ 30 元' },
+  { icon: '🥤', name: '奶茶 / 咖啡', v: '10 ~ 20 元' },
+  { icon: '🍎', name: '水果（一周）', v: '20 ~ 40 元' },
+  { icon: '🚌', name: '公交 / 地铁一次', v: '1 ~ 4 元' },
+  { icon: '🧴', name: '日用品月均', v: '30 ~ 60 元' },
+  { icon: '💇', name: '理发一次', v: '20 ~ 45 元' },
+  { icon: '📖', name: '教材（二手一本）', v: '10 ~ 30 元' }
+]
+const SEM_RHYTHM = [
+  { t: '开学季（9月 / 3月）', tip: '教材、日用品、宿舍水电网集中支出，当月生活费通常要高 10~20%', cls: 'up' },
+  { t: '学期中（平稳期）', tip: '食堂为主、节奏最稳，是最适合定预算、坚持记账的阶段', cls: 'flat' },
+  { t: '期末周（1月 / 6月）', tip: '打印、资料、宵夜奶茶增多，结余紧的话提前预留应急金', cls: 'warn' },
+  { t: '假期（寒暑假）', tip: '回家 / 留校支出结构变化很大，生活费建议单独做计划', cls: 'low' }
+]
+const FUN_TIPS = [
+  '🥤 一杯奶茶 ≈ 一顿食堂，月底算算「奶茶成就」就知道钱去哪了',
+  '🧾 收到生活费先固定存 10%：毕业时可能就是一笔不小的启动金',
+  '📉 月底看专业版「收支日历」：哪天是「赤字日」，下个月就避开它',
+  '🛒 大额刚需（数码/衣物）等开学季、双11、618 促销，能省 20%+',
+  '🎓 奖学金/助学金到账别一次性花完，拆成 3 个月生活费更稳'
+]
 </script>
 
 <template>
@@ -221,6 +245,7 @@ const PARTTIME = [
       <button class="seg-btn" :class="{ active: tab === 'estimate' }" @click="tab = 'estimate'">🧮 估算</button>
       <button class="seg-btn" :class="{ active: tab === 'alloc' }" @click="tab = 'alloc'">🎛️ 分配器</button>
       <button class="seg-btn" :class="{ active: tab === 'calib' }" @click="tab = 'calib'">📊 账单校准</button>
+      <button class="seg-btn" :class="{ active: tab === 'life' }" @click="tab = 'life'">📋 生活参考</button>
     </div>
   </div>
 
@@ -340,7 +365,7 @@ const PARTTIME = [
     </div>
   </template>
 
-  <template v-else>
+  <template v-else-if="tab === 'calib'">
     <div class="panel">
       <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>你的真实月均支出</div>
       <div v-if="!calib" class="calib-empty">
@@ -372,6 +397,37 @@ const PARTTIME = [
       <p class="muted" style="font-size:11px;margin-top:8px;">
         参考知乎 / 小红书 / 贴吧等社区常见讨论整理，个体差异大，仅供参考
       </p>
+    </div>
+  </template>
+
+  <template v-else>
+    <div class="panel">
+      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>🍜 青岛物价速览</div>
+      <div class="price-grid">
+        <div v-for="p in QD_PRICES" :key="p.name" class="price-item">
+          <span class="price-icon">{{ p.icon }}</span>
+          <div class="price-main">
+            <div class="price-name">{{ p.name }}</div>
+            <b class="price-val">{{ p.v }}</b>
+          </div>
+        </div>
+      </div>
+      <p class="muted" style="font-size:11px;margin-top:8px;">参考在校生日常开销与外卖平台价格整理，仅作预算参考</p>
+    </div>
+
+    <div class="panel">
+      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>🗓 学期消费节奏</div>
+      <div v-for="s in SEM_RHYTHM" :key="s.t" class="rhythm-row">
+        <span class="rhythm-tag" :class="s.cls">{{ s.t }}</span>
+        <span class="muted" style="font-size:12px;">{{ s.tip }}</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>💡 生活费小贴士</div>
+      <ul class="tip-list">
+        <li v-for="t in FUN_TIPS" :key="t">{{ t }}</li>
+      </ul>
     </div>
   </template>
 
@@ -459,4 +515,26 @@ const PARTTIME = [
   line-height: 1.7;
 }
 .ref-row { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+.price-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.price-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+.price-icon { font-size: 20px; }
+.price-main { display: flex; flex-direction: column; min-width: 0; }
+.price-name { font-size: 12px; color: var(--text-sub); }
+.price-val { font-size: 13px; }
+.rhythm-row { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-bottom: 1px dashed var(--border); }
+.rhythm-row:last-child { border-bottom: none; }
+.rhythm-tag { flex: 0 0 auto; font-size: 11px; font-weight: 700; border-radius: 8px; padding: 2px 8px; }
+.rhythm-tag.up { color: #b45309; background: rgba(245, 158, 11, 0.14); }
+.rhythm-tag.flat { color: #0f766e; background: rgba(13, 148, 136, 0.14); }
+.rhythm-tag.warn { color: #b63a46; background: rgba(182, 58, 70, 0.14); }
+.rhythm-tag.low { color: #6b7280; background: rgba(107, 114, 128, 0.14); }
+.tip-list { margin: 0; padding-left: 18px; font-size: 13px; line-height: 2; color: var(--text); }
 </style>

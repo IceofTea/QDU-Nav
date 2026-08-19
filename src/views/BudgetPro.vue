@@ -54,7 +54,8 @@ const RANGE_PRESETS = [
   { label: '近3月', n: -2 },
   { label: '近6月', n: -5 },
   { label: '近12月', n: -11 },
-  { label: '全部', n: -120 }
+  { label: '近2年', n: -23 },
+  { label: '近3年', n: -35 }
 ]
 function presetRange(n) {
   rangeStart.value = curMonthStr(n)
@@ -135,7 +136,7 @@ const balInRange = (s, e) => {
 }
 const weekAgg = computed(() => {
   const out = []
-  for (let w = 11; w >= 0; w--) {
+  for (let w = 5; w >= 0; w--) {
     const start = calWeekStart(w)
     const end = new Date(start)
     end.setDate(start.getDate() + 6)
@@ -387,10 +388,10 @@ function exportCsv() {
     </template>
 
     <template v-else-if="calMode === 'week'">
-      <div class="cal-list">
-        <button v-for="w in weekAgg" :key="w.label" class="cal-row" @click="calSelRange('week', w.s, w.e)">
-          <span class="cal-row-label">{{ w.label }}</span>
-          <span class="cal-row-val" :class="w.bal >= 0 ? 'pos' : 'neg'">{{ w.bal >= 0 ? '+' : '' }}{{ fmt(w.bal) }}</span>
+      <div class="cal-week-grid">
+        <button v-for="w in weekAgg" :key="w.label" class="cal-week" :class="w.bal > 0 ? 'pos' : w.bal < 0 ? 'neg' : ''" @click="calSelRange('week', w.s, w.e)">
+          <span class="cal-week-label">{{ w.label }}</span>
+          <b class="cal-week-val">{{ w.bal >= 0 ? '+' : '' }}{{ fmt(w.bal) }}</b>
         </button>
       </div>
     </template>
@@ -486,7 +487,10 @@ function exportCsv() {
     </div>
     <div v-if="filteredCount > 1" class="pager">
       <button class="btn ghost small" :disabled="proPage <= 1" @click="proPage--">‹ 上页</button>
-      <span class="pager-info">{{ proPage }} / {{ filteredCount }}</span>
+      <div class="pager-jump">
+        <input v-model.number="proPage" type="number" class="input page-input" min="1" :max="filteredCount" />
+        <span>/ {{ filteredCount }}</span>
+      </div>
       <button class="btn ghost small" :disabled="proPage >= filteredCount" @click="proPage++">下页 ›</button>
     </div>
   </div>
@@ -596,12 +600,15 @@ function exportCsv() {
 .pager-info { font-size: 12px; color: var(--text-sub); font-weight: 700; }
 
 /* 收支日历 */
-.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; max-width: 560px; margin-left: auto; margin-right: auto; }
 .cal-title { font-size: 14px; font-weight: 800; }
-.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; max-width: 560px; margin: 0 auto; }
 .cal-wd { text-align: center; font-size: 10px; color: var(--text-sub); padding: 2px 0; }
 .cal-cell {
   aspect-ratio: 1 / 1;
+  max-width: 74px;
+  justify-self: center;
+  width: 100%;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--card);
@@ -622,24 +629,28 @@ function exportCsv() {
 .cal-bal { font-size: 8px; color: var(--text-sub); white-space: nowrap; }
 .cal-cell.pos .cal-bal { color: #0f766e; font-weight: 700; }
 .cal-cell.neg .cal-bal { color: #b63a46; font-weight: 700; }
-.cal-list { display: flex; flex-direction: column; gap: 5px; }
-.cal-row {
+.cal-week-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-width: 560px; margin: 0 auto; }
+.cal-week {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 10px;
+  gap: 3px;
+  padding: 10px 6px;
+  border-radius: 12px;
   border: 1px solid var(--border);
-  border-radius: 10px;
   background: var(--card);
   font-family: inherit;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 11px;
+  color: var(--text);
 }
-.cal-row-label { color: var(--text); }
-.cal-row-val { font-weight: 800; }
-.cal-row-val.pos { color: #0f766e; }
-.cal-row-val.neg { color: #b63a46; }
-.cal-grid2 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.cal-week-label { color: var(--text-sub); }
+.cal-week-val { font-size: 14px; }
+.cal-week.pos { border-color: rgba(13, 148, 136, 0.5); background: rgba(13, 148, 136, 0.12); }
+.cal-week.pos .cal-week-val { color: #0f766e; }
+.cal-week.neg { border-color: rgba(182, 58, 70, 0.5); background: rgba(182, 58, 70, 0.12); }
+.cal-week.neg .cal-week-val { color: #b63a46; }
+.cal-grid2 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-width: 560px; margin: 0 auto; }
 .cal-tile {
   display: flex;
   flex-direction: column;
@@ -657,6 +668,8 @@ function exportCsv() {
 .cal-tile b { font-size: 13px; }
 .cal-tile.pos { border-color: rgba(13, 148, 136, 0.5); background: rgba(13, 148, 136, 0.12); color: #0f766e; }
 .cal-tile.neg { border-color: rgba(182, 58, 70, 0.5); background: rgba(182, 58, 70, 0.12); color: #b63a46; }
+.pager-jump { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-sub); }
+.page-input { width: 48px; text-align: center; font-size: 13px; }
 
 @media (max-width: 480px) {
   .kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }

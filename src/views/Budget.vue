@@ -595,6 +595,7 @@ const paged = computed(() => {
   return sorted.value.slice(s, s + PAGE_SIZE)
 })
 watch(pageCount, () => { if (page.value > pageCount.value) page.value = pageCount.value })
+watch(page, (v) => { if (!Number.isFinite(v)) page.value = 1; else if (v < 1) page.value = 1; else if (v > pageCount.value) page.value = pageCount.value })
 
 function balanceMsg() {
   if (!monthRecords.value.length) return '本月还没记一笔，先「记一笔」开始吧'
@@ -837,7 +838,10 @@ const monthLabel = computed(() => {
     </div>
     <div v-if="pageCount > 1" class="pager">
       <button class="btn ghost small" :disabled="page <= 1" @click="page--">‹ 上页</button>
-      <span class="pager-info">{{ page }} / {{ pageCount }}</span>
+      <div class="pager-jump">
+        <input v-model.number="page" type="number" class="input page-input" min="1" :max="pageCount" />
+        <span>/ {{ pageCount }}</span>
+      </div>
       <button class="btn ghost small" :disabled="page >= pageCount" @click="page++">下页 ›</button>
     </div>
     <p class="muted" style="font-size:11px;margin-top:10px;">记录保存在本机浏览器（localStorage），不会上传任何数据。</p>
@@ -1115,6 +1119,8 @@ const monthLabel = computed(() => {
 .sort-row .tab { flex: 0 0 auto; font-size: 12px; }
 .pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 10px; }
 .pager-info { font-size: 12px; color: var(--text-sub); font-weight: 700; }
+.pager-jump { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-sub); }
+.page-input { width: 48px; text-align: center; font-size: 13px; }
 .chart-type { display: flex; gap: 6px; }
 .chart-type .tab { font-size: 11px; }
 .cat-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
