@@ -36,6 +36,22 @@ async function tapLike(appId, ev) {
   }
 }
 
+/* 公告：读取静态公告文件（可随版本推送更新），404 时隐藏 */
+const announcement = ref(null)
+const noticeOpen = ref(true)
+async function loadAnnouncement() {
+  try {
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 6000)
+    const r = await fetch(import.meta.env.BASE_URL + 'data/announcements.json', { signal: ctrl.signal })
+    clearTimeout(timer)
+    if (r.ok) {
+      const d = await r.json()
+      if (d && Array.isArray(d.list) && d.list.length) announcement.value = d.list[0]
+    }
+  } catch { /* 无公告文件则不显示 */ }
+}
+
 function barH(v, m) {
   return m ? Math.max(6, Math.round((v / m) * 100)) : 6
 }
@@ -44,6 +60,7 @@ onMounted(async () => {
   stats.value = await getCourseStats()
   maxTerm.value = stats.value.terms.reduce((m, t) => Math.max(m, t.count), 1)
   initLikes()
+  loadAnnouncement()
 })
 
 function greeting() {
@@ -83,6 +100,16 @@ function toggleCampus(name) {
       </button>
     </section>
 
+    <div v-if="announcement" class="notice-card">
+      <div class="notice-head">
+        <span class="notice-badge">📢 公告</span>
+        <span class="notice-title">{{ announcement.title }}</span>
+        <span class="notice-date muted">{{ announcement.date }}</span>
+        <button class="notice-toggle" @click="noticeOpen = !noticeOpen">{{ noticeOpen ? '收起 ▴' : '展开 ▾' }}</button>
+      </div>
+      <div v-if="noticeOpen" class="notice-body">{{ announcement.content }}</div>
+    </div>
+
     <section class="section">
       <div class="wiki-card">
         <div class="wiki-main">
@@ -104,7 +131,10 @@ function toggleCampus(name) {
     <section class="section">
       <div class="section-head">
         <h3 class="section-title">公开应用</h3>
-        <span class="section-sub">高频应用一键直达</span>
+        <div class="section-head-right">
+          <span class="section-sub">高频应用一键直达</span>
+          <button class="section-link" @click="emit('open', 'categories')">查看全部分类 ›</button>
+        </div>
       </div>
       <div v-if="filtered.length" class="tile-grid">
         <button
@@ -115,22 +145,15 @@ function toggleCampus(name) {
         >
           <span class="tile-icon" :style="{ background: a.color + '1a', color: a.color }">{{ a.icon }}</span>
           <span class="tile-body">
-            <span class="tile-title">{{ a.title }}</span>
+            <span class="tile-title-row">
+              <span class="tile-title">{{ a.title }}</span>
+              <span class="tile-num" :title="likes[a.id] != null ? likes[a.id] + ' 人点赞' : '点赞数'">👍 {{ likes[a.id] != null ? likes[a.id] : '' }}</span>
+            </span>
             <span class="tile-desc">{{ a.desc }}</span>
-          </span>
-          <span class="tile-like" :class="{ on: likedState[a.id] }" title="点赞 / 取消" @click.stop="tapLike(a.id)">
-            👍 <b>{{ likes[a.id] != null ? likes[a.id] : '' }}</b>
           </span>
         </button>
       </div>
       <div v-else class="empty">没有找到相关应用，换个关键词试试</div>
-    </section>
-
-    <section class="section">
-      <div class="section-head">
-        <h3 class="section-title">应用分类</h3>
-        <button class="section-link" @click="emit('open', 'categories')">查看全部分类 ›</button>
-      </div>
       <div class="hint">按学习、生活、游戏等分组浏览全部 {{ apps.length }} 个应用</div>
     </section>
 
@@ -239,21 +262,39 @@ function toggleCampus(name) {
 .site-like .sl-icon { font-size: 16px; }
 .site-like .sl-num { font-weight: 800; color: var(--primary); min-width: 12px; text-align: left; }
 .site-like.on .sl-num { color: #e11d48; }
-.tile-like {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  margin-left: auto;
+.section-head-right { display: flex; align-items: center; gap: 10px; }
+.tile-title-row { display: flex; align-items: center; gap: 6px; min-width: 0; width: 100%; }
+.tile-num {
   flex: none;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-sub);
-  cursor: pointer;
-  padding: 4px 8px;
+  white-space: nowrap;
+  padding: 1px 7px;
   border-radius: 999px;
-  border: 1px solid transparent;
-  user-select: none;
+  background: var(--soft-gray, #eef3fb);
 }
-.tile-like b { min-width: 10px; }
-.tile-like:hover { background: var(--primary-soft); color: var(--primary); }
-.tile-like.on { border-color: rgba(225, 29, 72, 0.4); color: #e11d48; background: rgba(225, 29, 72, 0.06); }
+.notice-card {
+  margin: 14px auto 0;
+  max-width: 720px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--notice-border, var(--border));
+  background: var(--notice-bg, var(--card));
+  font-size: 13px;
+  color: var(--text);
+}
+.notice-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.notice-badge { font-weight: 800; color: var(--primary); }
+.notice-title { font-weight: 700; flex: 1; min-width: 0; }
+.notice-date { font-size: 11px; }
+.notice-toggle { border: none; background: none; font-family: inherit; font-size: 12px; color: var(--text-sub); cursor: pointer; padding: 2px 4px; }
+.notice-toggle:hover { color: var(--primary); }
+.notice-body {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  line-height: 1.9;
+  white-space: pre-line;
+  color: var(--text-sub);
+}
 </style>

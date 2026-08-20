@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { apps, appGroups, groupColors } from '../data/apps'
+import { fetchLikes, toggleLike, likedByMe } from '../utils/like'
 
 const emit = defineEmits(['back', 'open'])
 const kw = ref('')
@@ -11,6 +12,26 @@ const grouped = computed(() => {
     .map((g) => ({ group: g, items: apps.filter((a) => a.group === g && (!k || (a.title + a.desc + a.group + g).toLowerCase().includes(k))) }))
     .filter((x) => x.items.length)
 })
+
+/* 点赞：分类卡片可点赞 / 取消 */
+const likes = ref({})
+const likedState = ref({})
+onMounted(async () => {
+  likes.value = await fetchLikes()
+  const m = {}
+  for (const a of apps) m[a.id] = likedByMe(a.id)
+  likedState.value = m
+})
+async function tapLike(appId, ev) {
+  if (ev) ev.stopPropagation()
+  const res = await toggleLike(appId)
+  likedState.value = { ...likedState.value, [appId]: res.liked }
+  if (res.likes != null) likes.value = { ...likes.value, [appId]: res.likes }
+  else {
+    const cur = likes.value[appId] != null ? likes.value[appId] : 0
+    likes.value = { ...likes.value, [appId]: Math.max(0, cur + (res.liked ? 1 : -1)) }
+  }
+}
 </script>
 
 <template>
@@ -36,6 +57,9 @@ const grouped = computed(() => {
         <span class="cat-tile-icon" :style="{ background: a.color + '1a', color: a.color }">{{ a.icon }}</span>
         <span class="cat-tile-title">{{ a.title }}</span>
         <span class="cat-tile-desc">{{ a.desc }}</span>
+        <span class="cat-like" :class="{ on: likedState[a.id] }" title="点赞 / 取消" @click.stop="tapLike(a.id)">
+          👍 {{ likes[a.id] != null ? likes[a.id] : '' }}
+        </span>
       </button>
     </div>
   </div>
@@ -87,4 +111,20 @@ const grouped = computed(() => {
 }
 .cat-tile-title { font-weight: 700; font-size: 14px; }
 .cat-tile-desc { font-size: 11px; color: var(--text-light); text-align: center; line-height: 1.4; }
+.cat-like {
+  margin-top: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--text-sub);
+  cursor: pointer;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  user-select: none;
+  transition: background 0.15s, color 0.15s;
+}
+.cat-like:hover { background: var(--primary-soft); color: var(--primary); }
+.cat-like.on { border-color: rgba(225, 29, 72, 0.4); color: #e11d48; background: rgba(225, 29, 72, 0.06); }
 </style>

@@ -226,6 +226,7 @@ body {
   box-shadow: 0 4px 12px rgba(27, 102, 201, 0.12);
 }
 .brand-logo span {
+  white-space: nowrap;
   font-size: 15px;
   font-weight: 800;
   letter-spacing: 0.5px;
@@ -234,10 +235,11 @@ body {
   background-clip: text;
   color: transparent;
 }
-.brand-name { font-size: 19px; font-weight: 700; color: var(--primary-dark); line-height: 1.1; }
+.brand-name { font-size: 19px; font-weight: 700; color: var(--primary-dark); line-height: 1.1; white-space: nowrap; }
 .brand-sub { font-size: 12px; color: var(--text-sub); }
 .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .ghost-btn {
+  white-space: nowrap;
   background: var(--primary-soft);
   color: var(--primary);
   border: none;
@@ -996,7 +998,13 @@ table.data th { background: var(--primary-soft); color: var(--primary-dark); fon
 }
 @media (max-width: 640px) {
   .hero-title { font-size: 22px; }
-  .header-inner { padding: 12px 14px; }
+  .header-inner { padding: 10px 12px; gap: 10px; }
+  .brand { gap: 8px; min-width: 0; }
+  .brand-logo { height: 36px; padding: 0 10px; }
+  .brand-logo span { font-size: 13px; }
+  .brand-name { font-size: 15px; }
+  .header-right { gap: 6px; }
+  .ghost-btn { padding: 7px 10px; font-size: 12px; }
   .brand-sub { display: none; }
   .result-banner { flex-wrap: wrap; }
   .result-hint { width: 100%; margin-left: 0; }
