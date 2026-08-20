@@ -34,10 +34,6 @@ function emptyStats(): Stats {
   return { uv: 0, pv: 0, byDay: {}, byHour: {}, byWeekday: {}, byDevice: {}, byOs: {}, byRef: {}, byApp: {}, byAppLikes: {} }
 }
 
-function emptyStats(): Stats {
-  return { uv: 0, pv: 0, byDay: {}, byHour: {}, byWeekday: {}, byDevice: {}, byOs: {}, byRef: {}, byApp: {}, byAppLikes: {} }
-}
-
 async function getStats(): Promise<Stats> {
   const r = await kv.get<Stats>(KEY)
   if (!r.value) return emptyStats()
@@ -110,7 +106,6 @@ function overview(s: Stats) {
 }
 const toArr = (obj: Record<string, number>) =>
   Object.entries(obj || {}).map(([name, v]) => ({ name, v })).sort((a, b) => b.v - a.v)
-}
 
 // ============================================================
 // 一次性初始校准（历史痕迹，保留勿删）：
