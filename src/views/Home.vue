@@ -36,22 +36,6 @@ async function tapLike(appId, ev) {
   }
 }
 
-/* 公告：读取静态公告文件（可随版本推送更新），404 时隐藏 */
-const announcement = ref(null)
-const noticeOpen = ref(true)
-async function loadAnnouncement() {
-  try {
-    const ctrl = new AbortController()
-    const timer = setTimeout(() => ctrl.abort(), 6000)
-    const r = await fetch(import.meta.env.BASE_URL + 'data/announcements.json', { signal: ctrl.signal })
-    clearTimeout(timer)
-    if (r.ok) {
-      const d = await r.json()
-      if (d && Array.isArray(d.list) && d.list.length) announcement.value = d.list[0]
-    }
-  } catch { /* 无公告文件则不显示 */ }
-}
-
 function barH(v, m) {
   return m ? Math.max(6, Math.round((v / m) * 100)) : 6
 }
@@ -60,7 +44,6 @@ onMounted(async () => {
   stats.value = await getCourseStats()
   maxTerm.value = stats.value.terms.reduce((m, t) => Math.max(m, t.count), 1)
   initLikes()
-  loadAnnouncement()
 })
 
 function greeting() {
@@ -93,22 +76,7 @@ function toggleCampus(name) {
         <span class="search-icon">🔍</span>
         <input v-model="keyword" class="search-input" placeholder="搜一搜你想要的应用" />
       </div>
-      <button class="site-like" :class="{ on: likedState.site }" @click="tapLike('site')">
-        <span class="sl-icon">👍</span>
-        <span class="sl-text">给本站点赞</span>
-        <b class="sl-num">{{ likes.site != null ? likes.site : '' }}</b>
-      </button>
     </section>
-
-    <div v-if="announcement" class="notice-card">
-      <div class="notice-head">
-        <span class="notice-badge">📢 公告</span>
-        <span class="notice-title">{{ announcement.title }}</span>
-        <span class="notice-date muted">{{ announcement.date }}</span>
-        <button class="notice-toggle" @click="noticeOpen = !noticeOpen">{{ noticeOpen ? '收起 ▴' : '展开 ▾' }}</button>
-      </div>
-      <div v-if="noticeOpen" class="notice-body">{{ announcement.content }}</div>
-    </div>
 
     <section class="section">
       <div class="wiki-card">
@@ -145,10 +113,7 @@ function toggleCampus(name) {
         >
           <span class="tile-icon" :style="{ background: a.color + '1a', color: a.color }">{{ a.icon }}</span>
           <span class="tile-body">
-            <span class="tile-title-row">
-              <span class="tile-title">{{ a.title }}</span>
-              <span class="tile-num" :title="likes[a.id] != null ? likes[a.id] + ' 人点赞' : '点赞数'">👍 {{ likes[a.id] != null ? likes[a.id] : '' }}</span>
-            </span>
+            <span class="tile-title">{{ a.title }}</span>
             <span class="tile-desc">{{ a.desc }}</span>
           </span>
         </button>
@@ -234,7 +199,14 @@ function toggleCampus(name) {
         <div class="about-line"><b>数据来源：</b>{{ SITE.aboutSource }}</div>
         <div class="about-line"><b>抓取方式：</b>{{ SITE.aboutCrawl }}</div>
         <div class="about-line"><b>用途与版权：</b>{{ SITE.aboutUsage }}</div>
-        <button class="btn ghost small" style="margin-top:10px;" @click="emit('open', 'contributors')">🏆 查看贡献者墙 ›</button>
+        <div class="about-actions">
+          <button class="btn ghost small" @click="emit('open', 'contributors')">🏆 查看贡献者墙 ›</button>
+          <button class="site-like" :class="{ on: likedState.site }" @click="tapLike('site')">
+            <span class="sl-icon">👍</span>
+            <span class="sl-text">给本站点赞</span>
+            <b class="sl-num">{{ likes.site != null ? likes.site : 0 }}</b>
+          </button>
+        </div>
         <VisitStats />
       </div>
     </section>
@@ -243,11 +215,10 @@ function toggleCampus(name) {
 
 <style scoped>
 .site-like {
-  margin: 12px auto 0;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 18px;
+  padding: 7px 16px;
   border: 1px solid var(--border);
   background: var(--card);
   border-radius: 999px;
@@ -263,38 +234,5 @@ function toggleCampus(name) {
 .site-like .sl-num { font-weight: 800; color: var(--primary); min-width: 12px; text-align: left; }
 .site-like.on .sl-num { color: #e11d48; }
 .section-head-right { display: flex; align-items: center; gap: 10px; }
-.tile-title-row { display: flex; align-items: center; gap: 6px; min-width: 0; width: 100%; }
-.tile-num {
-  flex: none;
-  font-size: 11px;
-  color: var(--text-sub);
-  white-space: nowrap;
-  padding: 1px 7px;
-  border-radius: 999px;
-  background: var(--soft-gray, #eef3fb);
-}
-.notice-card {
-  margin: 14px auto 0;
-  max-width: 720px;
-  padding: 12px 16px;
-  border-radius: 14px;
-  border: 1px solid var(--notice-border, var(--border));
-  background: var(--notice-bg, var(--card));
-  font-size: 13px;
-  color: var(--text);
-}
-.notice-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.notice-badge { font-weight: 800; color: var(--primary); }
-.notice-title { font-weight: 700; flex: 1; min-width: 0; }
-.notice-date { font-size: 11px; }
-.notice-toggle { border: none; background: none; font-family: inherit; font-size: 12px; color: var(--text-sub); cursor: pointer; padding: 2px 4px; }
-.notice-toggle:hover { color: var(--primary); }
-.notice-body {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px dashed var(--border);
-  line-height: 1.9;
-  white-space: pre-line;
-  color: var(--text-sub);
-}
+.about-actions { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
 </style>

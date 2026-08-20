@@ -40,7 +40,9 @@ function emptyStats(): Stats {
 
 async function getStats(): Promise<Stats> {
   const r = await kv.get<Stats>(KEY)
-  return r.value ?? emptyStats()
+  if (!r.value) return emptyStats()
+  // 兼容旧 KV 数据：老版本 Stats 无 byAppLikes 等字段，补齐默认值避免 /api/stats 报错
+  return { ...emptyStats(), ...r.value, byAppLikes: r.value.byAppLikes || {} }
 }
 
 const pad = (n: number) => String(n).padStart(2, '0')

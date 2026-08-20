@@ -58,7 +58,7 @@ async function tapLike(appId, ev) {
         <span class="cat-tile-title">{{ a.title }}</span>
         <span class="cat-tile-desc">{{ a.desc }}</span>
         <span class="cat-like" :class="{ on: likedState[a.id] }" title="点赞 / 取消" @click.stop="tapLike(a.id)">
-          👍 {{ likes[a.id] != null ? likes[a.id] : '' }}
+          👍 {{ likes[a.id] != null ? likes[a.id] : 0 }}
         </span>
       </button>
     </div>

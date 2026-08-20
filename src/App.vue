@@ -5,7 +5,7 @@
  * 视图注册、路由解析、导航逻辑集中在 src/router.js；
  * 品牌、版权、文案集中在 src/config/site.js。此处只做组装。
  */
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import Welcome from './views/Welcome.vue'
 import { SITE } from './config/site'
 import { NAV_APPS, useViewState } from './router'
@@ -74,6 +74,29 @@ async function tapLike(appId) {
   }
 }
 
+/* 公告：顶部栏小铃铛，各浏览器按 localStorage 各自检测未读，打开即标记已读 */
+const notices = ref([])
+const noticeOpen = ref(false)
+const noticeRead = ref(new Set(JSON.parse(localStorage.getItem('qdu_notice_read') || '[]')))
+const unreadCount = computed(() => notices.value.filter((n) => !noticeRead.value.has(String(n.id))).length)
+async function loadNotices() {
+  try {
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 6000)
+    const r = await fetch(import.meta.env.BASE_URL + 'data/announcements.json', { signal: ctrl.signal })
+    clearTimeout(timer)
+    if (r.ok) {
+      const d = await r.json()
+      if (d && Array.isArray(d.list)) notices.value = d.list
+    }
+  } catch { /* 无公告文件则不显示入口红点 */ }
+}
+function openNotices() {
+  noticeOpen.value = true
+  for (const n of notices.value) noticeRead.value.add(String(n.id))
+  try { localStorage.setItem('qdu_notice_read', JSON.stringify([...noticeRead.value])) } catch { /* noop */ }
+}
+
 /* 默哀模式：灰白风格 + 顶部哀思条。
  * 触发来源：① 手动后门——部署时向 public/ 上传一个 `mourning` 文件即触发；
  *          ② 自动计时——每年 12 月 13 日南京大屠杀死难者国家公祭日自动变灰白。
@@ -104,6 +127,7 @@ onMounted(() => {
     })
     .catch(() => {})
   initLikes()
+  loadNotices()
 })
 </script>
 
@@ -121,6 +145,9 @@ onMounted(() => {
           </div>
         </div>
         <div class="header-right">
+          <button class="ghost-btn notice-bell" :class="{ 'has-unread': unreadCount > 0 }" title="查看公告" @click="openNotices">
+            📢<span v-if="unreadCount > 0" class="notice-dot">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+          </button>
           <button class="ghost-btn" :title="theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'" @click="toggleTheme">{{ theme === 'dark' ? '☀️' : '🌙' }}</button>
           <button class="ghost-btn" @click="goHome">🏠 首页</button>
         </div>
@@ -132,7 +159,7 @@ onMounted(() => {
         <button class="app-like-btn" :class="{ on: likedState[current] }" @click="tapLike(current)">
           <span>👍</span>
           <span>给「{{ appTitle(current) }}」点赞</span>
-          <b>{{ likes[current] != null ? likes[current] : '' }}</b>
+          <b>{{ likes[current] != null ? likes[current] : 0 }}</b>
         </button>
       </div>
       <div v-if="mourning" class="mourning-bar">
@@ -166,5 +193,21 @@ onMounted(() => {
         <span>{{ a.label }}</span>
       </button>
     </nav>
+  </div>
+
+  <div v-if="noticeOpen" class="notice-mask" @click.self="noticeOpen = false">
+    <div class="notice-modal">
+      <div class="notice-modal-head">
+        <span class="notice-modal-title">📢 公告</span>
+        <button class="notice-modal-close" title="关闭" @click="noticeOpen = false">✕</button>
+      </div>
+      <div class="notice-modal-body">
+        <div v-if="!notices.length" class="muted" style="text-align:center;padding:24px;">暂无公告</div>
+        <div v-for="n in notices" :key="n.id" class="notice-item">
+          <div class="notice-item-title">{{ n.title }}<span class="notice-item-date muted">{{ n.date }}</span></div>
+          <div class="notice-item-content">{{ n.content }}</div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
