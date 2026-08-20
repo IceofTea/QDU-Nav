@@ -25,18 +25,22 @@ export function likedByMe(appId) {
   return !!likedMap()[appId]
 }
 
-/** 拉取各应用点赞数 { appId: count }，失败返回 {}（调用方按降级处理） */
+/** 拉取各应用点赞数 { appId: count }（走轻量 /api/likes，60s 会话缓存），失败返回 {} */
+let likeCache = { ts: 0, data: {} }
 export async function fetchLikes() {
+  const now = Date.now()
+  if (now - likeCache.ts < 60000) return likeCache.data
   if (!api) return {}
   try {
     const ctrl = new AbortController()
     const timer = setTimeout(() => ctrl.abort(), 6000)
-    const r = await fetch(api + '/api/stats', { signal: ctrl.signal })
+    const r = await fetch(api + '/api/likes', { signal: ctrl.signal })
     clearTimeout(timer)
     if (!r.ok) return {}
     const d = await r.json()
     const out = {}
     for (const x of d.likes || []) out[x.name] = x.v
+    likeCache = { ts: now, data: out }
     return out
   } catch { return {} }
 }

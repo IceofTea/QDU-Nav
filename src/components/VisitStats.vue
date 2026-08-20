@@ -2,13 +2,14 @@
 /** 首页访问统计卡片：独立访客 UV / 累计访问 PV
  *  数据来自自建计数服务（counter/server.mjs 与 server.ts，独立于 QDU-Wiki）。
  *  UV 去重由服务端按前端匿名访客 ID（vid）完成，缺失时回退「IP + UA」指纹；
- *  本组件每次挂载上报一次 /api/hit；会话内缓存先行回填避免闪烁；
+ *  每会话只上报一次 /api/hit（会话内缓存回填），其余会话读 /api/stats 显示，控制计数服务请求量；
  *  服务不可用时降级显示「—」。 */
 import { ref, computed, onMounted } from 'vue'
 import { SITE } from '../config/site'
 import { visitorId } from '../utils/visitor'
 
 const STORAGE_KEY = 'qdu-nav-visit-v1'
+const REPORT_KEY = 'qdu-nav-visit-reported'
 const api = (SITE.counter && SITE.counter.api) || ''
 
 const uv = ref(null)
@@ -42,10 +43,14 @@ function restore() {
 async function refresh() {
   restore()
   if (!api) return
+  let reported = false
+  try { reported = sessionStorage.getItem(REPORT_KEY) === '1' } catch { /* noop */ }
+  // 本会话已上报过 → 只读统计不计数（/api/stats 全量或 hit 轻量均含 uv/pv/today）
+  const url = reported ? '/api/stats' : '/api/hit?vid=' + encodeURIComponent(visitorId())
   try {
     const ctrl = new AbortController()
     const timer = setTimeout(() => ctrl.abort(), 8000)
-    const r = await fetch(api + '/api/hit?vid=' + encodeURIComponent(visitorId()), { signal: ctrl.signal })
+    const r = await fetch(api + url, { signal: ctrl.signal })
     clearTimeout(timer)
     if (!r.ok) return
     const d = await r.json()
@@ -56,6 +61,7 @@ async function refresh() {
     todayPv.value = d.today ? d.today.pv : null
     try {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(d))
+      sessionStorage.setItem(REPORT_KEY, '1')
     } catch {
       /* noop */
     }

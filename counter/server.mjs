@@ -89,7 +89,6 @@ function overview() {
   }
   const hours = Array.from({ length: 24 }, (_, i) => ({ label: i + '点', v: state.byHour[String(i)] || 0 }))
   const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'].map((n, i) => ({ label: n, v: state.byWeekday[String(i)] || 0 }))
-  const toArr = (obj) => Object.entries(obj).map(([name, v]) => ({ name, v })).sort((a, b) => b.v - a.v)
   return {
     uv: state.uv, pv: state.pv,
     today: { date: todayKey, ...today },
@@ -98,6 +97,7 @@ function overview() {
     likes: toArr(state.byAppLikes)
   }
 }
+const toArr = (obj) => Object.entries(obj || {}).map(([name, v]) => ({ name, v })).sort((a, b) => b.v - a.v)
 
 const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN)
@@ -124,6 +124,11 @@ const server = http.createServer((req, res) => {
     }
     res.setHeader('Content-Type', 'application/json')
     res.end(JSON.stringify({ app, likes: state.byAppLikes[app] || 0, liked: on }))
+    return
+  }
+  if (u.pathname === '/api/likes') {
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify({ likes: toArr(state.byAppLikes) }))
     return
   }
   if (u.pathname === '/api/hit' || u.pathname === '/api/stats') {
@@ -154,7 +159,13 @@ const server = http.createServer((req, res) => {
       bump(state.byRef, parseRef(req.headers.referer || ''))
       const app = u.searchParams.get('app')
       if (app) bump(state.byApp, app)
+      // 控制对象体积：只保留近 120 天明细
+      const cutoff = dayKey(new Date(cnNow().getTime() - 120 * 86400000))
+      for (const k of Object.keys(state.byDay)) if (k < cutoff) delete state.byDay[k]
       setTimeout(save, 400)
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({ ok: 1, uv: state.uv, pv: state.pv, today: { date: dk, ...day } }))
+      return
     }
     res.setHeader('Content-Type', 'application/json')
     res.end(JSON.stringify(overview()))

@@ -107,13 +107,15 @@ export function useViewState() {
   return { current, currentComp, openApp, goHome }
 }
 
-/** 应用打开自动上报（本站舆情 · 纯自动化；同一应用 5s 节流防连发） */
-const appReportLast = {}
+/** 应用打开自动上报（本站舆情 · 纯自动化；每会话每应用限报 1 次，控制计数服务请求量） */
+const SESSION_REPORT_KEY = 'qdu_reported_apps'
 function reportApp(id) {
   const api = SITE.counter && SITE.counter.api
   if (!api || typeof fetch !== 'function') return
-  const now = Date.now()
-  if (now - (appReportLast[id] || 0) < 5000) return
-  appReportLast[id] = now
+  let reported = []
+  try { reported = JSON.parse(sessionStorage.getItem(SESSION_REPORT_KEY)) || [] } catch { /* noop */ }
+  if (reported.includes(id)) return
+  reported.push(id)
+  try { sessionStorage.setItem(SESSION_REPORT_KEY, JSON.stringify(reported)) } catch { /* noop */ }
   fetch(api + '/api/hit?vid=' + encodeURIComponent(visitorId()) + '&app=' + encodeURIComponent(id)).catch(() => {})
 }

@@ -94,9 +94,7 @@ function overview(s: Stats) {
     label: n,
     v: s.byWeekday[String(i)] || 0
   }))
-  const toArr = (obj: Record<string, number>) =>
-    Object.entries(obj).map(([name, v]) => ({ name, v })).sort((a, b) => b.v - a.v)
-return {
+  return {
     uv: s.uv,
     pv: s.pv,
     today: { date: todayKey, ...today },
@@ -110,6 +108,8 @@ return {
     likes: toArr(s.byAppLikes)
   }
 }
+const toArr = (obj: Record<string, number>) =>
+  Object.entries(obj || {}).map(([name, v]) => ({ name, v })).sort((a, b) => b.v - a.v)
 }
 
 // ============================================================
@@ -160,6 +160,11 @@ Deno.serve(async (req) => {
     headers.set('Content-Type', 'application/json')
     return new Response(JSON.stringify({ app, likes: s.byAppLikes[app] || 0, liked: on }), { headers })
   }
+  if (u.pathname === '/api/likes') {
+    const s = await getStats()
+    headers.set('Content-Type', 'application/json')
+    return new Response(JSON.stringify({ likes: toArr(s.byAppLikes) }), { headers })
+  }
   if (u.pathname === '/api/hit' || u.pathname === '/api/stats') {
     const hit = u.pathname === '/api/hit'
     const s = await getStats()
@@ -194,7 +199,13 @@ Deno.serve(async (req) => {
       bump(s.byRef, parseRef(req.headers.get('referer') || ''))
       const app = u.searchParams.get('app')
       if (app) bump(s.byApp, app)
+      // 控制 KV 对象体积：只保留近 120 天明细，避免 byDay 无限膨胀拖累每次读写
+      const cutoff = dayKey(new Date(cnNow().getTime() - 120 * 86400000))
+      for (const k of Object.keys(s.byDay)) if (k < cutoff) delete s.byDay[k]
       await kv.set(KEY, s)
+      headers.set('Content-Type', 'application/json')
+      // 轻量响应（VisitStats 只读 uv/pv/today，不再回传全量大对象）
+      return new Response(JSON.stringify({ ok: 1, uv: s.uv, pv: s.pv, today: { date: dk, ...day } }), { headers })
     }
     headers.set('Content-Type', 'application/json')
     return new Response(JSON.stringify(overview(s)), { headers })

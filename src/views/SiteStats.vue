@@ -254,6 +254,15 @@ onMounted(async () => {
       <p v-else class="muted" style="text-align:center;padding:10px;">暂无点赞 · 回首页给喜欢的应用点个赞吧</p>
     </div>
 
+    <div class="panel">
+      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>ℹ️ 关于本站统计与点赞</div>
+      <div class="muted" style="font-size:12px;line-height:1.9;">
+        · 本站为纯静态网站（GitHub Pages），统计与点赞由自建独立计数服务提供（Deno Deploy 免费额度），不采集个人信息，仅使用匿名访客 ID。<br>
+        · 因免费额度有限，访问上报采用「每会话每应用一次」节流，累计访问（PV）会略低于实际点击，独立访客（UV）、应用热度与点赞数不受影响。<br>
+        · 点赞数由服务端累计、可跨浏览器同步；计数服务不可达时页面会如实显示「—」或本地点赞状态。
+      </div>
+    </div>
+
     <p class="muted" style="font-size:12px;text-align:center;padding-bottom:6px;">仅统计访问聚合数据（不含个人身份信息），数据存于本站自建计数服务</p>
   </template>
 </template>
