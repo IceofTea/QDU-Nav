@@ -43,7 +43,7 @@ export async function fetchLikes() {
 
 /**
  * 点赞 / 取消（toggle）：on 缺省时自动取反
- * 返回 { liked, likes }，likes 为 null 表示计数不可知（counter 不可达，本地状态已生效）
+ * 返回 { liked, likes }，likes 为 null 表示计数不可知（counter 未部署/不可达，由调用方本地 ±1 兜底）
  */
 export async function toggleLike(appId, on) {
   const map = likedMap()
@@ -61,7 +61,8 @@ export async function toggleLike(appId, on) {
     clearTimeout(timer)
     if (r.ok) {
       const d = await r.json()
-      return { liked: target, likes: d.likes != null ? d.likes : null }
+      // 仅当服务端真的返回了数字计数才采用，否则视为未部署（走本地降级）
+      if (d && typeof d.likes === 'number') return { liked: target, likes: d.likes }
     }
   } catch { /* noop */ }
   return { liked: target, likes: null }

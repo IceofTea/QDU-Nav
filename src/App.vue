@@ -68,7 +68,10 @@ async function tapLike(appId) {
   const res = await toggleLike(appId)
   likedState.value = { ...likedState.value, [appId]: res.liked }
   if (res.likes != null) likes.value = { ...likes.value, [appId]: res.likes }
-  else if (likes.value[appId] != null) likes.value = { ...likes.value, [appId]: Math.max(0, (likes.value[appId] || 0) + (res.liked ? 1 : -1)) }
+  else {
+    const cur = likes.value[appId] != null ? likes.value[appId] : 0
+    likes.value = { ...likes.value, [appId]: Math.max(0, cur + (res.liked ? 1 : -1)) }
+  }
 }
 
 /* 默哀模式：灰白风格 + 顶部哀思条。
