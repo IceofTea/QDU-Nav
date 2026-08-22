@@ -60,7 +60,13 @@ export const SITE = {
 
   /** 独立访问计数服务（自建，见 counter/server.ts 部署说明） */
   counter: {
-    api: 'https://qdu-nav.iceoftea.deno.net'
+    api: 'https://qdu-nav.iceoftea.deno.net',
+    /* 静态降级开关：计数服务免费额度超限期间置 true —— 全站统计/点赞只读
+       staticData 快照、不发任何动态请求；额度恢复后改回 false 即恢复实时接口，
+       动态逻辑完整保留在 siteStats.js / like.js / VisitStats.vue / router.js 中，无需其他改动。 */
+    staticMode: true,
+    /** 静态快照数据文件（public/data/ 下，结构对齐 /api/stats 返回） */
+    staticData: 'data/site_stats_snapshot.json'
   },
 
   /** 教务系统入口（个人课表等需登录的功能） */

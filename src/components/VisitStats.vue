@@ -7,10 +7,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { SITE } from '../config/site'
 import { visitorId } from '../utils/visitor'
+import { getSiteStats, isStaticMode } from '../api/siteStats'
 
 const STORAGE_KEY = 'qdu-nav-visit-v1'
 const REPORT_KEY = 'qdu-nav-visit-reported'
 const api = (SITE.counter && SITE.counter.api) || ''
+const STATIC_MODE = isStaticMode()
 
 const uv = ref(null)
 const pv = ref(null)
@@ -42,6 +44,17 @@ function restore() {
 
 async function refresh() {
   restore()
+  // 静态降级模式：读快照展示，不向计数服务发任何请求
+  if (STATIC_MODE) {
+    const d = await getSiteStats()
+    if (d.uv !== undefined && d.pv !== undefined) {
+      uv.value = d.uv
+      pv.value = d.pv
+      todayUv.value = d.today ? d.today.uv : null
+      todayPv.value = d.today ? d.today.pv : null
+    }
+    return
+  }
   if (!api) return
   let reported = false
   try { reported = sessionStorage.getItem(REPORT_KEY) === '1' } catch { /* noop */ }
@@ -93,7 +106,7 @@ onMounted(refresh)
         <div class="vs-cell"><span class="vs-num">{{ todayPvText }}</span><span class="vs-label">今日访问</span></div>
       </div>
     </div>
-    <div class="vs-note">本站累计 · 自建独立计数</div>
+    <div class="vs-note">{{ STATIC_MODE ? '本站累计 · 快照数据（计数服务恢复前）' : '本站累计 · 自建独立计数' }}</div>
   </div>
 </template>
 

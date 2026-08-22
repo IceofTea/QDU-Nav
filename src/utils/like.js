@@ -8,6 +8,9 @@ import { SITE } from '../config/site'
 import { visitorId } from './visitor'
 
 const api = (SITE.counter && SITE.counter.api) || ''
+const STATIC_MODE = !!(SITE.counter && SITE.counter.staticMode)
+const staticUrl =
+  import.meta.env.BASE_URL + ((SITE.counter && SITE.counter.staticData) || 'data/site_stats_snapshot.json')
 const LIKED_KEY = 'qdu_liked'
 
 function likedMap() {
@@ -25,9 +28,24 @@ export function likedByMe(appId) {
   return !!likedMap()[appId]
 }
 
-/** 拉取各应用点赞数 { appId: count }（走轻量 /api/likes，60s 会话缓存），失败返回 {} */
-let likeCache = { ts: 0, data: {} }
+/** 拉取各应用点赞数 { appId: count }（走轻量 /api/likes，60s 会话缓存），失败返回 {}
+ *  静态降级模式：读快照里的点赞榜（模块级缓存一次） */
+let staticLikeCache = null
 export async function fetchLikes() {
+  if (STATIC_MODE) {
+    if (staticLikeCache) return staticLikeCache
+    try {
+      const r = await fetch(staticUrl)
+      if (r.ok) {
+        const d = await r.json()
+        const out = {}
+        for (const x of d.likes || []) out[x.name] = x.v
+        staticLikeCache = out
+        return out
+      }
+    } catch { /* noop */ }
+    return {}
+  }
   const now = Date.now()
   if (now - likeCache.ts < 60000) return likeCache.data
   if (!api) return {}
@@ -54,7 +72,7 @@ export async function toggleLike(appId, on) {
   const target = on != null ? !!on : !map[appId]
   map[appId] = target ? 1 : 0
   saveLiked(map)
-  if (!api) return { liked: target, likes: null }
+  if (!api || STATIC_MODE) return { liked: target, likes: null }
   try {
     const ctrl = new AbortController()
     const timer = setTimeout(() => ctrl.abort(), 6000)

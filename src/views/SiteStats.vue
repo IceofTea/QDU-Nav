@@ -3,7 +3,7 @@
  *  数据来自自建计数服务（Deno Deploy + KV），纯自动化采集（访问/打开应用自动上报）。
  *  默认展示与经典版一致的柱状/条形图（含金色序号），另增「一眼看懂」洞察与折线/圆饼切换。 */
 import { ref, computed, onMounted } from 'vue'
-import { getSiteStats, EMPTY_STATS } from '../api/siteStats'
+import { getSiteStats, EMPTY_STATS, isStaticMode } from '../api/siteStats'
 import { apps } from '../data/apps'
 import KpiCard from '../components/KpiCard.vue'
 import LineChart from '../components/LineChart.vue'
@@ -15,6 +15,7 @@ const emit = defineEmits(['back'])
 
 const stats = ref(EMPTY_STATS)
 const loading = ref(true)
+const staticMode = isStaticMode()
 
 /** appId → 中文名 */
 const APP_NAMES = Object.fromEntries(apps.map((a) => [a.id, a.title]))
@@ -78,6 +79,9 @@ onMounted(async () => {
   </div>
 
   <template v-else>
+    <div v-if="staticMode" class="snapshot-tip">
+      📌 计数服务免费额度超限暂停中，当前展示 {{ stats.generatedAt || '最近一次' }} 的快照数据；服务恢复后将自动回到实时统计
+    </div>
     <div class="kpi-grid">
       <KpiCard icon="👀" :value="stats.uv" label="独立访客" />
       <KpiCard icon="📈" :value="stats.pv" label="累计访问" />
@@ -259,7 +263,8 @@ onMounted(async () => {
       <div class="muted" style="font-size:12px;line-height:1.9;">
         · 本站为纯静态网站（GitHub Pages），统计与点赞由自建独立计数服务提供（Deno Deploy 免费额度），不采集个人信息，仅使用匿名访客 ID。<br>
         · 因免费额度有限，访问上报采用「每会话每应用一次」节流，累计访问（PV）会略低于实际点击，独立访客（UV）、应用热度与点赞数不受影响。<br>
-        · 点赞数由服务端累计、可跨浏览器同步；计数服务不可达时页面会如实显示「—」或本地点赞状态。
+        · 点赞数由服务端累计、可跨浏览器同步；计数服务不可达时页面会如实显示「—」或本地点赞状态。<br>
+        <template v-if="staticMode">· 当前计数服务免费额度超限暂停中：本页与首页统计展示的是最近一次快照数据，点赞仅保存在本机浏览器，服务恢复后自动回到实时统计。</template>
       </div>
     </div>
 
@@ -268,6 +273,16 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.snapshot-tip {
+  background: var(--soft-yellow, #fef3c7);
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.7;
+  margin-bottom: 14px;
+}
 .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .duo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 16px; }
 .chart-type { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }

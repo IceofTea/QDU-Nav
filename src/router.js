@@ -112,6 +112,8 @@ const SESSION_REPORT_KEY = 'qdu_reported_apps'
 function reportApp(id) {
   const api = SITE.counter && SITE.counter.api
   if (!api || typeof fetch !== 'function') return
+  // 静态降级期间（额度超限）不上报，避免无效请求
+  if (SITE.counter && SITE.counter.staticMode) return
   let reported = []
   try { reported = JSON.parse(sessionStorage.getItem(SESSION_REPORT_KEY)) || [] } catch { /* noop */ }
   if (reported.includes(id)) return

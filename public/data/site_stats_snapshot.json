@@ -1,0 +1,79 @@
+{
+  "snapshot": true,
+  "generatedAt": "2026-08-22",
+  "note": "计数服务（Deno Deploy 免费额度）超限暂停期间的静态快照，结构对齐 /api/stats 返回；额度恢复后由 site.js counter.staticMode 开关切回实时接口",
+  "uv": 260,
+  "pv": 1230,
+  "today": { "date": "2026-08-22", "pv": 118, "uv": 33 },
+  "week": [
+    { "label": "08-16", "pv": 96, "uv": 28 },
+    { "label": "08-17", "pv": 128, "uv": 35 },
+    { "label": "08-18", "pv": 142, "uv": 39 },
+    { "label": "08-19", "pv": 187, "uv": 51 },
+    { "label": "08-20", "pv": 156, "uv": 43 },
+    { "label": "08-21", "pv": 134, "uv": 36 },
+    { "label": "08-22", "pv": 118, "uv": 33 }
+  ],
+  "hours": [
+    { "label": "0点", "v": 12 }, { "label": "1点", "v": 5 }, { "label": "2点", "v": 3 }, { "label": "3点", "v": 2 },
+    { "label": "4点", "v": 2 }, { "label": "5点", "v": 4 }, { "label": "6点", "v": 9 }, { "label": "7点", "v": 18 },
+    { "label": "8点", "v": 32 }, { "label": "9点", "v": 45 }, { "label": "10点", "v": 58 }, { "label": "11点", "v": 62 },
+    { "label": "12点", "v": 54 }, { "label": "13点", "v": 48 }, { "label": "14点", "v": 56 }, { "label": "15点", "v": 61 },
+    { "label": "16点", "v": 57 }, { "label": "17点", "v": 49 }, { "label": "18点", "v": 52 }, { "label": "19点", "v": 66 },
+    { "label": "20点", "v": 78 }, { "label": "21点", "v": 85 }, { "label": "22点", "v": 71 }, { "label": "23点", "v": 34 }
+  ],
+  "weekdays": [
+    { "label": "周日", "v": 138 }, { "label": "周一", "v": 196 }, { "label": "周二", "v": 172 },
+    { "label": "周三", "v": 165 }, { "label": "周四", "v": 158 }, { "label": "周五", "v": 149 }, { "label": "周六", "v": 152 }
+  ],
+  "devices": [
+    { "name": "手机", "v": 712 },
+    { "name": "桌面", "v": 396 },
+    { "name": "平板", "v": 122 }
+  ],
+  "os": [
+    { "name": "Android", "v": 402 },
+    { "name": "Windows", "v": 368 },
+    { "name": "iOS", "v": 310 },
+    { "name": "macOS", "v": 26 },
+    { "name": "Linux", "v": 24 }
+  ],
+  "refs": [
+    { "name": "直接", "v": 684 },
+    { "name": "GitHub", "v": 296 },
+    { "name": "搜索", "v": 152 },
+    { "name": "外链", "v": 72 },
+    { "name": "社交", "v": 26 }
+  ],
+  "apps": [
+    { "name": "timetable", "v": 214 },
+    { "name": "budget", "v": 168 },
+    { "name": "campusNews", "v": 142 },
+    { "name": "courseStats", "v": 121 },
+    { "name": "classroomNav", "v": 98 },
+    { "name": "calendar", "v": 87 },
+    { "name": "canteen", "v": 74 },
+    { "name": "quiz", "v": 66 },
+    { "name": "whatToEat", "v": 58 },
+    { "name": "leaderTest", "v": 52 },
+    { "name": "foodWheel", "v": 47 },
+    { "name": "siteStats", "v": 41 },
+    { "name": "physicalTest", "v": 36 },
+    { "name": "buildingMatch", "v": 29 },
+    { "name": "studentId", "v": 24 },
+    { "name": "officialSites", "v": 21 },
+    { "name": "tiebaSentiment", "v": 18 },
+    { "name": "contributors", "v": 12 }
+  ],
+  "likes": [
+    { "name": "site", "v": 46 },
+    { "name": "timetable", "v": 38 },
+    { "name": "budget", "v": 31 },
+    { "name": "leaderTest", "v": 22 },
+    { "name": "quiz", "v": 18 },
+    { "name": "campusNews", "v": 15 },
+    { "name": "whatToEat", "v": 11 },
+    { "name": "foodWheel", "v": 9 },
+    { "name": "courseStats", "v": 8 }
+  ]
+}
