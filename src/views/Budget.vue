@@ -270,6 +270,11 @@ function triggerEggs(r) {
     ]
     const hit = tiers.find(([hi]) => r.amount <= hi)
     showToast(hit ? hit[1] : '吹牛逼呢😅')
+    return
+  }
+  /* 生活费一次性录入 ≥10000（如大额生活费/进账）→ 吹牛彩蛋 */
+  if (r.type === 'income' && r.amount >= 10000) {
+    showToast('吹牛逼呢😅')
   }
 }
 
