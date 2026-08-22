@@ -198,13 +198,13 @@ function remove(id) {
 }
 
 /* ================= 隐藏彩蛋（不影响正常情绪反馈，详见 AGENTS.md） ================= */
-/** 轻提示：彩蛋文案短暂弹出，自动消失 */
-const toast = ref(null)
-let toastTimer = null
+/** 轻提示：彩蛋文案短暂弹出；支持多条堆叠同时显示（成就解锁与大额彩蛋同帧触发时互不覆盖） */
+const toasts = ref([])
+let toastSeq = 0
 function showToast(text, ms = 2400) {
-  toast.value = { text, key: Date.now() }
-  clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => { toast.value = null }, ms)
+  const key = ++toastSeq
+  toasts.value.push({ text, key })
+  setTimeout(() => { toasts.value = toasts.value.filter((t) => t.key !== key) }, ms)
 }
 
 /** 连击彩蛋：金额 2 + 备注「1+1=」时，快速按回车（或点记入）10 次 → 彩蛋；连击期间吞掉重复保存。
@@ -272,8 +272,8 @@ function triggerEggs(r) {
     showToast(hit ? hit[1] : '吹牛逼呢😅')
     return
   }
-  /* 生活费一次性录入 ≥10000（如大额生活费/进账）→ 吹牛彩蛋 */
-  if (r.type === 'income' && r.amount >= 10000) {
+  /* 生活费（allowance）单笔录入 ≥10000 → 吹牛彩蛋（其他收入类别不触发，既有彩蛋不受影响） */
+  if (r.type === 'income' && r.cat === 'allowance' && r.amount >= 10000) {
     showToast('吹牛逼呢😅')
   }
 }
@@ -890,9 +890,11 @@ const monthLabel = computed(() => {
   </div>
   </div>
 
-  <transition name="egg-fade">
-    <div v-if="toast" :key="toast.key" class="egg-toast">{{ toast.text }}</div>
-  </transition>
+  <div class="egg-toast-wrap">
+    <transition-group name="egg-fade">
+      <div v-for="t in toasts" :key="t.key" class="egg-toast">{{ t.text }}</div>
+    </transition-group>
+  </div>
 
   <div v-if="pxRain.length" class="px-rain">
     <span v-for="p in pxRain" :key="p.id" class="px-drop" :style="{ left: p.left + '%', width: p.size + 'px', height: p.size + 'px', background: p.color, animationDelay: p.delay + 's', animationDuration: p.dur + 's' }"></span>
@@ -1051,12 +1053,19 @@ const monthLabel = computed(() => {
 .rec-del:hover { color: var(--primary); }
 
 /* ================= 隐藏彩蛋样式 ================= */
-.egg-toast {
+.egg-toast-wrap {
   position: fixed;
   left: 50%;
   top: 46%;
   transform: translateX(-50%);
   z-index: 300;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+}
+.egg-toast {
   max-width: 82vw;
   padding: 14px 22px;
   border-radius: 16px;
@@ -1071,7 +1080,8 @@ const monthLabel = computed(() => {
   white-space: nowrap;
 }
 .egg-fade-enter-active, .egg-fade-leave-active { transition: opacity 0.3s, transform 0.3s; }
-.egg-fade-enter-from, .egg-fade-leave-to { opacity: 0; transform: translateX(-50%) scale(0.85); }
+.egg-fade-enter-from, .egg-fade-leave-to { opacity: 0; transform: scale(0.85); }
+.egg-fade-move { transition: transform 0.3s; }
 
 .px-rain {
   position: fixed;
