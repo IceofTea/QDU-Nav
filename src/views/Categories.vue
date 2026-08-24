@@ -1,15 +1,17 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { apps, appGroups, groupColors } from '../data/apps'
+import { searchApps } from '../data/searchIndex'
 import { fetchLikes, toggleLike, likedByMe } from '../utils/like'
 
 const emit = defineEmits(['back', 'open'])
 const kw = ref('')
 
 const grouped = computed(() => {
-  const k = kw.value.trim().toLowerCase()
+  const k = kw.value.trim()
+  const hitIds = k ? new Set(searchApps(k).map((r) => r.app.id)) : null
   return appGroups
-    .map((g) => ({ group: g, items: apps.filter((a) => a.group === g && (!k || (a.title + a.desc + a.group + g).toLowerCase().includes(k))) }))
+    .map((g) => ({ group: g, items: apps.filter((a) => a.group === g && (!hitIds || hitIds.has(a.id))) }))
     .filter((x) => x.items.length)
 })
 
@@ -43,7 +45,7 @@ async function tapLike(appId, ev) {
 
   <div class="cat-search">
     <span class="search-icon">🔍</span>
-    <input v-model="kw" class="search-input" placeholder="在分类中搜索应用" />
+    <input v-model="kw" class="search-input" placeholder="搜索应用或功能：空教室、记账、体测…" />
   </div>
 
   <div v-for="g in grouped" :key="g.group" class="cat-group">

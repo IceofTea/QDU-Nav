@@ -17,6 +17,7 @@
 | 模块 | 路径 | 说明 |
 | --- | --- | --- |
 | 应用注册 | `src/data/apps.js` | 首页应用网格的唯一来源 |
+| 全局搜索索引 | `src/data/searchIndex.js` | 首页/分类页搜索的三层索引（keywords 别名 + content 功能点）与 `searchApps()` 打分算法，新增应用建议同步登记 EXTRA |
 | 路由注册 | `src/router.js` | 应用 id → 视图组件的映射（新增页面必须双登记） |
 | 站点配置 | `src/config/site.js` | 站点名 / 副标题 / 版本号（**版本号唯一维护点**） |
 | 视图 | `src/views/*.vue` | 各应用页面 |
@@ -58,6 +59,7 @@
 
 | 日期 | 版本 | 内容 |
 | --- | --- | --- |
+| 2026-08-24 | v1.3.16 | **全局搜索索引版**（参考 FJNU-Nav 搜索方案）。修复首页/分类页搜索只能匹配应用名（title+desc）的问题。①新增 `src/data/searchIndex.js`：`apps.js` 基础字段 + `EXTRA` 手工索引（`keywords` 别名/同义词 + `content` 应用内功能点短语）合并为 `searchDocs`，18 个应用全部登记（如 budget=记账/生活费/账单导入/预算，classroomNav=空教室/自习/占用/路线，timetable=课表/周次/下学期…）；②`searchApps()` 算法与 FJNU 对齐：多关键词空格拆分 AND 语义、加权打分（标题3 > 别名全等2.5/包含2 > 简介1.5 > 功能点1）、按分降序并收集命中标签 ≤3 个；③`Home.vue` 接入：结果卡片显示「匹配：xxx」胶囊徽章（`.tile-hit`，无命中时回退 desc）、空态提示「试试：空教室 / 记账 / 体测」、placeholder 更新；④`Categories.vue` 分组过滤改用 `searchApps` 命中 id 集合（原仅 title+desc+group includes）；⑤README「新增一个应用」补第 4 步 EXTRA 登记。验证：构建通过、CDP 专项 14/14（功能词命中教室导航/生活费计数器、content 层「账单导入」命中、多词 AND「教室 路线」与无交集空态、「体测」权重排序、uv/PV 大小写、点击跳转、分类页「奖学金」「热帖」命中、清空恢复全量）+ 冒烟零 JS 错误全绿。 |
 | 2026-08-22 | v1.3.15（增补3） | **大额彩蛋规则收窄 + toast 堆叠修复**。①按需求澄清，增补2 的分支收窄为**仅「生活费」（income · allowance 类别）单笔 ≥10000 弹「吹牛逼呢😅」**——奖学金/兼职/红包等其他收入类别一律不弹；既有彩蛋全部保留（prize 500000 间谍 / party >100 漂亮饭 / trouble 分档与 >100000 吹牛 / 9876547210.33 b站手办 / 结余 bannerEgg）。②**toast 堆叠修复**：`Budget.vue showToast` 由单例覆盖改为队列堆叠（toasts 数组 + transition-group + `.egg-toast-wrap` 垂直居中容器）——修复录入生活费 10000 时「吹牛逼呢😅」被「💎 成就解锁：一夜暴富」toast 覆盖的问题，多彩蛋同帧触发时垂直堆叠同时展示、各自独立计时消失（含 egg-fade-move 位移动画）。验证：构建通过、CDP 专项 8/8（生活费 10000 双 toast 堆叠 / 9999 不弹 / 10000.5 弹 / 奖学金 20000 不弹 / 闯祸 300 三国杀保留）、回归 v18(23)+v19(12) 全绿。版本号不变。 |
 | 2026-08-22 | v1.3.15（增补2） | **生活费大额录入彩蛋补全**。修复 v1.3.5 遗漏：原设计「生活费一次性 >10000 且当月盈利 >100000 → 吹牛逼呢😅」中单笔录入分支从未实现（仅结余类 bannerEgg 与闯祸类 tiers 有彩蛋）。现于 `Budget.vue triggerEggs` 末尾新增分支：**收入类单笔 ≥10000 保存后弹「吹牛逼呢😅」**（prize 500000 的「抓到间谍」专属彩蛋优先级不变，位于前方 return；trouble >100000 行为不变）。验证：构建通过、CDP 专项 4/4（收入 10000 弹 / 9999 不弹 / 10000.5 弹）两轮全绿、回归 v18(23)+v19(12) 全绿。版本号不变。 |
 | 2026-08-22 | v1.3.15（增补） | **计数服务静态降级版**。Deno Deploy 免费额度当月超限、计数服务关停（实测 /api/stats 返回 503、连接超时，KV 云端数据在恢复前无法读取），为避免前端反复请求白白超时：①新增静态快照 `public/data/site_stats_snapshot.json`（结构完全对齐 `/api/stats` 返回；因实时数据暂时无法读取，按累计 UV 260 / PV 1230 编制各维度分布——近7天/24h/星期/设备/系统/来源/热门应用/点赞榜，含 site 本站点赞 46）；②`site.js` counter 新增 **staticMode 单一开关**（true=全站统计与点赞只读快照、零动态请求；额度恢复后改回 false 即恢复实时接口，siteStats.js/like.js/VisitStats.vue/router.js 的动态逻辑原样保留，无需其他改动）；③接入点：`api/siteStats.js`（getSiteStats 静态分支 + isStaticMode 导出）、`VisitStats.vue`（读快照展示、不发 hit，note 标注「快照数据」）、`router.js reportApp`（静态期不上报）、`utils/like.js`（fetchLikes 读快照点赞榜、toggleLike 仅本地生效走既有 ±1 兜底）、`SiteStats.vue`（顶部快照提示条 + 关于面板补充说明）；④公告 `announcements.json` 追加 id=2「访问统计临时切换为快照展示」，旧公告 id=1 保留（列表式渲染互不挤占）。验证：构建通过、CDP 专项 21/21（首页 UV/PV/note、无 Deno 请求、双公告、分类页点赞 38、本站点赞 46、本站舆情 KPI/提示条/图表/点赞榜/关于面板、应用页打开不上报）全绿、回归 v18(23)+v19(12) 全绿。**恢复步骤**：下月额度刷新后把 `src/config/site.js` 的 `counter.staticMode` 改回 `false` 并重新构建部署即可。 |

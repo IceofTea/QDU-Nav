@@ -2,6 +2,7 @@
 /** 首页：欢迎语 / 应用网格 / 分类入口 / 校园数据 / 数据洞察 / 校区 / 关于本站 */
 import { ref, computed, onMounted } from 'vue'
 import { apps, campusStats } from '../data/apps'
+import { searchApps } from '../data/searchIndex'
 import { campuses } from '../data/campus'
 import { getCourseStats, EMPTY_STATS } from '../api/courseStats'
 import { SITE } from '../config/site'
@@ -56,9 +57,9 @@ function greeting() {
 }
 
 const filtered = computed(() => {
-  const kw = keyword.value.trim().toLowerCase()
-  if (!kw) return apps
-  return apps.filter((a) => (a.title + a.desc).toLowerCase().includes(kw))
+  const kw = keyword.value.trim()
+  if (!kw) return apps.map((a) => ({ app: a, score: 0, hits: [] }))
+  return searchApps(kw)
 })
 
 const expanded = ref(null)
@@ -74,7 +75,7 @@ function toggleCampus(name) {
       <p class="hero-sub">欢迎回到 {{ SITE.name }}，{{ SITE.heroSub }}</p>
       <div class="search-bar">
         <span class="search-icon">🔍</span>
-        <input v-model="keyword" class="search-input" placeholder="搜一搜你想要的应用" />
+        <input v-model="keyword" class="search-input" placeholder="搜索应用或功能：空教室、记账、体测…" />
       </div>
     </section>
 
@@ -106,19 +107,20 @@ function toggleCampus(name) {
       </div>
       <div v-if="filtered.length" class="tile-grid">
         <button
-          v-for="a in filtered"
-          :key="a.id"
+          v-for="r in filtered"
+          :key="r.app.id"
           class="service-tile"
-          @click="emit('open', a.id)"
+          @click="emit('open', r.app.id)"
         >
-          <span class="tile-icon" :style="{ background: a.color + '1a', color: a.color }">{{ a.icon }}</span>
+          <span class="tile-icon" :style="{ background: r.app.color + '1a', color: r.app.color }">{{ r.app.icon }}</span>
           <span class="tile-body">
-            <span class="tile-title">{{ a.title }}</span>
-            <span class="tile-desc">{{ a.desc }}</span>
+            <span class="tile-title">{{ r.app.title }}</span>
+            <span v-if="r.hits.length" class="tile-hit">匹配：{{ r.hits.join(' · ') }}</span>
+            <span v-else class="tile-desc">{{ r.app.desc }}</span>
           </span>
         </button>
       </div>
-      <div v-else class="empty">没有找到相关应用，换个关键词试试</div>
+      <div v-else class="empty">没有找到「{{ keyword }}」相关内容，试试：空教室 / 记账 / 体测</div>
       <div class="hint">按学习、生活、游戏等分组浏览全部 {{ apps.length }} 个应用</div>
     </section>
 
@@ -214,6 +216,18 @@ function toggleCampus(name) {
 </template>
 
 <style scoped>
+.tile-hit {
+  font-size: 11px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border-radius: 999px;
+  padding: 2px 8px;
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .site-like {
   display: inline-flex;
   align-items: center;

@@ -86,10 +86,7 @@ function hueOf(i) {
       <li><b>v1.3.13</b> — 点赞系统：首页/各应用点赞与计数，同本站舆情计数服务。</li>
       <li><b>v1.3.14</b> — 首页公告（部署与安全说明）、顶部栏移动端适配、点赞交互调整。</li>
       <li><b>v1.3.15</b> — 计数服务降耗（轻量接口/数据瘦身/会话节流）与点赞跨浏览器同步修复。</li>
-
-
-
-
+      <li><b>v1.3.16</b> — 全局搜索索引：首页/分类页搜索升级为「应用名 + 别名关键词 + 功能点」三层匹配，支持多词组合与命中标签展示。</li>
     </ul>
     <p class="muted" style="font-size:12px;margin-top:10px;">
       每个版本的完整改动清单见 <a href="https://github.com/IceofTea/QDU-Nav/blob/main/README.md" target="_blank" rel="noopener">README 版本历史</a>。
