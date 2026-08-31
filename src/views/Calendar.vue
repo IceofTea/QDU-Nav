@@ -2,7 +2,9 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { apiFetch } from '../api'
 import { previewTerms, defaultTermIdx } from '../data/calendarPreview'
+import { useI18n } from '../i18n'
 
+const { t, lang } = useI18n()
 const emit = defineEmits(['back'])
 
 const fallbackLinks = [
@@ -167,14 +169,14 @@ onMounted(load)
 </script>
 <template>
   <div class="view-top">
-    <button class="back-btn" @click="emit('back')">← 返回首页</button>
-    <div class="view-title">校历</div>
-    <div class="view-sub">校历原图预览 · 官方页面直达 · 放假安排一览</div>
+    <button class="back-btn" @click="emit('back')">{{ t('common.back') }}</button>
+    <div class="view-title">{{ t('calendar.title') }}</div>
+    <div class="view-sub">{{ t('calendar.sub') }}</div>
   </div>
 
   <div v-if="!loading" class="source-bar">
     <span class="dot" :class="online ? 'live' : 'off'"></span>
-    <span>{{ online ? '官方实时数据' : '官方接口暂不可达，展示演示链接' }}</span>
+    <span>{{ online ? (lang === 'en' ? 'Live data from official API' : '官方实时数据') : (lang === 'en' ? 'API unavailable, showing demo links' : '官方接口暂不可达，展示演示链接') }}</span>
     <span class="sep">·</span>
     <span>来源 jwc.qdu.edu.cn</span>
     <template v-if="online">
@@ -183,26 +185,26 @@ onMounted(load)
       <template v-if="costMs"><span class="sep">·</span><span>耗时 {{ costMs }}ms</span></template>
       <span v-if="cached" class="sep">·</span><span v-if="cached">命中缓存</span>
     </template>
-    <button class="refresh-btn" :disabled="refreshing" @click="load(true)">{{ refreshing ? '刷新中…' : '🔄 刷新' }}</button>
+    <button class="refresh-btn" :disabled="refreshing" @click="load(true)">{{ refreshing ? t('common.refreshing') : t('common.refresh') }}</button>
   </div>
 
   <div class="panel" style="margin-bottom:16px;">
-    <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>🗓️ 校历预览</div>
+    <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>🗓️ {{ t('calendar.preview') }}</div>
 
     <div class="cal-toolbar">
-      <button class="cal-nav-btn" :disabled="termIdx >= previewTerms.length - 1" title="上一学年" @click="goTerm(termIdx + 1, 'back')">←</button>
+      <button class="cal-nav-btn" :disabled="termIdx >= previewTerms.length - 1" :title="t('calendar.prevYear')" @click="goTerm(termIdx + 1, 'back')">←</button>
       <select class="cal-term-select" :value="termIdx" @change="onSelectTerm">
-        <option v-for="(t, i) in previewTerms" :key="t.id" :value="i">{{ t.label }}</option>
+        <option v-for="(trm, i) in previewTerms" :key="trm.id" :value="i">{{ trm.label }}</option>
       </select>
-      <button class="cal-nav-btn" :disabled="termIdx <= 0" title="下一学年" @click="goTerm(termIdx - 1, 'fwd')">→</button>
+      <button class="cal-nav-btn" :disabled="termIdx <= 0" :title="t('calendar.nextYear')" @click="goTerm(termIdx - 1, 'fwd')">→</button>
     </div>
 
     <div v-if="brokenImgs.has(currentTerm.id)" class="cal-error">
-      校历图片加载失败 ·
-      <a :href="currentTerm.sourceUrl" target="_blank" rel="noopener">打开教务处原文页 ↗</a>
+      {{ t('calendar.loadFail') }}
+      <a :href="currentTerm.sourceUrl" target="_blank" rel="noopener">{{ t('calendar.openOfficial') }}</a>
     </div>
     <div v-else class="cal-shell" @click="openPreview()">
-      <div v-if="imgLoading && !imgLoaded" class="cal-skeleton">校历加载中…</div>
+      <div v-if="imgLoading && !imgLoaded" class="cal-skeleton">{{ t('calendar.loadImage') }}</div>
       <Transition :name="'cal-' + slideDir">
         <img
           :key="currentTerm.id"
@@ -213,21 +215,21 @@ onMounted(load)
           @error="onImgError"
         />
       </Transition>
-      <div class="cal-hint">🔍 点击全屏查看（缩放拖动 · 左右滑动切换学年）</div>
+      <div class="cal-hint">{{ t('calendar.hint') }}</div>
     </div>
     <div class="cal-src-line">
-      来源：
-      <a :href="currentTerm.sourceUrl" target="_blank" rel="noopener">教务处校历通知原文 ↗</a>
+      {{ t('calendar.srcLine') }}
+      <a :href="currentTerm.sourceUrl" target="_blank" rel="noopener">{{ t('calendar.srcOfficial') }}</a>
       <template v-if="currentTerm.pdf">
         <span class="muted"> · </span>
-        <a :href="currentTerm.pdf" target="_blank" rel="noopener">PDF 原件 ↗</a>
+        <a :href="currentTerm.pdf" target="_blank" rel="noopener">{{ t('calendar.srcPdf') }}</a>
       </template>
-      <span class="muted">（图片为教务处公开发布的校历原图本地快照）</span>
+      <span class="muted">{{ t('calendar.srcNote') }}</span>
     </div>
   </div>
 
   <div class="panel" style="margin-bottom:16px;">
-    <div class="section-title" style="margin:0 0 14px;"><span class="bar"></span>📎 官方校历</div>
+    <div class="section-title" style="margin:0 0 14px;"><span class="bar"></span>📎 {{ t('calendar.officialList') }}</div>
     <div v-if="loading" class="skeleton-list">
       <div v-for="i in 4" :key="i" class="skeleton-row">
         <div class="skeleton" style="width:80px;height:22px;"></div>
@@ -238,7 +240,7 @@ onMounted(load)
       <a v-for="l in calendars" :key="l.url" class="cal-item" :href="l.url" target="_blank" rel="noopener">
         <span class="cal-title">{{ l.title }}</span>
         <span v-if="l.date" class="cal-date">{{ l.date }}</span>
-        <span class="cal-go">查看官方页 ↗</span>
+        <span class="cal-go">{{ lang === 'en' ? 'Official Page' : '查看官方页' }} ↗</span>
       </a>
     </div>
   </div>
@@ -260,9 +262,9 @@ onMounted(load)
     </div>
   </div>
   <div class="panel" style="background:var(--notice-bg);border-color:var(--notice-border);">
-    <div style="font-weight:700;color:var(--notice-text);">💡 提示</div>
+    <div style="font-weight:700;color:var(--notice-text);">{{ t('calendar.tip') }}</div>
     <div class="muted" style="font-size:13px;margin-top:6px;line-height:1.8;">
-      「校历预览」为教务处公开发布的校历原图本地快照（2019~2020 学年起有图，2019~2020 学年含说明页），支持左右滑动 / 按钮切换与全屏缩放；更早学年（2012~2018）请通过「官方校历」列表前往教务处页面查看。时间线为社区按往年规律整理，仅供参考；具体教学周与放假安排请以教务处官网为准。
+      {{ t('calendar.tipContent') }}
     </div>
   </div>
   <teleport to="body">
@@ -273,7 +275,7 @@ onMounted(load)
         <button class="cal-zoom-btn" @click="zoomIn">＋</button>
         <button class="cal-zoom-btn" @click="resetView">1:1</button>
         <span class="cal-modal-term">{{ currentTerm.label }}</span>
-        <button class="cal-close-btn" @click="closePreview">✕ 关闭</button>
+        <button class="cal-close-btn" @click="closePreview">✕ {{ t('common.close').replace('✕ ', '') }}</button>
       </div>
       <div
         class="cal-modal-body"
@@ -304,7 +306,7 @@ onMounted(load)
         </div>
         <button class="cal-side-btn right" :disabled="termIdx <= 0" @click.stop="stepTerm(-1)" title="下一学年">›</button>
       </div>
-      <div class="cal-modal-tip" @click.stop>💡 未放大时左右拖动丝滑切换学年 · 点击 ＋ 放大后可拖动查看细节</div>
+      <div class="cal-modal-tip" @click.stop>{{ t('calendar.hintModal') }}</div>
     </div>
   </teleport>
 </template>

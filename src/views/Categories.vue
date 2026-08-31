@@ -1,11 +1,23 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { apps, appGroups, groupColors } from '../data/apps'
+import { apps, appGroups, appGroupsEn, groupColors } from '../data/apps'
 import { searchApps } from '../data/searchIndex'
 import { fetchLikes, toggleLike, likedByMe } from '../utils/like'
+import { useI18n } from '../i18n'
 
+const { t, lang } = useI18n()
 const emit = defineEmits(['back', 'open'])
 const kw = ref('')
+
+const appName = (a) => lang.value === 'en' && a.titleEn ? a.titleEn : a.title
+const appDesc = (a) => lang.value === 'en' && a.descEn ? a.descEn : a.desc
+const groupName = (g) => {
+  if (lang.value === 'en') {
+    const idx = appGroups.indexOf(g)
+    return idx >= 0 && appGroupsEn[idx] ? appGroupsEn[idx] : g
+  }
+  return g
+}
 
 const grouped = computed(() => {
   const k = kw.value.trim()
@@ -15,7 +27,6 @@ const grouped = computed(() => {
     .filter((x) => x.items.length)
 })
 
-/* 点赞：分类卡片可点赞 / 取消 */
 const likes = ref({})
 const likedState = ref({})
 onMounted(async () => {
@@ -38,35 +49,35 @@ async function tapLike(appId, ev) {
 
 <template>
   <div class="view-top">
-    <button class="back-btn" @click="emit('back')">← 返回首页</button>
-    <div class="view-title">应用分类</div>
-    <div class="view-sub">{{ apps.length }} 个应用 · 按学习、生活、游戏等分组浏览</div>
+    <button class="back-btn" @click="emit('back')">{{ t('common.back') }}</button>
+    <div class="view-title">{{ t('nav.categories') }}</div>
+    <div class="view-sub">{{ apps.length }} {{ lang === 'en' ? 'apps grouped by study, life, games, etc.' : '个应用 · 按学习、生活、游戏等分组浏览' }}</div>
   </div>
 
   <div class="cat-search">
     <span class="search-icon">🔍</span>
-    <input v-model="kw" class="search-input" placeholder="搜索应用或功能：空教室、记账、体测…" />
+    <input v-model="kw" class="search-input" :placeholder="lang === 'en' ? 'Search apps or features...' : '搜索应用或功能：空教室、记账、体测…'" />
   </div>
 
   <div v-for="g in grouped" :key="g.group" class="cat-group">
     <div class="cat-group-head">
       <span class="cat-group-dot" :style="{ background: groupColors[g.group] }"></span>
-      <span class="cat-group-name">{{ g.group }}</span>
-      <span class="cat-group-count">{{ g.items.length }} 个</span>
+      <span class="cat-group-name">{{ groupName(g.group) }}</span>
+      <span class="cat-group-count">{{ g.items.length }} {{ lang === 'en' ? '' : '个' }}</span>
     </div>
     <div class="cat-grid">
       <button v-for="a in g.items" :key="a.id" class="cat-tile" @click="emit('open', a.id)">
         <span class="cat-tile-icon" :style="{ background: a.color + '1a', color: a.color }">{{ a.icon }}</span>
-        <span class="cat-tile-title">{{ a.title }}</span>
-        <span class="cat-tile-desc">{{ a.desc }}</span>
-        <span class="cat-like" :class="{ on: likedState[a.id] }" title="点赞 / 取消" @click.stop="tapLike(a.id)">
+        <span class="cat-tile-title">{{ appName(a) }}</span>
+        <span class="cat-tile-desc">{{ appDesc(a) }}</span>
+        <span class="cat-like" :class="{ on: likedState[a.id] }" :title="lang === 'en' ? 'Like / Unlike' : '点赞 / 取消'" @click.stop="tapLike(a.id)">
           👍 {{ likes[a.id] != null ? likes[a.id] : 0 }}
         </span>
       </button>
     </div>
   </div>
 
-  <div v-if="!grouped.length" class="empty" style="margin:24px 0;">没有匹配的分类应用</div>
+  <div v-if="!grouped.length" class="empty" style="margin:24px 0;">{{ lang === 'en' ? 'No matching apps' : '没有匹配的分类应用' }}</div>
 </template>
 
 <style scoped>
@@ -86,47 +97,19 @@ async function tapLike(appId, ev) {
 .cat-group-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .cat-group-dot { width: 10px; height: 10px; border-radius: 50%; }
 .cat-group-name { font-weight: 700; font-size: 15px; }
-.cat-group-count { color: var(--text-light); font-size: 12px; }
-.cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.cat-group-count { font-size: 12px; color: var(--text-sub); }
+.cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
 .cat-tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 16px 10px 14px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border-radius: 14px;
+  background: var(--card); border: 1px solid var(--border);
+  cursor: pointer; text-align: left; transition: 0.15s;
 }
-.cat-tile:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
-.cat-tile-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-}
-.cat-tile-title { font-weight: 700; font-size: 14px; }
-.cat-tile-desc { font-size: 11px; color: var(--text-light); text-align: center; line-height: 1.4; }
-.cat-like {
-  margin-top: 2px;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  font-size: 12px;
-  color: var(--text-sub);
-  cursor: pointer;
-  padding: 3px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  user-select: none;
-  transition: background 0.15s, color 0.15s;
-}
-.cat-like:hover { background: var(--primary-soft); color: var(--primary); }
-.cat-like.on { border-color: rgba(225, 29, 72, 0.4); color: #e11d48; background: rgba(225, 29, 72, 0.06); }
+.cat-tile:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08); }
+.cat-tile-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.cat-tile-title { font-weight: 700; font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cat-tile-desc { font-size: 12px; color: var(--text-sub); display: block; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
+.cat-like { margin-left: auto; font-size: 12px; color: var(--text-sub); cursor: pointer; flex-shrink: 0; }
+.cat-like.on { color: #e11d48; }
+.cat-tile-body { flex: 1; min-width: 0; }
 </style>

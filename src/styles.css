@@ -251,6 +251,8 @@ body {
   transition: 0.2s;
 }
 .ghost-btn:hover { background: var(--hover-bg); }
+.lang-btn { min-width: 0; padding: 8px 10px; }
+.lang-label { font-size: 12px; font-weight: 700; letter-spacing: 0.5px; }
 
 .main {
   flex: 1;
@@ -1005,6 +1007,8 @@ table.data th { background: var(--primary-soft); color: var(--primary-dark); fon
   .brand-name { font-size: 15px; }
   .header-right { gap: 6px; }
   .ghost-btn { padding: 7px 10px; font-size: 12px; }
+  .lang-btn { padding: 6px 8px; }
+  .lang-label { font-size: 11px; }
   .brand-sub { display: none; }
   .result-banner { flex-wrap: wrap; }
   .result-hint { width: 100%; margin-left: 0; }

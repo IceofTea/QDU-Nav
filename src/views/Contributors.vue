@@ -88,6 +88,7 @@ function hueOf(i) {
       <li><b>v1.3.15</b> — 计数服务降耗（轻量接口/数据瘦身/会话节流）与点赞跨浏览器同步修复。</li>
       <li><b>v1.3.16</b> — 全局搜索索引：首页/分类页搜索升级为「应用名 + 别名关键词 + 功能点」三层匹配，支持多词组合与命中标签展示。</li>
       <li><b>v1.3.17</b> — 校历原图预览：每学年校历本地预览（按钮/下拉/拖动滑动切换 + 丝滑滑动动画），全屏查看器支持缩放平移与键盘翻页，附 PDF 原件直链。</li>
+      <li><b>v1.3.18</b> — 中英文切换：顶部栏一键切换，首页/校历/分类等核心页面全英文，底部导航同步，模块化 i18n 架构（src/i18n/）。</li>
     </ul>
     <p class="muted" style="font-size:12px;margin-top:10px;">
       每个版本的完整改动清单见 <a href="https://github.com/IceofTea/QDU-Nav/blob/main/README.md" target="_blank" rel="noopener">README 版本历史</a>。
