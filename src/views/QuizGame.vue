@@ -67,7 +67,7 @@ function next() {
       score: score.value,
       correct: correct.value,
       total: QUESTIONS,
-      date: new Date().toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })
+      date: new Date().toLocaleDateString(lang.value === 'en' ? 'en-US' : 'zh-CN', { month: 'numeric', day: 'numeric' })
     })
     scores.value = scores.value.slice(0, 100)
     localStorage.setItem('qdu_quiz_scores', JSON.stringify(scores.value))
@@ -99,11 +99,11 @@ const verdict = computed(() => {
 
 const grade = computed(() => {
   const p = score.value / (QUESTIONS * PER_QUESTION)
-  if (p >= 0.9) return 'S · 青大活地图！'
-  if (p >= 0.7) return 'A · 很了解青大！'
-  if (p >= 0.5) return 'B · 有一定了解'
-  if (p >= 0.3) return 'C · 多逛逛校园吧'
-  return 'D · 新生报到，常来逛逛！'
+  if (p >= 0.9) return t('quiz.gradeS')
+  if (p >= 0.7) return t('quiz.gradeA')
+  if (p >= 0.5) return t('quiz.gradeB')
+  if (p >= 0.3) return t('quiz.gradeC')
+  return t('quiz.gradeD')
 })
 
 onMounted(() => {

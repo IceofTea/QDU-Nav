@@ -38,11 +38,11 @@ const BACK_IMGS = [
   'https://houqin.qdu.edu.cn/__local/0/FC/20/C63BFE356C6FCF0D4660203F633_D698434D_1A9F0.jpg'
 ]
 
-const DIFFS = {
-  easy: { label: '简单', pairs: 6, cols: 4 },
-  normal: { label: '普通', pairs: 10, cols: 5 },
-  hard: { label: '挑战', pairs: 15, cols: 6 }
-}
+const DIFFS = computed(() => ({
+  easy: { label: t('buildingMatch.easy'), pairs: 6, cols: 4 },
+  normal: { label: t('buildingMatch.normal'), pairs: 10, cols: 5 },
+  hard: { label: t('buildingMatch.hard'), pairs: 15, cols: 6 }
+}))
 /** 卡背图加载失败记录（弱网/校外环境回退到 emoji 卡片） */
 const broken = ref([])
 onMounted(() => {
@@ -53,7 +53,7 @@ onMounted(() => {
   })
 })
 const diff = ref('easy')
-const activePairs = computed(() => PAIRS.slice(0, DIFFS[diff.value].pairs))
+const activePairs = computed(() => PAIRS.slice(0, DIFFS.value[diff.value].pairs))
 
 function shuffle(arr) {
   const a = [...arr]
@@ -245,7 +245,7 @@ function restart() {
           <span class="card-label" :class="{ new: c.newName }">{{ c.label }}</span>
         </template>
         <template v-else>
-          <span class="card-badge">青大</span>
+          <span class="card-badge">{{ t('buildingMatch.badge') }}</span>
         </template>
       </button>
     </div>

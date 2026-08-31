@@ -20,10 +20,13 @@ const stats = ref(EMPTY_STATS)
 const loading = ref(true)
 const staticMode = isStaticMode()
 
-/** appId → 中文名 */
-const APP_NAMES = Object.fromEntries(apps.map((a) => [a.id, a.title]))
-APP_NAMES.home = '首页'
-const appName = (id) => APP_NAMES[id] || id
+/** appId → display name */
+const APP_NAMES = computed(() => {
+  const m = Object.fromEntries(apps.map((a) => [a.id, lang.value === 'en' ? a.titleEn || a.title : a.title]))
+  m.home = t('siteStats.homeApp')
+  return m
+})
+const appName = (id) => APP_NAMES.value[id] || id
 
 const max7 = computed(() => Math.max(1, ...stats.value.week.map((w) => w.pv)))
 const maxHour = computed(() => Math.max(1, ...stats.value.hours.map((h) => h.v)))
@@ -39,28 +42,28 @@ const chartTypes = ref({ week: 'bar', hour: 'bar', week2: 'bar', device: 'bar', 
 /* 近 7 天 / 24h 折线（可选） */
 const weekLine = computed(() => ({
   labels: stats.value.week.map((w) => w.label),
-  series: [{ label: '访问', color: '#0891b2', data: stats.value.week.map((w) => w.pv) }]
+  series: [{ label: t('siteStats.visitsLabel'), color: '#0891b2', data: stats.value.week.map((w) => w.pv) }]
 }))
 const hourLine = computed(() => ({
   labels: stats.value.hours.map((h) => h.label),
-  series: [{ label: '访问', color: '#7c3aed', data: stats.value.hours.map((h) => h.v) }]
+  series: [{ label: t('siteStats.visitsLabel'), color: '#7c3aed', data: stats.value.hours.map((h) => h.v) }]
 }))
 
 /* 自动洞察（一眼看懂数据） */
 const insights = computed(() => {
   const arr = []
   const peakHour = maxItem(stats.value.hours, 'label')
-  if (peakHour) arr.push(`访问高峰集中在 ${peakHour.label}，占全天 ${pctOf(stats.value.hours, peakHour.v)}%`)
+  if (peakHour) arr.push(t('siteStats.peakHour', `访问高峰集中在 ${peakHour.label}，占全天 ${pctOf(stats.value.hours, peakHour.v)}%`).replace('{n}', peakHour.label).replace('{pct}', pctOf(stats.value.hours, peakHour.v)))
   const topDay = maxItem(stats.value.weekdays, 'label')
-  if (topDay) arr.push(`一周中 ${topDay.label} 访问最多（${topDay.v} 次）`)
+  if (topDay) arr.push(t('siteStats.topDay', `一周中 ${topDay.label} 访问最多（${topDay.v} 次）`).replace('{n}', topDay.label).replace('{v}', topDay.v))
   const topDev = maxItem(stats.value.devices, 'name')
-  if (topDev) arr.push(`主力设备是「${topDev.name}」，占 ${pctOf(stats.value.devices, topDev.v)}%`)
+  if (topDev) arr.push(t('siteStats.topDevice', `主力设备是「${topDev.name}」，占 ${pctOf(stats.value.devices, topDev.v)}%`).replace('{n}', topDev.name).replace('{pct}', pctOf(stats.value.devices, topDev.v)))
   const topOs = maxItem(stats.value.os, 'name')
-  if (topOs) arr.push(`最常见系统：${topOs.name}（${pctOf(stats.value.os, topOs.v)}%）`)
+  if (topOs) arr.push(t('siteStats.topOs', `最常见系统：${topOs.name}（${pctOf(stats.value.os, topOs.v)}%）`).replace('{n}', topOs.name).replace('{pct}', pctOf(stats.value.os, topOs.v)))
   const topRef = maxItem(stats.value.refs, 'name')
-  if (topRef) arr.push(`主要来源：${topRef.name}`)
+  if (topRef) arr.push(t('siteStats.topRef', `主要来源：${topRef.name}`).replace('{n}', topRef.name))
   const topApp = stats.value.apps[0]
-  if (topApp) arr.push(`最常用应用：${appName(topApp.name)}（${topApp.v} 次）`)
+  if (topApp) arr.push(t('siteStats.topApp', `最常用应用：${appName(topApp.name)}（${topApp.v} 次）`).replace('{n}', appName(topApp.name)).replace('{v}', topApp.v))
   return arr
 })
 
@@ -83,7 +86,7 @@ onMounted(async () => {
 
   <template v-else>
     <div v-if="staticMode" class="snapshot-tip">
-      📌 计数服务免费额度超限暂停中，当前展示 {{ stats.generatedAt || '最近一次' }} 的快照数据；服务恢复后将自动回到实时统计
+      {{ t('siteStats.snapshotTip', '📌 计数服务免费额度超限暂停中，当前展示 ' + (stats.generatedAt || '最近一次') + ' 的快照数据；服务恢复后将自动回到实时统计').replace('{time}', stats.generatedAt || '最近一次') }}
     </div>
     <div class="kpi-grid">
       <KpiCard icon="👀" :value="stats.uv" :label="t('siteStats.uv')" />
@@ -122,9 +125,9 @@ onMounted(async () => {
         <div class="section-head" style="align-items:center;margin:0 0 12px;">
           <h3 class="section-title" style="margin:0;"><span class="bar"></span>{{ t('siteStats.hourTitle') }}</h3>
           <div class="chart-type">
-            <button class="tab" :class="{ active: chartTypes.hour === 'bar' }" @click="chartTypes.hour = 'bar'">▥ 柱状</button>
-            <button class="tab" :class="{ active: chartTypes.hour === 'line' }" @click="chartTypes.hour = 'line'">📈 折线</button>
-            <button class="tab" :class="{ active: chartTypes.hour === 'pie' }" @click="chartTypes.hour = 'pie'">◔ 圆饼</button>
+            <button class="tab" :class="{ active: chartTypes.hour === 'bar' }" @click="chartTypes.hour = 'bar'">{{ t('siteStats.chartBar') }}</button>
+            <button class="tab" :class="{ active: chartTypes.hour === 'line' }" @click="chartTypes.hour = 'line'">{{ t('siteStats.chartLine') }}</button>
+            <button class="tab" :class="{ active: chartTypes.hour === 'pie' }" @click="chartTypes.hour = 'pie'">{{ t('siteStats.chartPie') }}</button>
           </div>
         </div>
         <div v-if="stats.hours.length">
@@ -137,7 +140,7 @@ onMounted(async () => {
           <LineChart v-else-if="chartTypes.hour === 'line'" :series="hourLine.series" :labels="hourLine.labels" :height="150" :max-width="560" />
           <PieChart v-else :segments="stats.hours.map((h) => ({ name: h.label, icon: '', v: h.v }))" :total="sumArr(stats.hours)" />
         </div>
-        <p v-else class="muted" style="text-align:center;padding:10px;">暂无数据</p>
+        <p v-else class="muted" style="text-align:center;padding:10px;">{{ t('siteStats.noData') }}</p>
       </div>
 
       <div class="panel">
@@ -158,7 +161,7 @@ onMounted(async () => {
           </div>
           <PieChart v-else :segments="stats.weekdays.map((d) => ({ name: d.label, icon: '', v: d.v }))" :total="sumArr(stats.weekdays)" />
         </div>
-        <p v-else class="muted" style="text-align:center;padding:10px;">暂无数据</p>
+        <p v-else class="muted" style="text-align:center;padding:10px;">{{ t('siteStats.noData') }}</p>
       </div>
     </div>
 
@@ -181,7 +184,7 @@ onMounted(async () => {
           </div>
           <PieChart v-else :segments="stats.devices.map((d) => ({ name: d.name, icon: '', v: d.v }))" :total="sumArr(stats.devices)" />
         </div>
-        <p v-else class="muted" style="text-align:center;padding:10px;">暂无数据</p>
+        <p v-else class="muted" style="text-align:center;padding:10px;">{{ t('siteStats.noData') }}</p>
       </div>
 
       <div class="panel">
@@ -202,7 +205,7 @@ onMounted(async () => {
           </div>
           <PieChart v-else :segments="stats.os.map((d) => ({ name: d.name, icon: '', v: d.v }))" :total="sumArr(stats.os)" />
         </div>
-        <p v-else class="muted" style="text-align:center;padding:10px;">暂无数据</p>
+        <p v-else class="muted" style="text-align:center;padding:10px;">{{ t('siteStats.noData') }}</p>
       </div>
     </div>
 
@@ -225,7 +228,7 @@ onMounted(async () => {
           </div>
           <PieChart v-else :segments="stats.refs.map((d) => ({ name: d.name, icon: '', v: d.v }))" :total="sumArr(stats.refs)" />
         </div>
-        <p v-else class="muted" style="text-align:center;padding:10px;">暂无数据</p>
+        <p v-else class="muted" style="text-align:center;padding:10px;">{{ t('siteStats.noData') }}</p>
       </div>
 
       <div class="panel">
@@ -247,7 +250,7 @@ onMounted(async () => {
           </div>
           <PieChart v-else :segments="stats.apps.map((a) => ({ name: appName(a.name), icon: '', v: a.v }))" :total="sumArr(stats.apps)" />
         </div>
-        <p v-else class="muted" style="text-align:center;padding:10px;">暂无数据 · 打开应用后会自动记录</p>
+        <p v-else class="muted" style="text-align:center;padding:10px;">{{ t('siteStats.noDataOpen') }}</p>
       </div>
     </div>
 
@@ -258,20 +261,20 @@ onMounted(async () => {
       <div v-if="stats.likes.length">
         <BarRow v-for="(l, i) in stats.likes.slice(0, 8)" :key="l.name" :label="(i + 1) + '. ' + appName(l.name)" :value="l.v" :max="maxBar(stats.likes)" :text="String(l.v) + ' 👍'" color="linear-gradient(90deg,#be185d,#ec4899)" />
       </div>
-      <p v-else class="muted" style="text-align:center;padding:10px;">暂无点赞 · 回首页给喜欢的应用点个赞吧</p>
+      <p v-else class="muted" style="text-align:center;padding:10px;">{{ t('siteStats.noLikes') }}</p>
     </div>
 
     <div class="panel">
-      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>ℹ️ 关于本站统计与点赞</div>
+      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('siteStats.aboutStats') }}</div>
       <div class="muted" style="font-size:12px;line-height:1.9;">
-        · 本站为纯静态网站（GitHub Pages），统计与点赞由自建独立计数服务提供（Deno Deploy 免费额度），不采集个人信息，仅使用匿名访客 ID。<br>
-        · 因免费额度有限，访问上报采用「每会话每应用一次」节流，累计访问（PV）会略低于实际点击，独立访客（UV）、应用热度与点赞数不受影响。<br>
-        · 点赞数由服务端累计、可跨浏览器同步；计数服务不可达时页面会如实显示「—」或本地点赞状态。<br>
-        <template v-if="staticMode">· 当前计数服务免费额度超限暂停中：本页与首页统计展示的是最近一次快照数据，点赞仅保存在本机浏览器，服务恢复后自动回到实时统计。</template>
+        {{ t('siteStats.aboutNote1') }}<br>
+        {{ t('siteStats.aboutNote2') }}<br>
+        {{ t('siteStats.aboutNote3') }}<br>
+        <template v-if="staticMode">{{ t('siteStats.snapshotNote') }}</template>
       </div>
     </div>
 
-    <p class="muted" style="font-size:12px;text-align:center;padding-bottom:6px;">仅统计访问聚合数据（不含个人身份信息），数据存于本站自建计数服务</p>
+    <p class="muted" style="font-size:12px;text-align:center;padding-bottom:6px;">{{ t('siteStats.privacyNote') }}</p>
   </template>
 </template>
 

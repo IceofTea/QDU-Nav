@@ -8,6 +8,8 @@ import { ref, computed, onMounted } from 'vue'
 import { SITE } from '../config/site'
 import { visitorId } from '../utils/visitor'
 import { getSiteStats, isStaticMode } from '../api/siteStats'
+import { useI18n } from '../i18n'
+const { t, lang } = useI18n()
 
 const STORAGE_KEY = 'qdu-nav-visit-v1'
 const REPORT_KEY = 'qdu-nav-visit-reported'
@@ -91,22 +93,22 @@ onMounted(refresh)
     <div class="vs-grid">
       <div class="vs-card">
         <span class="vs-icon">👀</span>
-        <div class="vs-cell"><span class="vs-num">{{ uvText }}</span><span class="vs-label">独立访客</span></div>
+        <div class="vs-cell"><span class="vs-num">{{ uvText }}</span><span class="vs-label">{{ t('visitStats.uv') }}</span></div>
       </div>
       <div class="vs-card">
         <span class="vs-icon">📈</span>
-        <div class="vs-cell"><span class="vs-num">{{ pvText }}</span><span class="vs-label">累计访问</span></div>
+        <div class="vs-cell"><span class="vs-num">{{ pvText }}</span><span class="vs-label">{{ t('visitStats.pv') }}</span></div>
       </div>
       <div class="vs-card">
         <span class="vs-icon">📅</span>
-        <div class="vs-cell"><span class="vs-num">{{ todayUvText }}</span><span class="vs-label">今日访客</span></div>
+        <div class="vs-cell"><span class="vs-num">{{ todayUvText }}</span><span class="vs-label">{{ t('visitStats.todayUv') }}</span></div>
       </div>
       <div class="vs-card">
         <span class="vs-icon">⚡</span>
-        <div class="vs-cell"><span class="vs-num">{{ todayPvText }}</span><span class="vs-label">今日访问</span></div>
+        <div class="vs-cell"><span class="vs-num">{{ todayPvText }}</span><span class="vs-label">{{ t('visitStats.todayPv') }}</span></div>
       </div>
     </div>
-    <div class="vs-note">{{ STATIC_MODE ? '本站累计 · 快照数据（计数服务恢复前）' : '本站累计 · 自建独立计数' }}</div>
+    <div class="vs-note">{{ STATIC_MODE ? t('visitStats.staticNote') : t('visitStats.liveNote') }}</div>
   </div>
 </template>
 

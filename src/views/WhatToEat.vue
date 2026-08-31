@@ -14,12 +14,18 @@ const filter = ref('全部')
 const showAll = ref(false)
 const campusFilter = ref('全部')
 
-const CAMPUSES = ['全部', '浮山校区', '金家岭校区', '松山校区']
+const CAMPUSES = computed(() => lang.value === 'en'
+  ? ['All', 'Fushan', 'Jinjialing', 'Songshan']
+  : ['全部', '浮山校区', '金家岭校区', '松山校区'])
 
-const tags = computed(() => ['全部', ...new Set(foods.map(f => f.tag))])
+const CAMPUS_VALUES = ['全部', '浮山校区', '金家岭校区', '松山校区']
+
+const tags = computed(() => [t('whatToEat.all'), ...new Set(foods.map(f => f.tag))])
+
+const ALL_TAG = computed(() => t('whatToEat.all'))
 
 const filtered = computed(() => {
-  if (filter.value === '全部') return foods
+  if (filter.value === ALL_TAG.value || filter.value === '全部') return foods
   return foods.filter(f => f.tag === filter.value)
 })
 
@@ -71,15 +77,15 @@ onMounted(() => {
   <div class="panel" style="margin-bottom:16px;text-align:center;">
     <div class="tab-row" style="justify-content:center;margin-bottom:14px;">
       <button
-        v-for="c in CAMPUSES"
-        :key="c"
+        v-for="(raw, i) in CAMPUS_VALUES"
+        :key="raw"
         class="tab"
-        :class="{ active: campusFilter === c }"
-        @click="setCampus(c)"
-      >{{ c }}</button>
+        :class="{ active: campusFilter === raw }"
+        @click="setCampus(raw)"
+      >{{ CAMPUSES[i] }}</button>
     </div>
     <div class="muted" style="font-size:13px;margin-bottom:14px;">
-      {{ t('whatToEat.recommend3') }}<template v-if="campusFilter !== 'all'">（{{ t('whatToEat.onlyCampus') }} {{ campusFilter }}）</template>
+      {{ t('whatToEat.recommend3') }}<template v-if="campusFilter !== '全部'">（{{ t('whatToEat.onlyCampus') }} {{ campusFilter }}）</template>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;">
       <div v-for="(f, i) in picks" :key="i" class="food-card">
@@ -113,12 +119,12 @@ onMounted(() => {
     </div>
     <div class="tab-row">
       <button
-        v-for="t in tags"
-        :key="t"
+        v-for="tagName in tags"
+        :key="tagName"
         class="tab"
-        :class="{ active: filter === t }"
-        @click="filter = t"
-      >{{ t }}</button>
+        :class="{ active: filter === tagName }"
+        @click="filter = tagName"
+      >{{ tagName }}</button>
     </div>
     <div v-if="showAll" style="overflow-x:auto;">
       <table class="data">

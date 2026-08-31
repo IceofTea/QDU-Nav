@@ -125,7 +125,7 @@ onMounted(loadAll)
     </div>
 
     <div class="muted" style="font-size:12px;">
-      {{ t('campusNews.sourceLink') }}<a class="link" href="https://jwc.qdu.edu.cn" target="_blank" rel="noopener">青岛大学教务处 jwc.qdu.edu.cn</a>
+      {{ t('campusNews.sourceLink') }}<a class="link" href="https://jwc.qdu.edu.cn" target="_blank" rel="noopener">{{ t('campusNews.footerSource') }}</a>
     </div>
   </template>
 </template>

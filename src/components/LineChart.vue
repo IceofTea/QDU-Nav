@@ -5,6 +5,8 @@
  *  - 鼠标悬浮实时跟随显示「水平辅助线 + 数据点高亮 + 数值提示」
  *  props: series [{ label, color, data }], labels, height, unit, valuePrefix, maxWidth(px, 0=不限) */
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from '../i18n'
+const { t, lang } = useI18n()
 
 const props = defineProps({
   series: { type: Array, default: () => [] },
@@ -56,7 +58,7 @@ const ticks = computed(() => {
 })
 const fmtVal = (v) => {
   const n = Math.round(v * 100) / 100
-  if (n >= 100000) return (n / 10000).toFixed(1) + '万'
+  if (n >= 100000) return (n / 10000).toFixed(1) + t('common.unitWan')
   if (n >= 1000) return (n / 1000).toFixed(1) + 'k'
   return String(n % 1 === 0 ? n : n.toFixed(1))
 }

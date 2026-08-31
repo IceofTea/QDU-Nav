@@ -5,6 +5,8 @@
  *  - 中心显示合计；数据为空时提示
  *  props: segments [{ name, icon, v }], total, valuePrefix, legendValue, centerValue */
 import { ref, computed } from 'vue'
+import { useI18n } from '../i18n'
+const { t, lang } = useI18n()
 
 const props = defineProps({
   segments: { type: Array, default: () => [] },
@@ -51,7 +53,7 @@ const fmt = (n) => (n % 1 === 0 ? String(n) : n.toFixed(2))
         <svg :viewBox="`0 0 220 220`" class="pie-svg">
           <path v-for="(s, i) in segs" :key="s.name" :d="arcPath(s.from, s.to)" :fill="s.color" class="slice" :class="{ hi: hover === i }" @mouseenter="hover = i" @mouseleave="hover = -1" />
           <circle :cx="CX" :cy="CY" r="56" fill="var(--card)" />
-          <text :x="CX" :y="CY - 4" text-anchor="middle" class="pie-label">{{ centerValue ? '合计' : '总计' }}</text>
+          <text :x="CX" :y="CY - 4" text-anchor="middle" class="pie-label">{{ centerValue ? t('common.total') : '总计' }}</text>
           <text :x="CX" :y="CY + 16" text-anchor="middle" class="pie-center">{{ centerValue ? valuePrefix + fmt(sum) : '—' }}</text>
         </svg>
         <div v-if="tip" class="pie-tip">
@@ -67,7 +69,7 @@ const fmt = (n) => (n % 1 === 0 ? String(n) : n.toFixed(2))
         </button>
       </div>
     </template>
-    <p v-else class="muted" style="text-align:center;padding:16px 4px;font-size:12px;">暂无分布数据</p>
+    <p v-else class="muted" style="text-align:center;padding:16px 4px;font-size:12px;">{{ t('common.noDist') }}</p>
   </div>
 </template>
 

@@ -12,9 +12,9 @@ const live = ref(null)
 const loading = ref(true)
 const openFood = ref(null)
 
-const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+const dayNames = computed(() => lang.value === 'en' ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] : ['周日', '周一', '周二', '周三', '周四', '周五', '周六'])
 const now = new Date()
-const today = dayNames[now.getDay()]
+const today = computed(() => dayNames.value[now.getDay()])
 const hm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0')
 
 onMounted(async () => {
@@ -51,16 +51,15 @@ const isFlavorOpen = computed(() => {
   return t >= 390 && t <= 1290
 })
 const mealTag = computed(() => {
-  // 按小时档划分供餐时段（0.5 步长代表半小时边界）
   const h = now.getHours()
-  if (h < 6) return { t: '未营业', open: false }
-  if (h < 9) return { t: '早餐时段', open: true }
-  if (h < 10) return { t: '非供餐时段', open: false }
-  if (h < 13.5) return { t: '午餐时段', open: true }
-  if (h < 16.5) return { t: '非供餐时段', open: false }
-  if (h < 19) return { t: '晚餐时段', open: true }
-  if (h < 21.5) return { t: '风味持续供餐', open: true }
-  return { t: '已过供餐时段', open: false }
+  if (h < 6) return { t: t('canteen.notOpen'), open: false }
+  if (h < 9) return { t: t('canteen.breakfast'), open: true }
+  if (h < 10) return { t: t('canteen.offHours'), open: false }
+  if (h < 13.5) return { t: t('canteen.lunch'), open: true }
+  if (h < 16.5) return { t: t('canteen.offHours'), open: false }
+  if (h < 19) return { t: t('canteen.dinner'), open: true }
+  if (h < 21.5) return { t: t('canteen.flavorOpen'), open: true }
+  return { t: t('canteen.closed'), open: false }
 })
 const openCount = computed(() => list.value.filter((c) => (c.type === 'basic' ? basicOpen() : isFlavorOpen.value)).length)
 
@@ -140,7 +139,7 @@ function toggleFood(name) {
           <span v-for="f in c.foods" :key="f" class="food-chip">{{ f }}</span>
         </div>
       </div>
-      <div v-if="live && live.updatedAt" class="muted" style="font-size: 11px; margin-top: 8px">最近更新：{{ live.updatedAt }}</div>
+      <div v-if="live && live.updatedAt" class="muted" style="font-size: 11px; margin-top: 8px">{{ t('canteen.lastUpdate') }}{{ live.updatedAt }}</div>
     </div>
 
     <div class="source-bar" style="margin-top: 14px">

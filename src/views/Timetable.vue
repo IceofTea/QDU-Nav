@@ -56,7 +56,7 @@ const curRows = computed(() => termRows.value)
 const rooms = computed(() => [...new Set(curRows.value.map((r) => r.r && normRoom(r.r)).filter(Boolean))].sort())
 const teachers = computed(() => [...new Set(curRows.value.map((r) => r.t).filter(Boolean))])
 
-const sourceName = computed(() => (tab.value === 'class' ? '班级' : tab.value === 'room' ? '教室' : '教师'))
+const sourceName = computed(() => (tab.value === 'class' ? t('timetable.class') : tab.value === 'room' ? t('timetable.classroom') : t('timetable.teacher')))
 
 const singleClasses = computed(() => {
   const set = new Set()
@@ -280,26 +280,26 @@ onMounted(loadCourses)
 
   <template v-else-if="opened">
     <div class="view-top" style="padding-top:0;">
-      <button class="back-btn" @click="opened = null">← 返回查询</button>
+      <button class="back-btn" @click="opened = null">← {{ t('timetable.backQuery') }}</button>
       <div class="view-title">{{ opened.name }}</div>
-      <div class="view-sub">{{ sourceName }}课表 · {{ term || semester }} · 共 {{ opened.count }} 门</div>
+      <div class="view-sub">{{ sourceName }}{{ t('timetable.courseSchedule') }} · {{ term || semester }} · {{ t('common.all') }} {{ opened.count }} {{ t('timetable.totalCourses') }}</div>
     </div>
     <div class="panel" style="margin-bottom:12px;">
-      <div class="muted" style="font-size:12px;margin-bottom:6px;">按周次筛选（默认显示全部周次）</div>
+      <div class="muted" style="font-size:12px;margin-bottom:6px;">{{ t('timetable.weekFilterHint') }}</div>
       <div class="tab-row" style="flex-wrap:wrap;gap:6px;">
-        <button class="tab" :class="{ active: weekFilter === '' }" @click="weekFilter = ''">全部</button>
-        <button v-for="w in weekOptions" :key="w" class="tab" :class="{ active: weekFilter === String(w) }" @click="weekFilter = String(w)">第{{ w }}周</button>
+        <button class="tab" :class="{ active: weekFilter === '' }" @click="weekFilter = ''">{{ t('timetable.allWeeks') }}</button>
+        <button v-for="w in weekOptions" :key="w" class="tab" :class="{ active: weekFilter === String(w) }" @click="weekFilter = String(w)">{{ t('timetable.weekLabel', { n: w }) }}</button>
       </div>
       <div class="tab-row" style="flex-wrap:wrap;gap:6px;margin-top:10px;">
-        <button class="tab" :class="{ active: viewMode === 'grid' }" @click="viewMode = 'grid'">📅 周视图</button>
-        <button class="tab" :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'">📋 列表视图</button>
-        <span class="muted" style="font-size:12px;margin-left:auto;">手机建议用列表视图，点课程看详情</span>
+        <button class="tab" :class="{ active: viewMode === 'grid' }" @click="viewMode = 'grid'">{{ t('timetable.gridView') }}</button>
+        <button class="tab" :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'">{{ t('timetable.listViewBtn') }}</button>
+        <span class="muted" style="font-size:12px;margin-left:auto;">{{ t('timetable.mobileTip') }}</span>
       </div>
     </div>
     <div class="panel">
       <div v-if="viewMode === 'grid'" class="week-grid">
         <div class="wg-head-row">
-          <div class="wg-head wg-time-col">节次</div>
+          <div class="wg-head wg-time-col">{{ t('timetable.periodHeader') }}</div>
           <div v-for="d in dayNames" :key="d" class="wg-head">{{ d }}</div>
         </div>
         <div class="wg-body">
@@ -310,7 +310,7 @@ onMounted(loadCourses)
             <div v-for="co in dayCourses(i + 1)" :key="co.c + co.s + co.r" class="wg-cell" :style="posStyle(co)" @click="showCourse(co)">
               <b>{{ co.c }}</b>
               <div class="wg-sub">{{ subOf(co) }}</div>
-              <div class="wg-sub muted">{{ co.campus && co.campus !== '未标注' ? co.campus + ' · ' : '' }}第{{ co.w }}周</div>
+              <div class="wg-sub muted">{{ co.campus && co.campus !== '未标注' ? co.campus + ' · ' : '' }}{{ t('timetable.weekLabel', { n: co.w }) }}</div>
             </div>
           </div>
         </div>
@@ -320,7 +320,7 @@ onMounted(loadCourses)
         <div v-for="(d, i) in dayNames" :key="d" class="wg-list-day">
           <div v-if="dayCourses(i + 1).length" class="wg-list-dayname">{{ d }}</div>
           <button v-for="co in dayCourses(i + 1)" :key="co.c + co.s + co.r" class="wg-list-item" @click="showCourse(co)">
-            <span class="wg-li-time">{{ co.s }}–{{ co.e }} 节</span>
+            <span class="wg-li-time">{{ co.s }}–{{ co.e }} {{ t('timetable.periodRange') }}</span>
             <span class="wg-li-main">
               <b>{{ co.c }}</b>
               <span class="wg-li-sub">{{ subOf(co) }}</span>
@@ -329,7 +329,7 @@ onMounted(loadCourses)
             <span class="wg-li-go">›</span>
           </button>
         </div>
-        <p v-if="!Object.values(opened.days).flat().length" class="muted" style="padding:14px;text-align:center;">该学期暂无排课</p>
+        <p v-if="!Object.values(opened.days).flat().length" class="muted" style="padding:14px;text-align:center;">{{ t('timetable.noClass') }}</p>
       </div>
     </div>
 
@@ -339,15 +339,15 @@ onMounted(loadCourses)
           <div class="course-detail-title">{{ detail.c }}</div>
           <button class="overlay-close" @click="detail = null">✕</button>
         </div>
-        <div class="course-detail-row"><span>教师</span><b>{{ detail.t || '—' }}</b></div>
-        <div class="course-detail-row"><span>教室</span><b>{{ detail.r || '—' }}</b></div>
-        <div class="course-detail-row"><span>班级</span><b>{{ detail.cls || '—' }}</b></div>
-        <div class="course-detail-row"><span>时间</span><b>{{ dayLabel(detail.d) }} · 第 {{ detail.s }}–{{ detail.e }} 节</b></div>
-        <div class="course-detail-row"><span>周次</span><b>第 {{ detail.w }} 周</b></div>
-        <div v-if="detail.campus && detail.campus !== '未标注'" class="course-detail-row"><span>校区</span><b>{{ detail.campus }}</b></div>
-        <div v-if="detail.cat" class="course-detail-row"><span>类别</span><b>{{ detail.cat }}</b></div>
-        <div v-if="detail.credit" class="course-detail-row"><span>学分</span><b>{{ detail.credit }}</b></div>
-        <button class="btn accent" style="width:100%;margin-top:14px;" @click="detail = null">知道了</button>
+        <div class="course-detail-row"><span>{{ t('timetable.detailTeacher') }}</span><b>{{ detail.t || '—' }}</b></div>
+        <div class="course-detail-row"><span>{{ t('timetable.detailClassroom') }}</span><b>{{ detail.r || '—' }}</b></div>
+        <div class="course-detail-row"><span>{{ t('timetable.detailClass') }}</span><b>{{ detail.cls || '—' }}</b></div>
+        <div class="course-detail-row"><span>{{ t('timetable.detailTime') }}</span><b>{{ dayLabel(detail.d) }} · {{ t('timetable.period') }} {{ detail.s }}–{{ detail.e }}</b></div>
+        <div class="course-detail-row"><span>{{ t('timetable.detailWeek') }}</span><b>{{ t('timetable.weekLabel', { n: detail.w }) }}</b></div>
+        <div v-if="detail.campus && detail.campus !== '未标注'" class="course-detail-row"><span>{{ t('timetable.detailCampus') }}</span><b>{{ detail.campus }}</b></div>
+        <div v-if="detail.cat" class="course-detail-row"><span>{{ t('timetable.detailCategory') }}</span><b>{{ detail.cat }}</b></div>
+        <div v-if="detail.credit" class="course-detail-row"><span>{{ t('timetable.detailCredit') }}</span><b>{{ detail.credit }}</b></div>
+        <button class="btn accent" style="width:100%;margin-top:14px;" @click="detail = null">{{ t('timetable.detailOk') }}</button>
       </div>
     </div>
   </template>
@@ -356,31 +356,31 @@ onMounted(loadCourses)
     <div class="panel" style="margin-bottom:16px;">
       <div class="source-bar" style="flex-wrap:wrap;">
         <i class="dot live"></i>
-        {{ term || semester }} · {{ singleClasses.length }} 个班级 · {{ rooms.length }} 间教室 · {{ teachers.length }} 位教师
+        {{ term || semester }} · {{ singleClasses.length }} {{ t('timetable.classCount') }} · {{ rooms.length }} {{ t('timetable.roomCount') }} · {{ teachers.length }} {{ t('timetable.teacherCount') }}
         <span class="sep">·</span>
-        <span>数据更新于 {{ snap?.updatedAt ? fmtTime(snap.updatedAt) : '—' }}</span>
+        <span>{{ t('timetable.dataUpdate') }} {{ snap?.updatedAt ? fmtTime(snap.updatedAt) : '—' }}</span>
       </div>
       <div v-if="semesters.length > 1" class="tab-row" style="margin-top:10px;">
         <button v-for="t in semesters" :key="t" class="tab" :class="{ active: term === t }" @click="switchTerm(t)">{{ t }}</button>
       </div>
       <div class="tab-row" style="margin-top:10px;">
-        <button class="tab" :class="{ active: tab === 'class' }" @click="switchTab('class')">班级课表</button>
-        <button class="tab" :class="{ active: tab === 'room' }" @click="switchTab('room')">教室课表</button>
-        <button class="tab" :class="{ active: tab === 'teacher' }" @click="switchTab('teacher')">教师课表</button>
+        <button class="tab" :class="{ active: tab === 'class' }" @click="switchTab('class')">{{ t('timetable.classTab') }}</button>
+        <button class="tab" :class="{ active: tab === 'room' }" @click="switchTab('room')">{{ t('timetable.roomTab') }}</button>
+        <button class="tab" :class="{ active: tab === 'teacher' }" @click="switchTab('teacher')">{{ t('timetable.teacherTab') }}</button>
       </div>
       <div class="input-row" style="margin-top:12px;">
-        <input class="input" v-model="kw" :placeholder="'搜索' + sourceName + '（中文）'" @keyup.enter="resultItems[0] && open(resultItems[0].name)" />
+        <input class="input" v-model="kw" :placeholder="t('timetable.searchPlaceholder') + sourceName" @keyup.enter="resultItems[0] && open(resultItems[0].name)" />
       </div>
       <div class="muted" style="font-size:12px;margin-top:6px;">
-        可直接点选下方{{ sourceName }}，或用关键字搜索。例如班级「23高材」、教室「博学楼307」。
+        {{ t('timetable.searchHint') }}{{ sourceName }}{{ t('timetable.searchHint2') }}
       </div>
       <template v-if="tab === 'class'">
         <div class="tab-row" style="flex-wrap:wrap;gap:6px;margin-top:10px;">
-          <button class="tab" :class="{ active: gradeFilter === '' }" @click="gradeFilter = ''">全部年级</button>
-          <button v-for="y in years" :key="y" class="tab" :class="{ active: gradeFilter === y }" @click="gradeFilter = y">{{ y }}级</button>
+          <button class="tab" :class="{ active: gradeFilter === '' }" @click="gradeFilter = ''">{{ t('timetable.allGrades') }}</button>
+          <button v-for="y in years" :key="y" class="tab" :class="{ active: gradeFilter === y }" @click="gradeFilter = y">{{ t('timetable.gradeLabel', { y }) }}</button>
         </div>
         <div class="tab-row" style="flex-wrap:wrap;gap:6px;margin-top:8px;">
-          <button class="tab" :class="{ active: profFilter === '' }" @click="profFilter = ''">全部专业</button>
+          <button class="tab" :class="{ active: profFilter === '' }" @click="profFilter = ''">{{ t('timetable.allProfs') }}</button>
           <button v-for="p in profs" :key="p" class="tab" :class="{ active: profFilter === p }" @click="profFilter = p">{{ p }}</button>
         </div>
       </template>
@@ -388,52 +388,52 @@ onMounted(loadCourses)
 
     <div class="panel">
       <div class="muted" style="font-size:12px;margin-bottom:8px;">
-        共 {{ resultItems.length }} 个{{ sourceName }}（{{ tab === 'class' ? '默认按年级排序，含合班课拆分' : '按名称排序' }}），点击查看周课表{{ resultItems.length > PAGE_SIZE ? ' · 每页 ' + PAGE_SIZE + ' 条' : '' }}
+        {{ t('timetable.resultCount') }} {{ resultItems.length }} {{ t('timetable.resultCount2') }}{{ sourceName }}（{{ tab === 'class' ? t('timetable.defaultSort') : t('timetable.nameSort') }}），{{ t('timetable.viewSchedule') }}{{ resultItems.length > PAGE_SIZE ? ' · ' + t('timetable.perPage') + ' ' + PAGE_SIZE + ' ' + t('timetable.unitItem') : '' }}
       </div>
       <div class="cal-list">
         <button v-for="it in shown" :key="it.name" class="cal-item" style="width:100%;text-align:left;cursor:pointer;border:none;background:none;font-family:inherit;" @click="open(it.name)">
           <span class="cal-title">{{ it.name }}</span>
-          <span class="cal-count">{{ it.count }} 门课</span>
-          <span class="cal-go">查看课表 ›</span>
+          <span class="cal-count">{{ it.count }} {{ t('timetable.courseNum') }}</span>
+          <span class="cal-go">{{ t('timetable.viewSchedule') }}</span>
         </button>
-        <div v-if="!resultItems.length" class="muted" style="padding:16px;text-align:center;">没有匹配的{{ sourceName }}，换个关键字或筛选试试</div>
+        <div v-if="!resultItems.length" class="muted" style="padding:16px;text-align:center;">{{ t('timetable.noMatch') }}{{ sourceName }}{{ t('timetable.tryOther') }}</div>
       </div>
       <div v-if="resultItems.length > PAGE_SIZE" class="pager">
         <button class="tab" :class="{ disabled: page <= 1 || expandAll }" @click="goPage(1)">«</button>
-        <button class="tab" :class="{ disabled: page <= 1 || expandAll }" @click="goPage(page - 1)">‹ 上一页</button>
+        <button class="tab" :class="{ disabled: page <= 1 || expandAll }" @click="goPage(page - 1)">‹ {{ t('timetable.prevPage') }}</button>
         <template v-for="(p, i) in pageNos" :key="i">
           <span v-if="p === '…'" class="pager-ellipsis">…</span>
           <button v-else class="tab" :class="{ active: page === p && !expandAll }" @click="goPage(p)">{{ p }}</button>
         </template>
-        <button class="tab" :class="{ disabled: page >= pageCount || expandAll }" @click="goPage(page + 1)">下一页 ›</button>
+        <button class="tab" :class="{ disabled: page >= pageCount || expandAll }" @click="goPage(page + 1)">{{ t('timetable.nextPage') }} ›</button>
         <button class="tab" :class="{ disabled: page >= pageCount || expandAll }" @click="goPage(pageCount)">»</button>
         <span class="pager-jump">
-          <input class="input" v-model="jumpPage" type="number" min="1" :max="pageCount" placeholder="页" :disabled="expandAll" @keyup.enter="goPage(jumpPage)" />
-          <button class="tab" @click="goPage(jumpPage)">跳转</button>
+          <input class="input" v-model="jumpPage" type="number" min="1" :max="pageCount" :placeholder="t('timetable.pageInput')" :disabled="expandAll" @keyup.enter="goPage(jumpPage)" />
+          <button class="tab" @click="goPage(jumpPage)">{{ t('timetable.pageJump') }}</button>
         </span>
-        <button class="tab accent" :class="{ active: expandAll }" @click="toggleExpand">{{ expandAll ? '收起分页' : '展开全部' }}</button>
+        <button class="tab accent" :class="{ active: expandAll }" @click="toggleExpand">{{ expandAll ? t('timetable.collapseBtn') : t('timetable.expandAllBtn') }}</button>
       </div>
     </div>
   </template>
 
   <div class="panel" style="margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
     <div style="flex:1;min-width:200px;">
-      <div style="font-weight:700;">📖 教务系统 · 个人课表</div>
-      <div class="muted" style="font-size:12px;margin-top:2px;">个人课表需登录教务系统查询（需统一身份认证，无法免登录对接）。</div>
+      <div style="font-weight:700;">{{ t('timetable.officialTitle') }}</div>
+      <div class="muted" style="font-size:12px;margin-top:2px;">{{ t('timetable.officialDesc') }}</div>
     </div>
-    <a class="btn" href="https://xjw.qdu.edu.cn/jsxsd" target="_blank" rel="noopener" style="text-decoration:none;">前往新教务综合系统 ↗</a>
+    <a class="btn" href="https://xjw.qdu.edu.cn/jsxsd" target="_blank" rel="noopener" style="text-decoration:none;">{{ t('timetable.goToJwxt') }}</a>
   </div>
 
   <div class="panel" style="margin-bottom:16px;">
     <div style="display:flex;align-items:center;gap:10px;">
-      <div style="flex:1;font-weight:700;">📄 官方课程总表（教务处公开数据）</div>
-      <button class="refresh-btn" :disabled="coursesLoading" @click="loadCourses(true)">🔄 刷新</button>
+      <div style="flex:1;font-weight:700;">{{ t('timetable.officialCourseTitle') }}</div>
+      <button class="refresh-btn" :disabled="coursesLoading" @click="loadCourses(true)">{{ t('timetable.refresh') }}</button>
     </div>
     <div class="source-bar" style="margin-top:6px;">
       <i class="dot" :class="courses?.cached ? 'off' : 'live'"></i>
-      来源 jwc.qdu.edu.cn
+      {{ t('timetable.source') }}
       <span v-if="courses" class="sep">·</span>
-      <span v-if="courses">抓取于 {{ fmtTime(courses.fetchedAt) }}</span>
+      <span v-if="courses">{{ t('noticeDetail.fetchedAt') }} {{ fmtTime(courses.fetchedAt) }}</span>
     </div>
     <div v-if="coursesLoading" class="skeleton-list" style="margin-top:8px;">
       <div v-for="i in 3" :key="i" class="skeleton-row"><div class="skeleton" style="width:60%;height:16px"></div></div>
@@ -442,10 +442,10 @@ onMounted(loadCourses)
       <a v-for="c in courses.items" :key="c.url" class="cal-item" :href="c.url" target="_blank" rel="noopener">
         <span class="cal-title">{{ c.title }}</span>
         <span class="cal-date">{{ c.date }}</span>
-        <span class="cal-go">官方页 ↗</span>
+        <span class="cal-go">{{ t('timetable.officialPage') }}</span>
       </a>
     </div>
-    <div v-else class="muted" style="padding:14px;text-align:center;">官方课程总表暂不可用，请稍后重试</div>
+    <div v-else class="muted" style="padding:14px;text-align:center;">{{ t('timetable.officialCourseDesc') }}</div>
   </div>
 </template>
 

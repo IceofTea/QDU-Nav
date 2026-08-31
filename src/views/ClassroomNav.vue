@@ -76,7 +76,8 @@ function toggle(b) {
 }
 
 function fallbackRoute(b) {
-  return ['到达青岛大学' + (b.zone ? b.zone + '·' : '') + b.name + '后，参考楼内各层教室分布（见「楼层教室」），或使用下方高德地图定位获取实时导航。']
+  const loc = b.zone ? b.zone + '·' : ''
+  return [t('classroomNav.routeHint').replace('{name}', loc + b.name)]
 }
 </script>
 
@@ -105,7 +106,7 @@ function fallbackRoute(b) {
       <div class="cal-list" style="margin-top:8px;">
         <div v-for="(x, i) in roomSched.schedule" :key="i" class="cal-item">
           <span class="cal-title">{{ x.c }}</span>
-          <span class="cal-date">{{ dayNames[x.d - 1] }} 第{{ x.s }}-{{ x.e }}节 · 第{{ x.w }}周</span>
+          <span class="cal-date">{{ dayNames[x.d - 1] }} {{ t('classroomNav.periodLabel') }}{{ x.s }}-{{ x.e }}{{ t('classroomNav.periodSuffix') }} · {{ t('classroomNav.periodLabel') }}{{ x.w }}{{ t('classroomNav.weekSuffix') }}</span>
           <span class="cal-go">{{ x.cls }} · {{ x.t }}</span>
         </div>
         <div v-if="!roomSched.count" class="muted" style="padding:12px;text-align:center;">{{ t('classroomNav.noSchedule') }}</div>
@@ -114,7 +115,7 @@ function fallbackRoute(b) {
 
     <div class="panel">
       <div v-for="[g, rooms] in emptyGroups" :key="g" style="margin-bottom:16px;">
-        <div style="font-weight:700;margin-bottom:8px;">🏫 {{ g }} <span class="muted" style="font-size:12px;font-weight:400;">{{ rooms.length }} 间</span></div>
+        <div style="font-weight:700;margin-bottom:8px;">🏫 {{ g }} <span class="muted" style="font-size:12px;font-weight:400;">{{ rooms.length }} {{ t('classroomNav.roomCount') }}</span></div>
         <div class="tags">
           <button v-for="r in rooms" :key="r" class="tag tag-btn" @click="selectRoom(r)">{{ r }}</button>
         </div>
@@ -133,7 +134,7 @@ function fallbackRoute(b) {
           <option v-for="(d, i) in dayNames" :key="i" :value="i + 1">{{ d }}</option>
         </select>
         <select class="input" v-model="emptyPeriod">
-          <option v-for="p in 12" :key="p" :value="p">第 {{ p }} 节</option>
+          <option v-for="p in 12" :key="p" :value="p">{{ t('classroomNav.periodLabel') }} {{ p }} {{ t('classroomNav.periodSuffix') }}</option>
         </select>
         <input class="input" v-model="emptyKw" :placeholder="t('classroomNav.buildingPlaceholder')" />
         <button class="btn" :disabled="emptyLoading" @click="goEmpty">{{ emptyLoading ? t('classroomNav.querySearching') : t('classroomNav.queryEmpty') }}</button>

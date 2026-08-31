@@ -19,7 +19,7 @@ const current = computed(() => questions[step.value])
 const progress = computed(() => Math.round((step.value / totalQ) * 100))
 
 const selected = computed(() => answers.value[current.value?.id])
-const LIKERT = ['很不符合', '较不符合', '一般', '较符合', '很符合']
+const LIKERT = computed(() => [t('leaderTest.likert1'), t('leaderTest.likert2'), t('leaderTest.likert3'), t('leaderTest.likert4'), t('leaderTest.likert5')])
 
 function next() {
   if (step.value < totalQ - 1) step.value++
@@ -133,7 +133,10 @@ const whyText = computed(() => {
     .sort((a, b) => a.diff - b.diff)
     .slice(0, 3)
   const topDims = [...DIMS].sort((a, b) => (user.value[b.key] || 0) - (user.value[a.key] || 0)).slice(0, 2)
-  return `最终你最接近 ${best.value.name}，主要因为你在 ${nearest.map((n) => n.label).join('、')} 这几项上与该原型距离最近。整体看，你更偏向 ${topDims.map((t) => t.label).join('、')} 这类风格。`
+  return t('leaderTest.whyText')
+    .replace('{name}', best.value.name)
+    .replace('{dims}', nearest.map((n) => n.label).join(lang.value === 'en' ? ', ' : '、'))
+    .replace('{style}', topDims.map((td) => td.label).join(lang.value === 'en' ? ', ' : '、'))
 })
 
 /** 结果条：用户向量中心化（-1..1）映射回 0-10，与原型 vec 同量纲 */
@@ -197,7 +200,7 @@ const initial = (name) => name.charAt(0)
         <span class="opt-tag">{{ (selected || []).indexOf(i) >= 0 ? (selected || []).indexOf(i) + 1 : String.fromCharCode(65 + i) }}</span>
         <span>{{ o.label }}</span>
       </button>
-      <div class="muted" style="font-size:11px;margin-top:6px;">已选 {{ (selected || []).length }}/{{ current.max || 2 }} · 选好点下方「下一题」</div>
+      <div class="muted" style="font-size:11px;margin-top:6px;">{{ t('leaderTest.selectedMulti').replace('{n}', (selected || []).length).replace('{m}', current.max || 2) }}</div>
     </div>
     <div v-else class="opt-list">
       <button v-for="(o, i) in current.options" :key="i" class="opt-btn" :class="{ active: selected === i }" @click="choose(i)">

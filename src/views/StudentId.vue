@@ -12,7 +12,7 @@ const error = ref('')
 function gotoOfficial() {
   const ksh = form.value.kaoshenghao.trim()
   if (ksh && !/^\d{14}$/.test(ksh)) {
-    error.value = '考生号应为 14 位数字（填错不影响前往，可清空后直接前往官方页面）'
+    error.value = t('studentId.kshError')
     return
   }
   error.value = ''

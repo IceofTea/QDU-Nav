@@ -8,20 +8,21 @@ const { t, lang } = useI18n()
 
 const emit = defineEmits(['back'])
 
-const HUNGRY = { name: '饿着😭', campus: '', zone: '', hall: '' }
+const HUNGRY = { nameKey: 'foodWheel.hungryName', campus: '', zone: '', hall: '' }
 /** 轮盘旋转动画时长（ms），与 .wheel 的 transition 时长保持一致 */
 const SPIN_MS = 3400
 
 const TIERS = [
-  { key: 'free', label: '免费', cost: 0, hungry: 0.55, desc: '大概率饿着' },
-  { key: 'luck', label: '幸运', cost: 2, hungry: 0.3, desc: '小概率饿着' },
-  { key: 'lux', label: '豪华', cost: 5, hungry: 0.15, desc: '基本不饿着' },
-  { key: 'top', label: '至尊', cost: 10, hungry: 0.05, desc: '稳稳吃到' }
+  { key: 'free', labelKey: 'foodWheel.tierFree', cost: 0, hungry: 0.55, descKey: 'foodWheel.tierFreeDesc' },
+  { key: 'luck', labelKey: 'foodWheel.tierLuck', cost: 2, hungry: 0.3, descKey: 'foodWheel.tierLuckDesc' },
+  { key: 'lux', labelKey: 'foodWheel.tierLux', cost: 5, hungry: 0.15, descKey: 'foodWheel.tierLuxDesc' },
+  { key: 'top', labelKey: 'foodWheel.tierTop', cost: 10, hungry: 0.05, descKey: 'foodWheel.tierTopDesc' }
 ]
 
 const colors = ['#1b66c9', '#e76f51', '#0f766e', '#d97706', '#7c3aed', '#b63a46', '#0284c7', '#f43f5e']
 
-const hallSegs = [...halls, { name: HUNGRY.name }]
+const hungryName = computed(() => t(HUNGRY.nameKey))
+const hallSegs = computed(() => [...halls, { name: hungryName.value }])
 
 const balance = ref(0)
 const tier = ref('free')
@@ -34,11 +35,11 @@ const spins = ref(0)
 const history = ref([])
 
 const currentSegs = computed(() => {
-  if (stage.value === 'hall') return hallSegs
+  if (stage.value === 'hall') return hallSegs.value
   const hall = currentHall.value
   if (!hall) return []
   let list = foods.filter((f) => f.hall === hall.name).map((f) => f.name).slice(0, 12)
-  while (list.length < 6) list = list.concat(list.length ? list.slice(0, 6 - list.length) : ['大众窗口'])
+  while (list.length < 6) list = list.concat(list.length ? list.slice(0, 6 - list.length) : [t('foodWheel.hallDefault')])
   return list.map((n) => ({ name: n }))
 })
 
@@ -47,8 +48,8 @@ const gradient = computed(() =>
   currentSegs.value.map((s, i) => `${colors[i % colors.length]} ${i * anglePer.value}deg ${(i + 1) * anglePer.value}deg`).join(', ')
 )
 
-const tierInfo = computed(() => TIERS.find((t) => t.key === tier.value))
-const canUseTier = (t) => balance.value >= t.cost || t.cost === 0
+const tierInfo = computed(() => TIERS.find((ti) => ti.key === tier.value))
+const canUseTier = (ti) => balance.value >= ti.cost || ti.cost === 0
 
 function tierHungry(roll) {
   return Math.random() < roll.hungry
@@ -83,10 +84,10 @@ function spin() {
     spinning.value = false
     const hit = segs[target]
     if (stage.value === 'hall') {
-      if (hit.name === HUNGRY.name) {
-        result.value = { ...HUNGRY, hungry: true }
+      if (hit.name === hungryName.value) {
+        result.value = { ...HUNGRY, hungry: true, name: hungryName.value }
         spins.value += 1
-        pushHistory(null, HUNGRY.name, tier.value)
+        pushHistory(null, hungryName.value, tier.value)
       } else {
         const hall = halls.find((h) => h.name === hit.name)
         currentHall.value = hall
@@ -103,8 +104,8 @@ function spin() {
   }, SPIN_MS)
 }
 
-function pushHistory(hall, dish, t) {
-  history.value.unshift({ at: new Date().toLocaleTimeString(), hall: hall || '—', dish, tier: t })
+function pushHistory(hall, dish, tier) {
+  history.value.unshift({ at: new Date().toLocaleTimeString(), hall: hall || '—', dish, tier })
   history.value = history.value.slice(0, 10)
   localStorage.setItem('qdu_wheel_history', JSON.stringify(history.value))
   sessionStorage.setItem('qdu_wheel_spins', String(spins.value))
@@ -116,8 +117,8 @@ function addBalance(n) {
 }
 
 function pickTier(k) {
-  const t = TIERS.find((x) => x.key === k)
-  if (canUseTier(t)) tier.value = k
+  const ti = TIERS.find((x) => x.key === k)
+  if (canUseTier(ti)) tier.value = k
 }
 
 onMounted(() => {
@@ -144,14 +145,14 @@ const groupedFoods = computed(() => halls.map((h) => ({ ...h, foods: foods.filte
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
       <div class="tier-tabs">
         <button
-          v-for="t in TIERS"
-          :key="t.key"
+          v-for="ti in TIERS"
+          :key="ti.key"
           class="tier-btn"
-          :class="{ active: tier === t.key, disabled: !canUseTier(t) }"
-          :title="t.desc"
-          @click="pickTier(t.key)"
+          :class="{ active: tier === ti.key, disabled: !canUseTier(ti) }"
+          :title="t(ti.descKey)"
+          @click="pickTier(ti.key)"
         >
-          {{ t.label }}{{ t.cost ? ' ' + t.cost + '币' : '' }}
+          {{ t(ti.labelKey) }}{{ ti.cost ? ' ' + ti.cost + t('foodWheel.coinUnit') : '' }}
         </button>
       </div>
       <div class="balance-box">
@@ -160,7 +161,7 @@ const groupedFoods = computed(() => halls.map((h) => ({ ...h, foods: foods.filte
       </div>
     </div>
     <div class="muted" style="font-size:12px;text-align:left;margin-top:6px;">
-      {{ tierInfo.label }}{{ t('foodWheel.tierHint') }}{{ tierInfo.desc }}{{ t('foodWheel.noPayHint') }}
+      {{ t(tierInfo.labelKey) }}{{ t('foodWheel.tierHint') }}{{ t(tierInfo.descKey) }}{{ t('foodWheel.noPayHint') }}
     </div>
 
     <div class="wheel-wrap">
@@ -169,7 +170,7 @@ const groupedFoods = computed(() => halls.map((h) => ({ ...h, foods: foods.filte
     </div>
 
     <div v-if="result" class="result-box" style="text-align:center;">
-      <div class="muted" style="font-size:13px;">{{ result.hungry ? t('foodWheel.hungryResult') : stage === 'dish' ? t('foodWheel.hallResult') : t('foodWheel.恭喜抽中') }}</div>
+      <div class="muted" style="font-size:13px;">{{ result.hungry ? t('foodWheel.hungryResult') : stage === 'dish' ? t('foodWheel.hallResult') : t('foodWheel.dishResult') }}</div>
       <div style="font-size:22px;font-weight:800;margin:4px 0;">{{ result.hungry ? '😭 ' + result.name : '🍽️ ' + result.name }}</div>
       <div v-if="!result.hungry" class="muted" style="font-size:13px;">{{ result.campus }} · {{ result.zone }}</div>
     </div>
