@@ -2,6 +2,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { foods, halls } from '../data/foods'
 import CountUp from '../components/CountUp.vue'
+import { useI18n } from '../i18n'
+
+const { t, lang } = useI18n()
 
 const emit = defineEmits(['back'])
 
@@ -132,9 +135,9 @@ const groupedFoods = computed(() => halls.map((h) => ({ ...h, foods: foods.filte
 
 <template>
   <div class="view-top">
-    <button class="back-btn" @click="emit('back')">← 返回首页</button>
-    <div class="view-title">美食轮盘</div>
-    <div class="view-sub">先转餐厅，再转菜式 · 已抽 <CountUp :value="spins" /> 次</div>
+    <button class="back-btn" @click="emit('back')">{{ t('common.back') }}</button>
+    <div class="view-title">{{ t('foodWheel.title') }}</div>
+    <div class="view-sub">{{ t('foodWheel.subFull') }} <CountUp :value="spins" /> {{ t('foodWheel.spins') }}</div>
   </div>
 
   <div class="panel" style="text-align:center;">
@@ -152,12 +155,12 @@ const groupedFoods = computed(() => halls.map((h) => ({ ...h, foods: foods.filte
         </button>
       </div>
       <div class="balance-box">
-        <b>{{ balance }}</b> 币
-        <button class="btn ghost small" style="margin-left:6px;" @click="addBalance(10)">＋充值 10</button>
+        <b>{{ balance }}</b> {{ t('foodWheel.coins') }}
+        <button class="btn ghost small" style="margin-left:6px;" @click="addBalance(10)">{{ t('foodWheel.recharge') }}</button>
       </div>
     </div>
     <div class="muted" style="font-size:12px;text-align:left;margin-top:6px;">
-      {{ tierInfo.label }}档：{{ tierInfo.desc }}（不充钱大概率抽中「饿着😭」哦）
+      {{ tierInfo.label }}{{ t('foodWheel.tierHint') }}{{ tierInfo.desc }}{{ t('foodWheel.noPayHint') }}
     </div>
 
     <div class="wheel-wrap">
@@ -166,12 +169,12 @@ const groupedFoods = computed(() => halls.map((h) => ({ ...h, foods: foods.filte
     </div>
 
     <div v-if="result" class="result-box" style="text-align:center;">
-      <div class="muted" style="font-size:13px;">{{ result.hungry ? '很遗憾，今天要饿着啦' : stage === 'dish' ? '转到这家餐厅，继续转菜式' : '恭喜抽中' }}</div>
+      <div class="muted" style="font-size:13px;">{{ result.hungry ? t('foodWheel.hungryResult') : stage === 'dish' ? t('foodWheel.hallResult') : t('foodWheel.恭喜抽中') }}</div>
       <div style="font-size:22px;font-weight:800;margin:4px 0;">{{ result.hungry ? '😭 ' + result.name : '🍽️ ' + result.name }}</div>
       <div v-if="!result.hungry" class="muted" style="font-size:13px;">{{ result.campus }} · {{ result.zone }}</div>
     </div>
     <div v-else class="muted" style="margin:10px 0;">
-      {{ stage === 'hall' ? '点击「开始抽奖」先转出餐厅' : '转出菜式！' }}
+      {{ stage === 'hall' ? t('foodWheel.hallHint') : t('foodWheel.dishHint2') }}
     </div>
 
     <button
@@ -180,13 +183,13 @@ const groupedFoods = computed(() => halls.map((h) => ({ ...h, foods: foods.filte
       :disabled="spinning || (stage === 'hall' && !canUseTier(tierInfo))"
       @click="spin"
     >
-      {{ spinning ? '转动中…' : stage === 'hall' ? '🎡 开始抽奖 · 转餐厅' : '🍜 继续转 · 转菜式' }}
+      {{ spinning ? t('foodWheel.spinning') : stage === 'hall' ? t('foodWheel.spinHall') : t('foodWheel.spinDish') }}
     </button>
-    <div v-if="stage === 'dish' && result" class="muted" style="font-size:12px;margin-top:6px;">已定餐厅，点击按钮转动菜式转盘</div>
+    <div v-if="stage === 'dish' && result" class="muted" style="font-size:12px;margin-top:6px;">{{ t('foodWheel.dishHint') }}</div>
   </div>
 
   <div class="panel" style="margin-top:16px;">
-    <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>菜式大全（{{ foods.length }} 道 · 按餐厅）</div>
+    <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('foodWheel.menuTitle') }}{{ foods.length }}{{ t('foodWheel.menuUnit') }}</div>
     <div v-for="g in groupedFoods" :key="g.name" style="margin-bottom:12px;">
       <div style="font-weight:700;font-size:13px;margin-bottom:4px;">{{ g.name }} <span class="muted" style="font-weight:400;">{{ g.campus }} · {{ g.zone }}</span></div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;">
@@ -196,10 +199,10 @@ const groupedFoods = computed(() => halls.map((h) => ({ ...h, foods: foods.filte
   </div>
 
   <div class="panel" style="margin-top:16px;">
-    <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>抽奖记录（最近 {{ history.length }} 次）</div>
-    <div v-if="!history.length" class="muted" style="text-align:center;padding:14px;">还没有抽奖记录</div>
+    <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('foodWheel.historyTitle') }}{{ history.length }}{{ t('foodWheel.historyUnit') }}</div>
+    <div v-if="!history.length" class="muted" style="text-align:center;padding:14px;">{{ t('foodWheel.noHistory') }}</div>
     <table v-else class="data">
-      <thead><tr><th>时间</th><th>档位</th><th>餐厅</th><th>美食</th></tr></thead>
+      <thead><tr><th>{{ t('foodWheel.tableTime') }}</th><th>{{ t('foodWheel.tableTier') }}</th><th>{{ t('foodWheel.tableHall') }}</th><th>{{ t('foodWheel.tableDish') }}</th></tr></thead>
       <tbody>
         <tr v-for="(h, i) in history" :key="i">
           <td>{{ h.at }}</td>

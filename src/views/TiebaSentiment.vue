@@ -4,6 +4,9 @@ import KpiCard from '../components/KpiCard.vue'
 import InsightPanel from '../components/InsightPanel.vue'
 import BarRow from '../components/BarRow.vue'
 import LineChart from '../components/LineChart.vue'
+import { useI18n } from '../i18n'
+
+const { t, lang } = useI18n()
 
 const emit = defineEmits(['back'])
 
@@ -56,7 +59,7 @@ const maxReplies = computed(() => data.value?.topThreads?.[0]?.replies || 1)
 const hotBar = (r) => Math.round((r / maxReplies.value) * 100)
 const maxKw = computed(() => maxCount(data.value?.keywords || [], 'count') || 1)
 const maxTopic = computed(() => maxCount(data.value?.topics || [], 'count') || 1)
-const topicTotal = computed(() => (data.value?.topics || []).reduce((s, t) => s + t.count, 0) || 1)
+const topicTotal = computed(() => (data.value?.topics || []).reduce((sum, tp) => sum + tp.count, 0) || 1)
 const weekSum = computed(() => (data.value?.weekTrend || []).reduce((s, p) => s + p.count, 0))
 const topTopic = computed(() => data.value?.topics?.[0] || null)
 /** 近 14 天趋势：默认柱状（hover 显示当天帖数），可切换折线 */
@@ -65,7 +68,7 @@ const trendHover = ref(-1)
 const maxTrend = computed(() => maxCount(data.value?.weekTrend || [], 'count') || 1)
 const trendLine = computed(() => ({
   labels: (data.value?.weekTrend || []).map((p) => p.label),
-  series: [{ label: '发帖', color: '#0891b2', data: (data.value?.weekTrend || []).map((p) => p.count) }]
+  series: [{ label: t('tiebaSentiment.posts'), color: '#0891b2', data: (data.value?.weekTrend || []).map((p) => p.count) }]
 }))
 const topKw = computed(() => data.value?.keywords?.[0] || null)
 
@@ -85,94 +88,93 @@ const insights = computed(() => {
 
 <template>
   <div class="view-top">
-    <button class="back-btn" @click="emit('back')">← 返回首页</button>
-    <div class="view-title">贴吧舆情</div>
-    <div class="view-sub">青岛大学吧热帖与话题舆情分析（数据由定时任务尽力抓取）</div>
+    <button class="back-btn" @click="emit('back')">{{ t('common.back') }}</button>
+    <div class="view-title">{{ t('tiebaSentiment.title') }}</div>
+    <div class="view-sub">{{ t('tiebaSentiment.subFull') }}</div>
   </div>
 
   <div class="panel" style="margin-bottom:16px;">
     <a class="tieba-enter" :href="(data && data.barUrl) || 'https://tieba.baidu.com/f?kw=%E9%9D%92%E5%B2%9B%E5%A4%A7%E5%AD%A6'" target="_blank" rel="noopener">
       <span class="tieba-logo">吧</span>
-      <span class="tieba-main">
-        <b>青岛大学吧 · 百度贴吧</b>
-        <span class="muted">学生社区交流 · 学习 / 生活 / 升学 / 求助</span>
+        <span class="tieba-main">
+        <b>{{ t('tiebaSentiment.tiebaName') }}</b>
+        <span class="muted">{{ t('tiebaSentiment.tiebaDesc') }}</span>
       </span>
       <span class="site-go">↗</span>
     </a>
     <p class="muted" style="font-size:12px;margin:10px 2px 0;">
-      舆情数据来自贴吧公开列表页（标题 / 回复 / 发帖时间），仅做轻量聚合，版权归发帖用户与百度贴吧所有。
+      {{ t('tiebaSentiment.tiebaNote') }}
     </p>
   </div>
 
   <div v-if="loading" class="panel" style="text-align:center;color:var(--text-sub);padding:40px 16px;">
-    正在加载贴吧数据…
+    {{ t('tiebaSentiment.loadingData') }}
   </div>
 
   <div v-else-if="status === 'unavailable'" class="panel" style="text-align:center;padding:32px 16px;">
     <div style="font-size:40px;margin-bottom:10px;">📭</div>
-    <div style="font-weight:700;margin-bottom:6px;">贴吧数据暂未抓取成功</div>
+    <div style="font-weight:700;margin-bottom:6px;">{{ t('tiebaSentiment.unavailableTitle') }}</div>
     <p class="muted" style="font-size:13px;line-height:1.7;max-width:460px;margin:0 auto 14px;">
-      百度贴吧反爬较严（常返回 403 / 验证码），云端定时任务会在每次执行时重试；
-      抓取成功后此处会自动展示热帖榜、关键词与话题分布。你仍可先通过上方入口直接逛贴吧。
+      {{ t('tiebaSentiment.unavailableDesc') }}
     </p>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-      <a class="btn accent" :href="'https://tieba.baidu.com/f?kw=%E9%9D%92%E5%B2%9B%E5%A4%A7%E5%AD%A6'" target="_blank" rel="noopener">打开青岛大学吧</a>
-      <button class="btn ghost" @click="load">🔄 重试加载</button>
+      <a class="btn accent" :href="'https://tieba.baidu.com/f?kw=%E9%9D%92%E5%B2%9B%E5%A4%A7%E5%AD%A6'" target="_blank" rel="noopener">{{ t('tiebaSentiment.openTieba') }}</a>
+      <button class="btn ghost" @click="load">{{ t('tiebaSentiment.retryLoad') }}</button>
     </div>
     <p v-if="errMsg" class="muted" style="font-size:11px;margin-top:10px;">{{ errMsg }}</p>
   </div>
 
   <template v-else-if="data">
     <div class="kpi-grid">
-      <KpiCard :value="data.total" label="抓取帖数" :sub="data.pages + ' 页列表'" />
-      <KpiCard :value="maxReplies" label="最热帖回复" :sub="'《' + ((data.topThreads[0] || {}).title || '—') + '》'" />
-      <KpiCard :value="data.topics.length" label="话题覆盖" :sub="data.keywords.length + ' 个高频关键词'" />
-      <KpiCard :value="weekSum" label="近 14 天发帖" :sub="'日均约 ' + Math.round(weekSum / 14) + ' 条'" />
+      <KpiCard :value="data.total" :label="t('tiebaSentiment.kpiPostCount')" :sub="data.pages + ' ' + t('tiebaSentiment.pagesUnit') + t('tiebaSentiment.postCount')" />
+      <KpiCard :value="maxReplies" :label="t('tiebaSentiment.kpiHotReplies')" :sub="'《' + ((data.topThreads[0] || {}).title || '—') + '》'" />
+      <KpiCard :value="data.topics.length" :label="t('tiebaSentiment.kpiTopicCover')" :sub="data.keywords.length + ' ' + t('tiebaSentiment.postCount')" />
+      <KpiCard :value="weekSum" :label="t('tiebaSentiment.kpiRecentPosts')" :sub="t('tiebaSentiment.postsPerDay') + ' ' + Math.round(weekSum / 14)" />
     </div>
     <InsightPanel :items="insights" />
 
     <div class="panel" style="margin-bottom:16px;">
-      <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>🔥 热帖榜（按回复数 Top 10）</div>
-      <a v-for="(t, i) in data.topThreads" :key="t.url || i" class="hot-row" :href="t.url" target="_blank" rel="noopener">
+      <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('tiebaSentiment.hotPostsTitle') }}</div>
+      <a v-for="(thr, i) in data.topThreads" :key="thr.url || i" class="hot-row" :href="thr.url" target="_blank" rel="noopener">
         <span class="hot-rank" :class="{ top: i < 3 }">{{ i + 1 }}</span>
         <span class="hot-main">
-          <span class="hot-title">{{ t.title }}</span>
-          <span class="hot-sub muted">{{ t.author || '匿名' }} · {{ t.date }}</span>
+          <span class="hot-title">{{ thr.title }}</span>
+          <span class="hot-sub muted">{{ thr.author || '匿名' }} · {{ thr.date }}</span>
         </span>
-        <span class="hot-replybar"><i :style="{ width: hotBar(t.replies) + '%' }"></i></span>
-        <span class="hot-meta">{{ t.replies }} 回复</span>
+        <span class="hot-replybar"><i :style="{ width: hotBar(thr.replies) + '%' }"></i></span>
+        <span class="hot-meta">{{ t('tiebaSentiment.replies') }}</span>
       </a>
-      <p class="muted" style="font-size:12px;margin:10px 2px 0;">抓取 {{ data.total }} 帖（{{ data.pages }} 页，覆盖最近发帖），更新于 {{ (data.updatedAt || '').slice(0, 10) }}</p>
+      <p class="muted" style="font-size:12px;margin:10px 2px 0;">{{ t('tiebaSentiment.postsCount') }} {{ data.total }} {{ t('tiebaSentiment.postCount') }}（{{ data.pages }} {{ t('tiebaSentiment.pagesUnit') }}，覆盖最近发帖），更新于 {{ (data.updatedAt || '').slice(0, 10) }}</p>
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:16px;">
       <div class="panel">
-        <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>🏷️ 关键词热度</div>
+        <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('tiebaSentiment.keywordTitle') }}</div>
         <div class="kw-cloud" v-if="data.keywords.length">
           <span v-for="k in data.keywords" :key="k.word" class="kw-tag"
             :style="{ fontSize: (12 + Math.round((k.count / maxKw) * 14)) + 'px', opacity: 0.65 + (k.count / maxKw) * 0.35 }">
             {{ k.word }}<em>{{ k.count }}</em>
           </span>
         </div>
-        <p v-else class="muted" style="font-size:13px;">暂无关键词命中。</p>
-        <p class="muted" style="font-size:12px;margin-top:10px;">字号越大出现越频繁，点进热帖能对上社区最近在聊什么。</p>
+        <p v-else class="muted" style="font-size:13px;">{{ t('tiebaSentiment.noKeyword') }}</p>
+        <p class="muted" style="font-size:12px;margin-top:10px;">{{ t('tiebaSentiment.keywordNote') }}</p>
       </div>
 
       <div class="panel">
-        <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>🗂️ 话题分布</div>
+        <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('tiebaSentiment.topicTitle') }}</div>
         <div v-if="data.topics.length">
           <BarRow v-for="t in data.topics" :key="t.name" :label="(TOPIC_ICONS[t.name] || '·') + ' ' + t.name" :value="t.count" :max="maxTopic" :text="Math.round((t.count / topicTotal) * 100) + '%'" color="linear-gradient(90deg,#0d9488,#2dd4bf)" />
         </div>
-        <p v-if="!data.topics.length" class="muted" style="font-size:13px;">暂无话题归类。</p>
+        <p v-if="!data.topics.length" class="muted" style="font-size:13px;">{{ t('tiebaSentiment.noTopic') }}</p>
       </div>
     </div>
 
     <div class="panel">
       <div class="section-head" style="align-items:center;margin:0 0 12px;">
-        <h3 class="section-title" style="margin:0;"><span class="bar"></span>📈 近 14 天发帖趋势（日均 {{ Math.round(weekSum / 14) }} 条）</h3>
+        <h3 class="section-title" style="margin:0;"><span class="bar"></span>{{ t('tiebaSentiment.trendTitle', { n: Math.round(weekSum / 14) }) }}</h3>
         <div class="chart-type">
-          <button class="tab" :class="{ active: trendChartType === 'bar' }" @click="trendChartType = 'bar'">▥ 柱状</button>
-          <button class="tab" :class="{ active: trendChartType === 'line' }" @click="trendChartType = 'line'">📈 折线</button>
+          <button class="tab" :class="{ active: trendChartType === 'bar' }" @click="trendChartType = 'bar'">{{ t('siteStats.chartBar') }}</button>
+          <button class="tab" :class="{ active: trendChartType === 'line' }" @click="trendChartType = 'line'">{{ t('siteStats.chartLine') }}</button>
         </div>
       </div>
       <template v-if="data.weekTrend && data.weekTrend.length">
@@ -185,8 +187,8 @@ const insights = computed(() => {
         </div>
         <LineChart v-else :series="trendLine.series" :labels="trendLine.labels" :height="150" :max-width="640" />
       </template>
-      <p v-else class="muted" style="font-size:13px;">暂无趋势数据。</p>
-      <p class="muted" style="font-size:12px;margin-top:6px;">💡 柱状按天查看热度；切折线后可悬浮查看每天具体数值。</p>
+      <p v-else class="muted" style="font-size:13px;">{{ t('tiebaSentiment.noTrend') }}</p>
+      <p class="muted" style="font-size:12px;margin-top:6px;">{{ t('tiebaSentiment.trendNote') }}</p>
     </div>
   </template>
 </template>

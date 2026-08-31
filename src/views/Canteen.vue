@@ -2,9 +2,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { canteens, canteenStats } from '../data/canteens'
 import { apiFetch } from '../api/index'
+import { useI18n } from '../i18n'
+
+const { t, lang } = useI18n()
 
 const emit = defineEmits(['back'])
-const campus = ref('全部')
+const campus = ref('all')
 const live = ref(null)
 const loading = ref(true)
 const openFood = ref(null)
@@ -24,7 +27,7 @@ onMounted(async () => {
 })
 
 const list = computed(() => {
-  if (campus.value === '全部') return canteens
+  if (campus.value === 'all') return canteens
   return canteens.filter((c) => c.campus === campus.value)
 })
 
@@ -69,9 +72,9 @@ function toggleFood(name) {
 <template>
   <div>
     <div class="view-top">
-      <button class="back-btn" @click="emit('back')">← 返回首页</button>
-      <div class="view-title">食堂空座率</div>
-      <div class="view-sub">官方食堂名单 · 营业时间实时判定 · 空座监测接入中</div>
+      <button class="back-btn" @click="emit('back')">← {{ t('common.back').slice(2) }}</button>
+      <div class="view-title">{{ t('canteen.title') }}</div>
+      <div class="view-sub">{{ t('canteen.subFull') }}</div>
     </div>
 
     <div class="panel">
@@ -80,36 +83,36 @@ function toggleFood(name) {
         <div style="flex: 1; min-width: 160px;">
           <div style="font-weight: 800; font-size: 16px;">{{ mealTag.t }} · {{ today }} {{ hm }}</div>
           <div class="muted" style="font-size: 12px; margin-top: 2px;">
-            当前在营餐厅 {{ openCount }} / {{ list.length }} 家
+            {{ t('canteen.currentOpen') }} {{ openCount }} {{ t('canteen.of') }} {{ list.length }}
           </div>
         </div>
         <div class="stat-pill">
           <b>{{ canteenStats.total }}</b>
-          <span>官方食堂</span>
+          <span>{{ t('canteen.officialCanteen') }}</span>
         </div>
         <div class="stat-pill">
           <b>{{ canteenStats.basic }}</b>
-          <span>大众窗口</span>
+          <span>{{ t('canteen.basicWindow') }}</span>
         </div>
         <div class="stat-pill">
           <b>{{ canteenStats.flavor }}</b>
-          <span>风味档口</span>
+          <span>{{ t('canteen.flavorStall') }}</span>
         </div>
       </div>
       <div class="hour-row">
-        <span class="hour-tag basic">大众窗口 {{ canteenStats.basicHours }}</span>
-        <span class="hour-tag flavor">风味档口 {{ canteenStats.flavorHours }}</span>
+        <span class="hour-tag basic">{{ t('canteen.basicHours') }} {{ canteenStats.basicHours }}</span>
+        <span class="hour-tag flavor">{{ t('canteen.flavorHours') }} {{ canteenStats.flavorHours }}</span>
       </div>
       <div class="muted" style="font-size: 11px; margin-top: 6px">
-        服务热线 {{ canteenStats.hotline }} · 数据来源：青岛大学后勤管理处
+        {{ t('canteen.hotline') }} {{ canteenStats.hotline }} · {{ t('canteen.dataSource') }}
       </div>
     </div>
 
     <div class="seg" style="margin: 12px 0">
-      <button class="seg-btn" :class="{ active: campus === '全部' }" @click="campus = '全部'">全部</button>
-      <button class="seg-btn" :class="{ active: campus === '浮山校区' }" @click="campus = '浮山校区'">浮山</button>
-      <button class="seg-btn" :class="{ active: campus === '金家岭校区' }" @click="campus = '金家岭校区'">金家岭</button>
-      <button class="seg-btn" :class="{ active: campus === '松山校区' }" @click="campus = '松山校区'">松山</button>
+      <button class="seg-btn" :class="{ active: campus === 'all' }" @click="campus = 'all'">{{ t('canteen.all') }}</button>
+      <button class="seg-btn" :class="{ active: campus === '浮山校区' }" @click="campus = '浮山校区'">{{ t('canteen.fushan') }}</button>
+      <button class="seg-btn" :class="{ active: campus === '金家岭校区' }" @click="campus = '金家岭校区'">{{ t('canteen.jinjialing') }}</button>
+      <button class="seg-btn" :class="{ active: campus === '松山校区' }" @click="campus = '松山校区'">{{ t('canteen.songshan') }}</button>
     </div>
 
     <div v-if="loading" class="skeleton-list">
@@ -117,15 +120,15 @@ function toggleFood(name) {
     </div>
     <div v-else class="panel">
       <div class="muted" style="font-size: 12px; margin-bottom: 8px">
-        每行为「在座人数 / 座位数（*今日堂食次数）」格式，在座人数待摄像头接入后实时刷新，座位数为官方公布规模
+        {{ t('canteen.seatNote') }}
       </div>
       <div v-for="c in list" :key="c.name" class="canteen-row">
         <button class="canteen-main" @click="toggleFood(c.name)">
           <span style="font-weight: 800; font-size: 14px; white-space: nowrap">{{ c.name }}</span>
-          <span class="type-tag" :class="c.type">{{ c.type === 'basic' ? '大众窗口' : '风味档口' }}</span>
+          <span class="type-tag" :class="c.type">{{ c.type === 'basic' ? t('canteen.basicWindow') : t('canteen.flavorStall') }}</span>
           <span v-if="c.note" class="tag" style="background:var(--soft-yellow); color: #e65100">{{ c.note }}</span>
           <span class="canteen-area">{{ c.area }} · {{ c.dept }}</span>
-          <span class="canteen-toggle">{{ openFood === c.name ? '收起 ▴' : '特色档口 ▾' }}</span>
+          <span class="canteen-toggle">{{ openFood === c.name ? t('canteen.collapseFood') : t('canteen.expandFood') }}</span>
         </button>
         <div class="canteen-metric">
           <span class="metric-people">{{ peopleOf() }}</span>
@@ -141,7 +144,7 @@ function toggleFood(name) {
     </div>
 
     <div class="source-bar" style="margin-top: 14px">
-      <span>📋 食堂名单与营业时间：后勤管理处「饮食服务」 · 特色档口/招牌菜：后勤采购公告与公开报道 · 空座人数：待接入</span>
+      <span>{{ t('canteen.sourceNote') }}</span>
     </div>
   </div>
 </template>

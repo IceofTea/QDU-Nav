@@ -3,6 +3,9 @@ import { ref, onMounted } from 'vue'
 import { apiFetch } from '../api'
 import { fallbackNotices, fallbackNews } from '../data/news'
 import NoticeDetail from './NoticeDetail.vue'
+import { useI18n } from '../i18n'
+
+const { t, lang } = useI18n()
 
 const emit = defineEmits(['back'])
 
@@ -55,9 +58,9 @@ onMounted(loadAll)
 
 <template>
   <div class="view-top">
-    <button class="back-btn" @click="emit('back')">← 返回首页</button>
-    <div class="view-title">校园动态</div>
-    <div class="view-sub">教务处官方通知与动态 · {{ staticMode ? '构建时快照（静态部署）' : '由服务端实时抓取' }}</div>
+    <button class="back-btn" @click="emit('back')">{{ t('common.back') }}</button>
+    <div class="view-title">{{ t('campusNews.title') }}</div>
+    <div class="view-sub">{{ t('campusNews.subFull') }} · {{ staticMode ? t('campusNews.snapshotMode') : t('campusNews.realtimeMode') }}</div>
   </div>
 
   <template v-if="selected">
@@ -67,25 +70,25 @@ onMounted(loadAll)
   <template v-else>
     <div v-if="!loading" class="source-bar">
       <span class="dot" :class="online ? 'live' : 'off'"></span>
-      <span>{{ staticMode ? '官方数据快照（构建时）' : online ? '官方实时数据' : '官方接口暂不可达，展示演示数据' }}</span>
+      <span>{{ staticMode ? t('campusNews.snapshotData') : online ? t('campusNews.realtimeData') : t('campusNews.fallbackData') }}</span>
       <span class="sep">·</span>
-      <span>来源 jwc.qdu.edu.cn</span>
+      <span>{{ t('campusNews.dataSource') }}</span>
       <template v-if="online">
         <span class="sep">·</span>
-        <span>抓取于 {{ new Date(fetchedAt).toLocaleTimeString('zh-CN', { hour12: false }) }}</span>
-        <template v-if="costMs"><span class="sep">·</span><span>耗时 {{ costMs }}ms</span></template>
-        <span v-if="cached" class="sep">·</span><span v-if="cached">命中缓存</span>
+        <span>{{ t('campusNews.fetchedAt') }} {{ new Date(fetchedAt).toLocaleTimeString('zh-CN', { hour12: false }) }}</span>
+        <template v-if="costMs"><span class="sep">·</span><span>{{ t('campusNews.costTime') }} {{ costMs }}ms</span></template>
+        <span v-if="cached" class="sep">·</span><span v-if="cached">{{ t('campusNews.cacheHit') }}</span>
       </template>
-      <button class="refresh-btn" :disabled="refreshing" @click="refresh">{{ refreshing ? '刷新中…' : '🔄 刷新' }}</button>
+      <button class="refresh-btn" :disabled="refreshing" @click="refresh">{{ refreshing ? t('common.refreshing') : t('common.refresh') }}</button>
     </div>
 
     <div class="panel" style="margin-bottom:16px;">
       <div class="seg">
         <button class="seg-btn" :class="{ active: tab === 'notice' }" @click="tab = 'notice'">
-          📢 教务通知（{{ notices.length }}）
+          {{ t('campusNews.noticeTab') }}{{ notices.length }}）
         </button>
         <button class="seg-btn" :class="{ active: tab === 'news' }" @click="tab = 'news'">
-          📰 教务动态（{{ news.length }}）
+          {{ t('campusNews.newsTab') }}{{ news.length }}）
         </button>
       </div>
 
@@ -100,7 +103,7 @@ onMounted(loadAll)
         <button v-for="it in notices" :key="it.url" class="news-item news-click" @click="selected = it">
           <span class="news-date">{{ it.date }}</span>
           <span class="news-title">{{ it.title }}</span>
-          <span class="news-go">详情 ›</span>
+          <span class="news-go">{{ t('campusNews.detailBtn') }}</span>
         </button>
       </div>
 
@@ -115,14 +118,14 @@ onMounted(loadAll)
 
     <div v-if="!loading && tab === 'notice'" class="panel" style="padding:12px 16px;">
       <div style="display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;">
-        <span class="muted" style="font-size:13px;">共 {{ notices.length }} 条通知（抓取自教务处通知列表页前 4 页）</span>
+        <span class="muted" style="font-size:13px;">{{ t('campusNews.noticeListHint', { n: notices.length }) }}</span>
         <span class="sep" style="opacity:.4;">·</span>
-        <a class="btn ghost" style="text-decoration:none;" href="https://jwc.qdu.edu.cn/jwtz.htm" target="_blank" rel="noopener">查看完整通知列表 ↗</a>
+        <a class="btn ghost" style="text-decoration:none;" href="https://jwc.qdu.edu.cn/jwtz.htm" target="_blank" rel="noopener">{{ t('campusNews.viewFullList') }}</a>
       </div>
     </div>
 
     <div class="muted" style="font-size:12px;">
-      数据来源：<a class="link" href="https://jwc.qdu.edu.cn" target="_blank" rel="noopener">青岛大学教务处 jwc.qdu.edu.cn</a>
+      {{ t('campusNews.sourceLink') }}<a class="link" href="https://jwc.qdu.edu.cn" target="_blank" rel="noopener">青岛大学教务处 jwc.qdu.edu.cn</a>
     </div>
   </template>
 </template>

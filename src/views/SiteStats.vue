@@ -10,6 +10,9 @@ import LineChart from '../components/LineChart.vue'
 import PieChart from '../components/PieChart.vue'
 import BarRow from '../components/BarRow.vue'
 import InsightPanel from '../components/InsightPanel.vue'
+import { useI18n } from '../i18n'
+
+const { t, lang } = useI18n()
 
 const emit = defineEmits(['back'])
 
@@ -69,9 +72,9 @@ onMounted(async () => {
 
 <template>
   <div class="view-top">
-    <button class="back-btn" @click="emit('back')">← 返回首页</button>
-    <div class="view-title">本站舆情</div>
-    <div class="view-sub">本站访问与使用行为统计 · 数据由自建计数服务自动采集</div>
+    <button class="back-btn" @click="emit('back')">← {{ t('common.back').slice(2) }}</button>
+    <div class="view-title">{{ t('siteStats.title') }}</div>
+    <div class="view-sub">{{ t('siteStats.subFull') }}</div>
   </div>
 
   <div v-if="loading" class="skeleton-list">
@@ -83,21 +86,21 @@ onMounted(async () => {
       📌 计数服务免费额度超限暂停中，当前展示 {{ stats.generatedAt || '最近一次' }} 的快照数据；服务恢复后将自动回到实时统计
     </div>
     <div class="kpi-grid">
-      <KpiCard icon="👀" :value="stats.uv" label="独立访客" />
-      <KpiCard icon="📈" :value="stats.pv" label="累计访问" />
-      <KpiCard icon="📅" :value="stats.today.uv" label="今日访客" />
-      <KpiCard icon="⚡" :value="stats.today.pv" label="今日访问" />
+      <KpiCard icon="👀" :value="stats.uv" :label="t('siteStats.uv')" />
+      <KpiCard icon="📈" :value="stats.pv" :label="t('siteStats.pv')" />
+      <KpiCard icon="📅" :value="stats.today.uv" :label="t('siteStats.todayUv')" />
+      <KpiCard icon="⚡" :value="stats.today.pv" :label="t('siteStats.todayPv')" />
     </div>
 
-    <InsightPanel :items="insights" title="一眼看懂这些数据" />
+    <InsightPanel :items="insights" :title="t('siteStats.insightTitle')" />
 
     <div class="panel" style="margin-bottom:16px;">
       <div class="section-head" style="align-items:center;margin:0 0 12px;">
-        <h3 class="section-title" style="margin:0;"><span class="bar"></span>近 7 天访问趋势</h3>
+        <h3 class="section-title" style="margin:0;"><span class="bar"></span>{{ t('siteStats.weekTrendTitle') }}</h3>
         <div class="chart-type">
-          <button class="tab" :class="{ active: chartTypes.week === 'bar' }" @click="chartTypes.week = 'bar'">▥ 柱状</button>
-          <button class="tab" :class="{ active: chartTypes.week === 'line' }" @click="chartTypes.week = 'line'">📈 折线</button>
-          <button class="tab" :class="{ active: chartTypes.week === 'pie' }" @click="chartTypes.week = 'pie'">◔ 圆饼</button>
+          <button class="tab" :class="{ active: chartTypes.week === 'bar' }" @click="chartTypes.week = 'bar'">{{ t('siteStats.chartBar') }}</button>
+          <button class="tab" :class="{ active: chartTypes.week === 'line' }" @click="chartTypes.week = 'line'">{{ t('siteStats.chartLine') }}</button>
+          <button class="tab" :class="{ active: chartTypes.week === 'pie' }" @click="chartTypes.week = 'pie'">{{ t('siteStats.chartPie') }}</button>
         </div>
       </div>
       <div v-if="stats.week.length">
@@ -111,13 +114,13 @@ onMounted(async () => {
         <LineChart v-else-if="chartTypes.week === 'line'" :series="weekLine.series" :labels="weekLine.labels" :height="150" :max-width="720" />
         <PieChart v-else :segments="stats.week.map((w) => ({ name: w.label, icon: '', v: w.pv }))" :total="sumArr(stats.week.map((w) => ({ name: w.label, v: w.pv })))" />
       </div>
-      <p v-else class="muted" style="text-align:center;padding:10px;">暂无访问数据</p>
+      <p v-else class="muted" style="text-align:center;padding:10px;">{{ t('siteStats.noData') }}</p>
     </div>
 
     <div class="duo-grid">
       <div class="panel">
         <div class="section-head" style="align-items:center;margin:0 0 12px;">
-          <h3 class="section-title" style="margin:0;"><span class="bar"></span>访问时段（24 小时）</h3>
+          <h3 class="section-title" style="margin:0;"><span class="bar"></span>{{ t('siteStats.hourTitle') }}</h3>
           <div class="chart-type">
             <button class="tab" :class="{ active: chartTypes.hour === 'bar' }" @click="chartTypes.hour = 'bar'">▥ 柱状</button>
             <button class="tab" :class="{ active: chartTypes.hour === 'line' }" @click="chartTypes.hour = 'line'">📈 折线</button>
@@ -139,7 +142,7 @@ onMounted(async () => {
 
       <div class="panel">
         <div class="section-head" style="align-items:center;margin:0 0 12px;">
-          <h3 class="section-title" style="margin:0;"><span class="bar"></span>一周分布</h3>
+          <h3 class="section-title" style="margin:0;"><span class="bar"></span>{{ t('siteStats.weekDistTitle') }}</h3>
           <div class="chart-type">
             <button class="tab" :class="{ active: chartTypes.week2 === 'bar' }" @click="chartTypes.week2 = 'bar'">▥</button>
             <button class="tab" :class="{ active: chartTypes.week2 === 'pie' }" @click="chartTypes.week2 = 'pie'">◔</button>
@@ -162,7 +165,7 @@ onMounted(async () => {
     <div class="duo-grid">
       <div class="panel">
         <div class="section-head" style="align-items:center;margin:0 0 12px;">
-          <h3 class="section-title" style="margin:0;"><span class="bar"></span>设备占比</h3>
+          <h3 class="section-title" style="margin:0;"><span class="bar"></span>{{ t('siteStats.deviceTitle') }}</h3>
           <div class="chart-type">
             <button class="tab" :class="{ active: chartTypes.device === 'bar' }" @click="chartTypes.device = 'bar'">▥</button>
             <button class="tab" :class="{ active: chartTypes.device === 'pie' }" @click="chartTypes.device = 'pie'">◔</button>
@@ -183,7 +186,7 @@ onMounted(async () => {
 
       <div class="panel">
         <div class="section-head" style="align-items:center;margin:0 0 12px;">
-          <h3 class="section-title" style="margin:0;"><span class="bar"></span>系统占比</h3>
+          <h3 class="section-title" style="margin:0;"><span class="bar"></span>{{ t('siteStats.osTitle') }}</h3>
           <div class="chart-type">
             <button class="tab" :class="{ active: chartTypes.os === 'bar' }" @click="chartTypes.os = 'bar'">▥</button>
             <button class="tab" :class="{ active: chartTypes.os === 'pie' }" @click="chartTypes.os = 'pie'">◔</button>
@@ -206,7 +209,7 @@ onMounted(async () => {
     <div class="duo-grid">
       <div class="panel">
         <div class="section-head" style="align-items:center;margin:0 0 12px;">
-          <h3 class="section-title" style="margin:0;"><span class="bar"></span>来源分布</h3>
+          <h3 class="section-title" style="margin:0;"><span class="bar"></span>{{ t('siteStats.refTitle') }}</h3>
           <div class="chart-type">
             <button class="tab" :class="{ active: chartTypes.ref === 'bar' }" @click="chartTypes.ref = 'bar'">▥</button>
             <button class="tab" :class="{ active: chartTypes.ref === 'pie' }" @click="chartTypes.ref = 'pie'">◔</button>
@@ -227,7 +230,7 @@ onMounted(async () => {
 
       <div class="panel">
         <div class="section-head" style="align-items:center;margin:0 0 12px;">
-          <h3 class="section-title" style="margin:0;"><span class="bar"></span>热门应用 Top</h3>
+          <h3 class="section-title" style="margin:0;"><span class="bar"></span>{{ t('siteStats.hotAppsTitle') }}</h3>
           <div class="chart-type">
             <button class="tab" :class="{ active: chartTypes.app === 'bar' }" @click="chartTypes.app = 'bar'">▥</button>
             <button class="tab" :class="{ active: chartTypes.app === 'pie' }" @click="chartTypes.app = 'pie'">◔</button>
@@ -250,7 +253,7 @@ onMounted(async () => {
 
     <div class="panel">
       <div class="section-head" style="align-items:center;margin:0 0 12px;">
-        <h3 class="section-title" style="margin:0;"><span class="bar"></span>🏆 最受欢迎（点赞榜）</h3>
+        <h3 class="section-title" style="margin:0;"><span class="bar"></span>{{ t('siteStats.likesTitle') }}</h3>
       </div>
       <div v-if="stats.likes.length">
         <BarRow v-for="(l, i) in stats.likes.slice(0, 8)" :key="l.name" :label="(i + 1) + '. ' + appName(l.name)" :value="l.v" :max="maxBar(stats.likes)" :text="String(l.v) + ' 👍'" color="linear-gradient(90deg,#be185d,#ec4899)" />

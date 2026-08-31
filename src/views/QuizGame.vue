@@ -2,6 +2,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { quiz } from '../data/quiz'
 import CountUp from '../components/CountUp.vue'
+import { useI18n } from '../i18n'
+
+const { t, lang } = useI18n()
 
 const emit = defineEmits(['back'])
 
@@ -91,7 +94,7 @@ function toggleBank(q) {
 
 const verdict = computed(() => {
   if (picked.value === null) return ''
-  return picked.value === cur.value.answer ? '✅ 回答正确' : '❌ 回答错误'
+  return picked.value === cur.value.answer ? t('quiz.correctAnswer') : t('quiz.wrongAnswer')
 })
 
 const grade = computed(() => {
@@ -116,24 +119,24 @@ onMounted(() => {
 
 <template>
   <div class="view-top">
-    <button class="back-btn" @click="emit('back')">← 返回首页</button>
-    <div class="view-title">青大知多少</div>
-    <div class="view-sub">校园知识问答 · 已挑战 <CountUp :value="rounds" /> 次 · 历史最高 <CountUp :value="best" /> 分</div>
+    <button class="back-btn" @click="emit('back')">{{ t('common.back') }}</button>
+    <div class="view-title">{{ t('quiz.title') }}</div>
+    <div class="view-sub">{{ t('quiz.subFull') }} <CountUp :value="rounds" /> {{ t('quiz.rounds') }} · {{ t('quiz.best') }} <CountUp :value="best" /> {{ t('quiz.bestScore') }}</div>
   </div>
 
   <div class="panel" style="margin-bottom:16px;padding:10px;">
     <div class="mode-tabs">
-      <button class="mode-btn" :class="{ active: mode === 'play' }" @click="mode = 'play'">🎯 开始答题</button>
-      <button class="mode-btn" :class="{ active: mode === 'bank' }" @click="mode = 'bank'">📚 题库查看（{{ quiz.length }} 题）</button>
+      <button class="mode-btn" :class="{ active: mode === 'play' }" @click="mode = 'play'">{{ t('quiz.quizMode') }}</button>
+      <button class="mode-btn" :class="{ active: mode === 'bank' }" @click="mode = 'bank'">{{ t('quiz.bankMode') }}{{ quiz.length }}{{ t('quiz.bankModeEnd') }}</button>
     </div>
   </div>
 
   <template v-if="mode === 'bank'">
     <div class="panel" style="margin-bottom:16px;">
       <div class="input-row">
-        <input v-model="bankKw" class="input" placeholder="🔍 搜索题目 / 答案关键词" />
+        <input v-model="bankKw" class="input" :placeholder="t('quiz.searchPlaceholder')" />
       </div>
-      <div class="muted" style="font-size:12px;margin-top:6px;">共 {{ filteredBank.length }} 题，点击题目展开查看答案与解析</div>
+      <div class="muted" style="font-size:12px;margin-top:6px;">{{ filteredBank.length }} {{ t('quiz.bankTotal') }}</div>
     </div>
 
     <div class="panel">
@@ -141,7 +144,7 @@ onMounted(() => {
         <button class="bank-q" @click="toggleBank(q)">
           <span class="bank-no">{{ qi + 1 }}</span>
           <span class="bank-text">{{ q.q }}</span>
-          <span class="bank-toggle">{{ bankOpen[q.q] ? '收起 ▴' : '答案 ▾' }}</span>
+          <span class="bank-toggle">{{ bankOpen[q.q] ? t('quiz.bankCollapse') : t('quiz.bankAnswer') }}</span>
         </button>
         <div v-if="bankOpen[q.q]" class="bank-detail">
           <div style="display:grid;gap:6px;margin:8px 0;">
@@ -155,20 +158,20 @@ onMounted(() => {
           <div class="bank-explain">💡 {{ q.explain }}</div>
         </div>
       </div>
-      <div v-if="!filteredBank.length" class="muted" style="text-align:center;padding:20px;">没有找到相关题目</div>
+      <div v-if="!filteredBank.length" class="muted" style="text-align:center;padding:20px;">{{ t('quiz.bankNoResult') }}</div>
     </div>
   </template>
 
   <template v-else-if="!done">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-      <div style="font-weight:800;font-size:15px;">第 {{ index + 1 }} / {{ pool.length }} 题</div>
+      <div style="font-weight:800;font-size:15px;">{{ index + 1 }} {{ t('quiz.questionOf', { total: pool.length }) }}</div>
       <div style="flex:1;height:8px;background:var(--soft-gray);border-radius:4px;overflow:hidden;">
         <div
           style="height:100%;background:linear-gradient(90deg,#1b66c9,#3a86e8);transition:width .3s;"
           :style="{ width: ((index + (picked !== null ? 1 : 0)) / pool.length * 100) + '%' }"
         ></div>
       </div>
-      <div style="font-weight:800;color:var(--primary);">得分 {{ score }}</div>
+      <div style="font-weight:800;color:var(--primary);">{{ t('quiz.score') }} {{ score }}</div>
     </div>
 
     <div style="font-size:18px;font-weight:700;line-height:1.6;margin-bottom:18px;">{{ cur.q }}</div>
@@ -195,7 +198,7 @@ onMounted(() => {
       <div style="font-weight:700;">{{ verdict }}</div>
       <div class="muted" style="font-size:13px;margin-top:4px;">{{ cur.explain }}</div>
       <button class="btn" style="margin-top:12px;" @click="next">
-        {{ index + 1 >= pool.length ? '查看成绩' : '下一题 →' }}
+        {{ index + 1 >= pool.length ? t('quiz.viewResult') : t('quiz.nextQuestion') }}
       </button>
     </div>
   </template>
@@ -204,15 +207,15 @@ onMounted(() => {
     <div style="font-size:40px;">🏆</div>
     <div style="font-size:22px;font-weight:800;margin:10px 0;">{{ score }} / {{ QUESTIONS * PER_QUESTION }}</div>
     <div style="font-size:15px;font-weight:600;color:var(--primary);">{{ grade }}</div>
-    <div class="muted" style="margin:10px 0;">答对 {{ correct }} / {{ QUESTIONS }} 题</div>
+    <div class="muted" style="margin:10px 0;">{{ t('quiz.correctCount') }} {{ correct }} / {{ QUESTIONS }} {{ t('quiz.questions') }}</div>
     <div style="display:flex;gap:10px;justify-content:center;margin-top:14px;">
-      <button class="btn" @click="start">再来一轮</button>
-      <button class="btn ghost" @click="emit('back')">返回首页</button>
+      <button class="btn" @click="start">{{ t('quiz.再来一轮') }}</button>
+      <button class="btn ghost" @click="emit('back')">{{ t('quiz.backHome') }}</button>
     </div>
   </div>
 
   <div v-if="done && wrongList.length" class="panel" style="margin-top:16px;">
-    <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>📝 本轮错题回顾</div>
+    <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('quiz.wrongReviewTitle') }}</div>
     <div v-for="(w, wi) in wrongList" :key="wi" class="bank-item">
       <div class="bank-q" style="cursor:default;">
         <span class="bank-no" style="background:#b63a46;">{{ wi + 1 }}</span>
@@ -228,16 +231,16 @@ onMounted(() => {
   </div>
 
   <div v-if="done" class="panel" style="margin-top:16px;">
-    <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>🏅 本机排行榜 Top 10</div>
+    <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('quiz.rankTitle') }}</div>
     <div v-if="leaderboard.length" class="rank-list">
       <div v-for="(s, i) in leaderboard" :key="i" class="rank-row">
         <span class="rank-no" :class="{ top: i === 0 }">{{ i + 1 }}</span>
-        <span class="rank-main">{{ s.score }} 分 · 答对 {{ s.correct }}/{{ s.total }}</span>
+        <span class="rank-main">{{ s.score }} {{ t('quiz.bestScore') }} · {{ t('quiz.correctCount') }} {{ s.correct }}/{{ s.total }}</span>
         <span class="muted" style="font-size:12px;">{{ s.date }}</span>
       </div>
     </div>
-    <div v-else class="muted" style="text-align:center;padding:12px;">完成一轮答题即可上榜</div>
-    <p class="muted" style="font-size:11px;margin-top:10px;">成绩仅保存在本机浏览器（localStorage），供自己挑战刷新。</p>
+    <div v-else class="muted" style="text-align:center;padding:12px;">{{ t('quiz.rankComplete') }}</div>
+    <p class="muted" style="font-size:11px;margin-top:10px;">{{ t('quiz.rankLocal') }}</p>
   </div>
 </template>
 

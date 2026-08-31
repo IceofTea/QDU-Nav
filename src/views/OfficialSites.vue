@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { officialGroups, colleges, emergency } from '../data/official'
+import { useI18n } from '../i18n'
+
+const { t, lang } = useI18n()
 
 const emit = defineEmits(['back'])
 const tab = ref('official')
@@ -35,16 +38,16 @@ async function copyMail() {
 
 <template>
   <div class="view-top">
-    <button class="back-btn" @click="emit('back')">← 返回首页</button>
-    <div class="view-title">学校官网</div>
-    <div class="view-sub">青岛大学官方网站与各学院官网大全</div>
+    <button class="back-btn" @click="emit('back')">{{ t('common.back') }}</button>
+    <div class="view-title">{{ t('officialSites.title') }}</div>
+    <div class="view-sub">{{ t('officialSites.subFull') }}</div>
   </div>
 
   <div class="panel">
     <div class="seg">
-      <button class="seg-btn" :class="{ active: tab === 'official' }" @click="tab = 'official'">🏛️ 官方网站</button>
-      <button class="seg-btn" :class="{ active: tab === 'college' }" @click="tab = 'college'">🎓 学院官网</button>
-      <button class="seg-btn" :class="{ active: tab === 'phone' }" @click="tab = 'phone'">📞 常用电话</button>
+      <button class="seg-btn" :class="{ active: tab === 'official' }" @click="tab = 'official'">{{ t('officialSites.officialTab') }}</button>
+      <button class="seg-btn" :class="{ active: tab === 'college' }" @click="tab = 'college'">{{ t('officialSites.collegeTab') }}</button>
+      <button class="seg-btn" :class="{ active: tab === 'phone' }" @click="tab = 'phone'">{{ t('officialSites.phoneTab') }}</button>
     </div>
 
     <template v-if="tab === 'official'">
@@ -52,19 +55,19 @@ async function copyMail() {
         <div class="mail-head">
           <span class="mail-emoji">📧</span>
           <div class="mail-head-txt">
-            <div class="mail-title">邮箱助手</div>
-            <div class="mail-sub">输入学号，一键生成你的校园邮箱</div>
+            <div class="mail-title">{{ t('officialSites.mailTitle') }}</div>
+            <div class="mail-sub">{{ t('officialSites.mailSub') }}</div>
           </div>
         </div>
         <div class="mail-row">
-          <input class="input" v-model="sid" type="text" inputmode="numeric" placeholder="输入学号，如 2023XXXXXX" style="flex:1;min-width:0;" />
-          <button class="btn accent" :disabled="!email" @click="copyMail">{{ copied ? '已复制 ✓' : '复制邮箱' }}</button>
+          <input class="input" v-model="sid" type="text" inputmode="numeric" :placeholder="t('officialSites.mailPlaceholder')" style="flex:1;min-width:0;" />
+          <button class="btn accent" :disabled="!email" @click="copyMail">{{ copied ? t('officialSites.copiedMail') : t('officialSites.copyMail') }}</button>
         </div>
-        <div class="mail-out" :class="{ empty: !email }">{{ email || '输入学号后自动生成' }}</div>
-        <div class="mail-quip">💡 悄悄告诉你：校长邮箱是 <b>xiaozhang@qdu.edu.cn</b>，一般别乱发哦～</div>
+        <div class="mail-out" :class="{ empty: !email }">{{ email || t('officialSites.mailOutput') }}</div>
+        <div class="mail-quip">{{ t('officialSites.mailQuip') }} <b>xiaozhang@qdu.edu.cn</b>{{ t('officialSites.mailQuipEnd') }}</div>
         <p class="muted" style="font-size:12px;margin-top:8px;line-height:1.8;">
-          校园邮箱地址：<a class="link" href="https://mail.qdu.edu.cn" target="_blank" rel="noopener">mail.qdu.edu.cn</a>（账号 <b>学号@qdu.edu.cn</b>），用于接收教务处通知、奖学金与就业信息。尚未开通？可到
-          <a class="link" href="https://ehall.qdu.edu.cn" target="_blank" rel="noopener">网上办事大厅</a>「邮箱申请」开通，或咨询智慧校园服务热线 0532-85955678。
+          {{ t('officialSites.mailGuide') }}<a class="link" href="https://mail.qdu.edu.cn" target="_blank" rel="noopener">mail.qdu.edu.cn</a>{{ t('officialSites.mailGuide2') }}<b>学号@qdu.edu.cn</b>{{ t('officialSites.mailGuideEnd') }}
+          <a class="link" href="https://ehall.qdu.edu.cn" target="_blank" rel="noopener">网上办事大厅</a>{{ t('officialSites.mailGuideEnd2') }}
         </p>
       </div>
 
@@ -88,7 +91,7 @@ async function copyMail() {
           </a>
         </div>
       </div>
-      <p class="muted">学院名单依据青岛大学本科招生信息网「学院专业」整理，按学科大类分类展示，如有变动以学校官网为准。</p>
+      <p class="muted">{{ t('officialSites.collegeNote') }}</p>
     </template>
 
     <template v-else>
@@ -98,7 +101,7 @@ async function copyMail() {
           <span class="phone-num">{{ v }}</span>
         </div>
       </div>
-      <p class="muted">紧急求助请优先拨打 110 / 120 / 119。</p>
+      <p class="muted">{{ t('officialSites.emergencyNote') }}</p>
     </template>
   </div>
 </template>

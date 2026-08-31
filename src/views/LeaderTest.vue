@@ -4,6 +4,9 @@
  *  青岛大学历任/现任校领导原型做加权距离匹配。结果仅供娱乐。 */
 import { ref, computed } from 'vue'
 import { DIMS, leaders, questions, shareLine, BIAS } from '../data/leaders'
+import { useI18n } from '../i18n'
+
+const { t, lang } = useI18n()
 
 const emit = defineEmits(['back'])
 
@@ -163,26 +166,26 @@ const initial = (name) => name.charAt(0)
 
 <template>
   <div class="view-top">
-    <button class="back-btn" @click="emit('back')">← 返回首页</button>
-    <div class="view-title">测出你像哪位校领导</div>
-    <div class="view-sub">按校园管理风格匹配 · 青岛大学历任与现任校领导原型</div>
+    <button class="back-btn" @click="emit('back')">{{ t('common.back') }}</button>
+    <div class="view-title">{{ t('leaderTest.titleFull') }}</div>
+    <div class="view-sub">{{ t('leaderTest.subFull') }}</div>
   </div>
 
   <!-- 开始页 -->
   <div v-if="phase === 'intro'" class="panel" style="text-align:center;padding:32px 20px;">
     <div style="font-size:44px;">🎓</div>
-    <div style="font-size:18px;font-weight:800;margin:10px 0 6px;">你是哪位校领导「转世」？</div>
+    <div style="font-size:18px;font-weight:800;margin:10px 0 6px;">{{ t('leaderTest.introTitle') }}</div>
     <p class="muted" style="font-size:13px;line-height:1.8;max-width:420px;margin:0 auto;">
-      回答 {{ totalQ }} 道校园管理场景题，系统会从<b>决策魄力、规划理性、改革锐气、情怀感召、制度规范、育人理念、师生动员、执行强度、发展导向</b>九个维度刻画你的风格，并匹配你最像的青岛大学校领导。
+      {{ t('leaderTest.introDesc', { total: totalQ }) }}
     </p>
-    <p class="muted" style="font-size:12px;margin-top:8px;">本测试结果仅供娱乐，不涉及任何现实人物的立场讨论。</p>
-    <button class="btn accent big" style="margin-top:18px;width:100%;max-width:320px;" @click="start">开始测试</button>
+    <p class="muted" style="font-size:12px;margin-top:8px;">{{ t('leaderTest.introNote') }}</p>
+    <button class="btn accent big" style="margin-top:18px;width:100%;max-width:320px;" @click="start">{{ t('leaderTest.start') }}</button>
   </div>
 
   <!-- 答题页 -->
   <div v-else-if="phase === 'quiz'" class="panel">
     <div class="quiz-progress"><i :style="{ width: progress + '%' }"></i></div>
-    <div class="muted" style="font-size:12px;margin:8px 0 2px;">第 {{ step + 1 }} / {{ totalQ }} 题 · {{ current.kicker }}</div>
+    <div class="muted" style="font-size:12px;margin:8px 0 2px;">{{ t('leaderTest.questionOf', { cur: step + 1, total: totalQ }) }} · {{ current.kicker }}</div>
     <div style="font-size:17px;font-weight:800;margin:10px 0 4px;">{{ current.title }}</div>
     <div class="muted" style="font-size:12px;margin-bottom:14px;">{{ current.desc }}</div>
 
@@ -204,8 +207,8 @@ const initial = (name) => name.charAt(0)
     </div>
 
     <div class="quiz-nav">
-      <button class="btn ghost" :disabled="step === 0" @click="goPrev">‹ 上一题</button>
-      <button class="btn accent" :disabled="!answered" @click="goNext">{{ step === totalQ - 1 ? '提交结果 ✓' : '下一题 ›' }}</button>
+      <button class="btn ghost" :disabled="step === 0" @click="goPrev">{{ t('leaderTest.prevQuestion') }}</button>
+      <button class="btn accent" :disabled="!answered" @click="goNext">{{ step === totalQ - 1 ? t('leaderTest.submitResult') : t('leaderTest.nextQuestion') }}</button>
     </div>
   </div>
 
@@ -217,7 +220,7 @@ const initial = (name) => name.charAt(0)
         <span v-else class="portrait-initial">{{ initial(best.name) }}</span>
       </div>
       <div class="result-hero-txt">
-        <div class="muted" style="font-size:11px;">唯一结果匹配 · 契合度 {{ best.match }}%</div>
+        <div class="muted" style="font-size:11px;">{{ t('leaderTest.resultMatch') }} {{ best.match }}{{ t('leaderTest.percent') }}</div>
         <div class="result-name">{{ best.name }}</div>
         <div class="muted" style="font-size:12px;">{{ best.period }} · {{ best.role }}</div>
         <div class="result-bio">{{ best.bio }}</div>
@@ -225,16 +228,16 @@ const initial = (name) => name.charAt(0)
     </div>
 
     <div class="result-sec">
-      <div class="sec-title">契合分析</div>
+      <div class="sec-title">{{ t('leaderTest.matchAnalysis') }}</div>
       <p class="muted" style="font-size:13px;line-height:1.8;margin:0;">{{ whyText }}</p>
     </div>
 
     <div class="result-sec">
-      <div class="sec-title">多维原型比对 <span class="sec-note">蓝=你的画像 · 橙={{ best.name }}原型</span></div>
+      <div class="sec-title">{{ t('leaderTest.multiDim') }} <span class="sec-note">{{ t('leaderTest.dimNote') }}{{ best.name }}{{ t('leaderTest.dimNoteEnd') }}</span></div>
       <div v-for="d in DIMS" :key="d.key" class="dim-block">
         <div class="dim-head">
           <span class="dim-name">{{ d.label }}</span>
-          <span class="dim-nums">你 <b>{{ norm(user[d.key]) }}</b> / 原型 <b>{{ best.vec[d.key] }}</b></span>
+          <span class="dim-nums">{{ t('leaderTest.dimYou') }} <b>{{ norm(user[d.key]) }}</b> / {{ t('leaderTest.dimProto') }} <b>{{ best.vec[d.key] }}</b></span>
         </div>
         <div class="dim-track">
           <i class="dim-you" :style="{ width: pct(norm(user[d.key])) + '%' }"></i>
@@ -244,12 +247,12 @@ const initial = (name) => name.charAt(0)
     </div>
 
     <div class="result-sec">
-      <div class="sec-title">简要事迹</div>
+      <div class="sec-title">{{ t('leaderTest.briefBio') }}</div>
       <p class="muted" style="font-size:13px;line-height:1.8;margin:0;">{{ best.summary }}</p>
     </div>
 
     <div class="result-sec">
-      <div class="sec-title">最接近的另外两位</div>
+      <div class="sec-title">{{ t('leaderTest.nearbyTwo') }}</div>
       <div v-for="(o, i) in [second, third]" :key="o.name" class="near-row">
         <span class="near-rank">#{{ i + 2 }}</span>
         <img v-if="o.photo" class="near-img" :src="photoUrl(o.photo)" alt="" @error="o.photo = ''" />
@@ -262,20 +265,20 @@ const initial = (name) => name.charAt(0)
     </div>
 
     <div class="share-box">
-      <div style="font-weight:800;font-size:13px;margin-bottom:6px;">可分享文案</div>
+      <div style="font-weight:800;font-size:13px;margin-bottom:6px;">{{ t('leaderTest.shareText') }}</div>
       <p class="muted" style="font-size:13px;margin:0 0 10px;line-height:1.6;">{{ shareText }}</p>
-      <button class="btn ghost small" @click="copyShare">{{ copied ? '已复制 ✓' : '复制文案' }}</button>
+      <button class="btn ghost small" @click="copyShare">{{ copied ? t('leaderTest.copiedText') : t('leaderTest.copyText') }}</button>
     </div>
 
-    <div style="margin:18px 0 4px;font-size:13px;">这个结果准吗？</div>
+    <div style="margin:18px 0 4px;font-size:13px;">{{ t('leaderTest.feedbackTitle') }}</div>
     <div style="display:flex;gap:10px;justify-content:center;">
-      <button class="tab" :class="{ active: feedback === 'ok' }" @click="feedback = 'ok'">👍 准</button>
-      <button class="tab" :class="{ active: feedback === 'mid' }" @click="feedback = 'mid'">🤔 一般</button>
-      <button class="tab" :class="{ active: feedback === 'no' }" @click="feedback = 'no'">👎 不准</button>
+      <button class="tab" :class="{ active: feedback === 'ok' }" @click="feedback = 'ok'">{{ t('leaderTest.feedbackOk') }}</button>
+      <button class="tab" :class="{ active: feedback === 'mid' }" @click="feedback = 'mid'">{{ t('leaderTest.feedbackMid') }}</button>
+      <button class="tab" :class="{ active: feedback === 'no' }" @click="feedback = 'no'">{{ t('leaderTest.feedbackNo') }}</button>
     </div>
 
-    <p class="muted" style="font-size:11px;margin:16px 0 0;">本测试结果仅供娱乐，不参与任何立场和现实人物的讨论。</p>
-    <button class="btn accent big" style="margin-top:14px;width:100%;" @click="start">再测一次</button>
+    <p class="muted" style="font-size:11px;margin:16px 0 0;">{{ t('leaderTest.testNote') }}</p>
+    <button class="btn accent big" style="margin-top:14px;width:100%;" @click="start">{{ t('leaderTest.retake') }}</button>
   </div>
 </template>
 

@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import CountUp from '../components/CountUp.vue'
+import { useI18n } from '../i18n'
+
+const { t, lang } = useI18n()
 
 const emit = defineEmits(['back'])
 
@@ -183,42 +186,42 @@ function restart() {
 
 <template>
   <div class="view-top">
-    <button class="back-btn" @click="emit('back')">← 返回首页</button>
-    <div class="view-title">教学楼速配</div>
-    <div class="view-sub">新楼名 × 旧称配对 · 一次可翻 4 张记忆 · 配对应从照片上翻起</div>
+    <button class="back-btn" @click="emit('back')">{{ t('common.back') }}</button>
+    <div class="view-title">{{ t('buildingMatch.title') }}</div>
+    <div class="view-sub">{{ t('buildingMatch.subFull') }}</div>
   </div>
 
   <div class="panel" style="margin-bottom:16px;">
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <div class="stat-pill"><b>{{ moves }}</b><span>步数</span></div>
-      <div class="stat-pill"><b>{{ matched.size }}/{{ activePairs.length }}</b><span>已配对</span></div>
-      <div class="stat-pill" v-if="best"><b>{{ best }}</b><span>最佳</span></div>
+      <div class="stat-pill"><b>{{ moves }}</b><span>{{ t('buildingMatch.moves') }}</span></div>
+      <div class="stat-pill"><b>{{ matched.size }}/{{ activePairs.length }}</b><span>{{ t('buildingMatch.matched') }}</span></div>
+      <div class="stat-pill" v-if="best"><b>{{ best }}</b><span>{{ t('buildingMatch.bestMoves') }}</span></div>
       <div style="margin-left:auto;display:flex;gap:8px;">
-        <button class="btn ghost" style="padding:7px 14px;" @click="help = true">❓ 玩法</button>
-        <button class="btn ghost" style="padding:7px 14px;" @click="openCheat">✨ 开挂</button>
-        <button class="btn ghost" style="padding:7px 14px;" @click="restart">🔄 重开</button>
+        <button class="btn ghost" style="padding:7px 14px;" @click="help = true">{{ t('buildingMatch.helpBtn') }}</button>
+        <button class="btn ghost" style="padding:7px 14px;" @click="openCheat">{{ t('buildingMatch.cheatBtn') }}</button>
+        <button class="btn ghost" style="padding:7px 14px;" @click="restart">{{ t('buildingMatch.restartBtn') }}</button>
       </div>
     </div>
 
     <div class="tab-row" style="margin-top:12px;">
       <button v-for="(d, k) in DIFFS" :key="k" class="tab" :class="{ active: diff === k }" @click="pickDiff(k)">
-        {{ d.label }} · {{ d.pairs }} 对
+        {{ d.label }} · {{ d.pairs }} {{ t('buildingMatch.pairs') }}
       </button>
     </div>
 
     <div v-if="finished" class="result-box" style="text-align:center;margin-top:12px;">
       <div style="font-size:26px;">🎉</div>
-      <div style="font-weight:800;font-size:18px;">全部配对成功！</div>
-      <div style="margin-top:4px;">{{ DIFFS[diff].label }}难度 · 用了 {{ moves }} 步 · 获得 {{ stars }} 星</div>
+      <div style="font-weight:800;font-size:18px;">{{ t('buildingMatch.allMatched') }}</div>
+      <div style="margin-top:4px;">{{ DIFFS[diff].label }}{{ t('buildingMatch.difficulty') }} · {{ moves }} {{ t('buildingMatch.matchSteps') }} · {{ stars }} {{ t('buildingMatch.matchStars') }}</div>
     </div>
 
     <div
       v-if="found"
       class="found-tip"
-    >🔍 发现配对！点击两张高亮卡片确认（还需翻到对应两张才算成功哦）</div>
-    <div v-else-if="noPair" class="found-tip bad">这 4 张里没有配对，已翻回，再试试</div>
-    <div v-else-if="confirmPair && !pickedId" class="found-tip">先点击一张高亮卡片选中，再点击另一张完成配对</div>
-    <div v-else-if="confirmPair && pickedId" class="found-tip good">已选中 ✅ 点击另一张高亮卡片配对</div>
+    >{{ t('buildingMatch.foundPair') }}</div>
+    <div v-else-if="noPair" class="found-tip bad">{{ t('buildingMatch.noMatchFound') }}</div>
+    <div v-else-if="confirmPair && !pickedId" class="found-tip">{{ t('buildingMatch.confirmHint') }}</div>
+    <div v-else-if="confirmPair && pickedId" class="found-tip good">{{ t('buildingMatch.selectedHint') }}</div>
 
     <div class="card-grid" :style="{ '--cols': DIFFS[diff].cols }">
       <button
@@ -246,25 +249,25 @@ function restart() {
         </template>
       </button>
     </div>
-    <div class="muted" style="font-size:11px;margin-top:10px;">卡背为青大校园实景 · 名称对应据《青岛大学道路楼宇及园林命名方案》（青大办字〔2006〕24号）</div>
+    <div class="muted" style="font-size:11px;margin-top:10px;">{{ t('buildingMatch.cardNote') }}</div>
   </div>
 
   <div v-if="help" class="overlay" @click="help = false">
     <div class="overlay-card" @click.stop>
-      <div style="font-weight:800;font-size:17px;margin-bottom:12px;">📖 玩法说明</div>
+      <div style="font-weight:800;font-size:17px;margin-bottom:12px;">{{ t('buildingMatch.helpTitle') }}</div>
       <div style="font-size:14px;line-height:2;">
-        <p>1. 卡片背面是青大校园实景照片，点击翻开看楼名。</p>
-        <p>2. 每次可同时翻开 <b>4 张</b> 记忆：若 4 张里没有配对会自动翻回；<b>若发现配对</b>，两张卡片会高亮，但你还需依次点击这两张确认才算配对成功。</p>
-        <p>3. 目标是找出「新楼名 ⇄ 旧称」的全部配对，步数越少星级越高。</p>
-        <p>4. 卡住了？点「✨ 开挂」会显示 3 秒全部配对答案。</p>
+        <p>{{ t('buildingMatch.helpStep1') }}</p>
+        <p>{{ t('buildingMatch.helpStep2') }}<b>{{ t('buildingMatch.helpStep2Bold') }}</b>{{ t('buildingMatch.helpStep2Mid') }}<b>{{ t('buildingMatch.helpStep2Bold2') }}</b>{{ t('buildingMatch.helpStep2End') }}</p>
+        <p>{{ t('buildingMatch.helpStep3') }}</p>
+        <p>{{ t('buildingMatch.helpStep4') }}</p>
       </div>
-      <button class="btn accent" style="width:100%;margin-top:6px;" @click="help = false">明白了，开始！</button>
+      <button class="btn accent" style="width:100%;margin-top:6px;" @click="help = false">{{ t('buildingMatch.helpOk') }}</button>
     </div>
   </div>
 
   <div v-if="cheat" class="overlay">
     <div class="cheat-box">
-      <div style="font-weight:800;font-size:15px;margin-bottom:10px;">✨ 答案速览（3 秒后自动关闭）</div>
+      <div style="font-weight:800;font-size:15px;margin-bottom:10px;">{{ t('buildingMatch.cheatTitle') }}</div>
       <div v-for="(p, i) in activePairs" :key="i" class="cheat-row">
         <b style="color:var(--primary);">{{ p[0] }}</b>
         <span style="opacity:.6;">⇄</span>

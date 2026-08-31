@@ -7,6 +7,9 @@ import { loadSnap } from '../api/localCourse'
 import { loadTimetableMeta, loadTermRows } from '../api/termTimetable'
 import { normRoom, clsSplit, profOf, parseWeeks } from '../utils/course'
 import { fmtTime } from '../utils/format'
+import { useI18n } from '../i18n'
+
+const { t, lang } = useI18n()
 
 const emit = defineEmits(['back'])
 
@@ -20,7 +23,7 @@ const opened = ref(null)
 const term = ref('')
 const weekFilter = ref('')
 
-const dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+const dayNames = computed(() => [t('common.mon'), t('common.tue'), t('common.wed'), t('common.thu'), t('common.fri'), t('common.sat'), t('common.sun')])
 const PERIOD = 12
 
 onMounted(async () => {
@@ -266,9 +269,9 @@ onMounted(loadCourses)
 
 <template>
 <div class="view-top">
-      <button class="back-btn" @click="emit('back')">← 返回首页</button>
-      <div class="view-title">课程表</div>
-      <div class="view-sub">真实课表 · {{ term || semester }}《课程总表》，{{ curRows.length }} 条排课（含 {{ semesters.length }} 个学期并集）</div>
+      <button class="back-btn" @click="emit('back')">← {{ t('common.back').slice(2) }}</button>
+      <div class="view-title">{{ t('timetable.title') }}</div>
+      <div class="view-sub">{{ t('timetable.subFull') }} {{ term || semester }}{{ t('timetable.courseTable') }}，{{ curRows.length }} {{ t('timetable.rows') }}（{{ semesters.length }} {{ t('timetable.semesters') }}）</div>
     </div>
 
   <div v-if="loading" class="skeleton-list">

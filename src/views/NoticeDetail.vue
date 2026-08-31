@@ -1,6 +1,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { apiFetch } from '../api'
+import { useI18n } from '../i18n'
+
+const { t, lang } = useI18n()
 
 const props = defineProps({ notice: { type: Object, required: true } })
 const emit = defineEmits(['back'])

@@ -7,6 +7,9 @@ import BudgetPro from './BudgetPro.vue'
 import BarRow from '../components/BarRow.vue'
 import PieChart from '../components/PieChart.vue'
 import { parseBillFile } from '../utils/billImport.js'
+import { useI18n } from '../i18n'
+
+const { t, lang } = useI18n()
 
 const emit = defineEmits(['back'])
 
@@ -656,8 +659,8 @@ const monthLabel = computed(() => {
   <template v-else>
   <div class="budget-root" :class="{ cyber: cyberOn }">
   <div class="view-top">
-    <button class="back-btn" @click="emit('back')">← 返回首页</button>
-    <div class="view-title">生活费计数器</div>
+    <button class="back-btn" @click="emit('back')">← {{ t('common.back').slice(2) }}</button>
+    <div class="view-title">{{ t('budget.title') }}</div>
     <div class="view-sub">随手记一笔，月底少流一滴泪 · 奖学金、兼职收入也能入账</div>
     <div class="top-actions">
       <button class="btn ghost small" @click="subView = 'sim'">📊 生活费模拟 ›</button>
@@ -667,13 +670,13 @@ const monthLabel = computed(() => {
 
   <div class="panel">
     <div class="month-nav">
-      <button class="btn ghost small" @click="month = monthOffset(month, -1)">← 上月</button>
+      <button class="btn ghost small" @click="month = monthOffset(month, -1)">{{ t('budget.prevMonth') }}</button>
       <div class="month-title">{{ monthLabel }}</div>
-      <button class="btn ghost small" @click="month = monthOffset(month, 1)">下月 →</button>
+      <button class="btn ghost small" @click="month = monthOffset(month, 1)">{{ t('budget.nextMonth') }} →</button>
     </div>
     <div class="balance-banner" :class="{ negative: balance < 0 }" @click="rainTap()">
       <div v-if="bannerEgg" class="balance-egg">{{ bannerEgg.emoji }} {{ bannerEgg.text }}</div>
-      <div class="balance-label">本月结余</div>
+      <div class="balance-label">{{ t('budget.monthlyBalance') }}</div>
       <div class="balance-num"><span class="balance-sym">¥</span>{{ fmt(Math.abs(balance)) }}</div>
       <div class="balance-hint">{{ balanceMsg() }}</div>
       <div v-if="allowance" class="balance-live">
@@ -684,16 +687,16 @@ const monthLabel = computed(() => {
         {{ prevDiff > 0 ? '▲' : '▼' }} 支出较上月 {{ prevDiff > 0 ? '+' : '' }}{{ fmt(prevDiff) }} 元
       </div>
       <div class="balance-row">
-        <div class="balance-item income"><span>收入</span><b>+¥{{ fmt(income) }}</b></div>
-        <div class="balance-item expense"><span>支出</span><b>-¥{{ fmt(expense) }}</b></div>
-        <div class="balance-item"><span>笔数</span><b>{{ monthRecords.length }}</b></div>
+        <div class="balance-item income"><span>{{ t('budget.income') }}</span><b>+¥{{ fmt(income) }}</b></div>
+        <div class="balance-item expense"><span>{{ t('budget.expense') }}</span><b>-¥{{ fmt(expense) }}</b></div>
+        <div class="balance-item"><span>{{ t('budget.countLabel') }}</span><b>{{ monthRecords.length }}</b></div>
       </div>
     </div>
   </div>
 
   <div class="panel">
-    <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ editing ? '✏️ 修改记录' : '记一笔' }}</div>
-    <button v-if="editing" class="btn ghost small" style="margin-bottom:10px;" @click="cancelEdit">← 取消修改</button>
+    <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ editing ? t('budget.editRecord') : t('budget.addRecord') }}</div>
+    <button v-if="editing" class="btn ghost small" style="margin-bottom:10px;" @click="cancelEdit">{{ t('budget.cancelEdit') }}</button>
     <div class="seg">
       <button
         class="seg-btn"
@@ -704,7 +707,7 @@ const monthLabel = computed(() => {
         @mouseleave="holdEnd"
         @touchstart="holdStart"
         @touchend="holdEnd"
-      >💸 支出</button>
+      >💸 {{ t('budget.expenseLabel') }}</button>
       <button
         class="seg-btn"
         :class="{ active: mode === 'income' }"
@@ -714,7 +717,7 @@ const monthLabel = computed(() => {
         @mouseleave="holdEnd"
         @touchstart="holdStart"
         @touchend="holdEnd"
-      >💵 收入</button>
+      >💵 {{ t('budget.incomeLabel') }}</button>
     </div>
     <div class="cat-grid">
       <button
@@ -741,10 +744,10 @@ const monthLabel = computed(() => {
       </div>
     </template>
     <div class="input-row" style="margin-top:14px;">
-      <input v-model="amount" class="input amount-input" type="number" inputmode="decimal" placeholder="金额，如 12.5" @keyup.enter="save" />
+      <input v-model="amount" class="input amount-input" type="number" inputmode="decimal" :placeholder="t('budget.amountPlaceholder')" @keyup.enter="save" />
       <input v-model="date" class="input date-input" type="date" />
     </div>
-    <input v-model="note" class="input" style="margin-top:10px;" placeholder="备注（可选），如：食堂麻辣香锅" @keyup.enter="save" />
+    <input v-model="note" class="input" style="margin-top:10px;" :placeholder="t('budget.notePlaceholder')" @keyup.enter="save" />
     <div class="batch-row" v-if="!editing">
       <span class="muted" style="font-size:11px;">批量：</span>
       <input v-model.number="batchN" type="number" min="1" max="99" class="input batch-input" @keyup.enter="save" />
@@ -752,18 +755,18 @@ const monthLabel = computed(() => {
       <span v-if="Number(batchN) > 1" class="batch-tip">一次记 {{ Number(batchN) }} 条相同记录</span>
     </div>
     <button class="btn accent big" style="margin-top:12px;width:100%;" :class="festival ? 'festival-on ' + festival : ''" :disabled="!(Number(amount) > 0)" @click="save">
-      {{ editing ? '✓ 保存修改' : '＋ 记入' + (mode === 'expense' ? '支出' : '收入') + (Number(batchN) > 1 ? ' ×' + Number(batchN) : '') }}
+      {{ editing ? t('budget.saveEdit') : (mode === 'expense' ? t('budget.addExpense') : t('budget.addIncome')) + (Number(batchN) > 1 ? ' ×' + Number(batchN) : '') }}
     </button>
-    <button v-if="editing" class="btn ghost big" style="margin-top:8px;width:100%;" @click="cancelEdit">取消</button>
+    <button v-if="editing" class="btn ghost big" style="margin-top:8px;width:100%;" @click="cancelEdit">{{ t('budget.cancel') }}</button>
   </div>
 
   <div class="panel">
-    <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>📥 导入微信 / 支付宝账单</div>
+    <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('budget.importTitle') }}</div>
     <p class="muted" style="font-size:12px;margin-bottom:10px;">
       直接选择从微信 / 支付宝下载的账单文件即可自动识别：微信「支付 → 钱包 → 账单 → 常见问题 → 下载账单 → 用于个人对账」或支付宝「我的 → 账单 → 右上角 ⋯ → 开具交易流水证明 / 导出」，下载的 CSV 或 Excel(xlsx) 都能识别。金额按「收/支」自动记入，支出按交易分类与商品名自动归类。
     </p>
     <input id="csv-file" type="file" accept=".csv,.xlsx,text/csv" style="display:none;" @change="billImport($event.target.files[0])" />
-    <label for="csv-file" class="btn ghost" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">📄 选择账单文件（CSV / Excel）</label>
+    <label for="csv-file" class="btn ghost" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">{{ t('budget.selectFile') }}</label>
     <div class="clean-toggle">
       <input id="clean-switch" type="checkbox" v-model="cleanMode" />
       <label for="clean-switch">智能清洗：自动跳过转账 / 红包 / 收款类<b>大额中转</b>（≥1000 元，如别人转几万给你、你再转去他另一张卡这类过账，避免虚增当月收支；小额 AA 饭钱等转账仍保留）</label>
@@ -776,8 +779,8 @@ const monthLabel = computed(() => {
 
   <div class="panel">
     <button class="ref-toggle" @click="showRef = !showRef">
-      📚 社区参考区间（元/月）
-      <span>{{ showRef ? '收起 ▴' : '展开 ▾' }}</span>
+      {{ t('budget.refTitle') }}
+      <span>{{ showRef ? t('budget.refToggleCollapse') : t('budget.refToggleExpand') }}</span>
     </button>
     <div v-if="showRef" class="ref-list">
       <div v-for="r in REF" :key="r.key" class="ref-row">
@@ -792,10 +795,10 @@ const monthLabel = computed(() => {
 
   <div class="panel">
     <div class="section-head" style="align-items:center;margin:0 0 12px;">
-      <h3 class="section-title" style="margin:0;"><span class="bar"></span>本月支出构成</h3>
+      <h3 class="section-title" style="margin:0;"><span class="bar"></span>{{ t('budget.catTitle') }}</h3>
       <div class="chart-type">
-        <button class="tab" :class="{ active: catChartType === 'bar' }" @click="catChartType = 'bar'">▥ 条形</button>
-        <button class="tab" :class="{ active: catChartType === 'pie' }" @click="catChartType = 'pie'">◔ 圆饼</button>
+        <button class="tab" :class="{ active: catChartType === 'bar' }" @click="catChartType = 'bar'">{{ t('budget.chartBar') }}</button>
+        <button class="tab" :class="{ active: catChartType === 'pie' }" @click="catChartType = 'pie'">{{ t('budget.chartPie') }}</button>
       </div>
     </div>
     <div v-if="catStats.length && catChartType === 'bar'" class="cat-stat">
@@ -804,11 +807,11 @@ const monthLabel = computed(() => {
     <div v-else-if="catStats.length && catChartType === 'pie'">
       <PieChart :segments="catChartSegs" :total="expense" value-prefix="¥" @select="selectCatByLabel" />
     </div>
-    <div v-else class="muted" style="text-align:center;padding:10px;">本月还没有支出</div>
+    <div v-else class="muted" style="text-align:center;padding:10px;">{{ t('budget.noExpense') }}</div>
   </div>
 
   <div class="panel">
-    <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>近 6 月支出趋势</div>
+    <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('budget.trendTitle') }}</div>
     <div class="trend-wrap">
       <div v-for="t in trend" :key="t.key" class="trend-col">
         <div class="trend-val">{{ t.v ? '¥' + fmt(t.v) : '' }}</div>
@@ -820,30 +823,30 @@ const monthLabel = computed(() => {
 
   <div class="panel">
     <div class="section-head" style="align-items:center;margin:0 0 8px;">
-      <h3 class="section-title" style="margin:0;">明细（{{ sorted.length }}）</h3>
-      <button v-if="records.length" class="btn ghost small" @click="clearAll">清空全部</button>
+      <h3 class="section-title" style="margin:0;">{{ t('budget.detailTitle') }}{{ sorted.length }}）</h3>
+      <button v-if="records.length" class="btn ghost small" @click="clearAll">{{ t('budget.clearAll') }}</button>
     </div>
     <div class="sort-row">
-      <button class="tab" :class="{ active: typeFilter === 'all' }" @click="typeFilter = 'all'; catFilter = 'all'; incCatFilter = 'all'">全部</button>
-      <button class="tab" :class="{ active: typeFilter === 'expense' }" @click="typeFilter = 'expense'; catFilter = 'all'">支出</button>
-      <button class="tab" :class="{ active: typeFilter === 'income' }" @click="typeFilter = 'income'; incCatFilter = 'all'">收入</button>
+      <button class="tab" :class="{ active: typeFilter === 'all' }" @click="typeFilter = 'all'; catFilter = 'all'; incCatFilter = 'all'">{{ t('budget.typeAll') }}</button>
+      <button class="tab" :class="{ active: typeFilter === 'expense' }" @click="typeFilter = 'expense'; catFilter = 'all'">{{ t('budget.typeExpense') }}</button>
+      <button class="tab" :class="{ active: typeFilter === 'income' }" @click="typeFilter = 'income'; incCatFilter = 'all'">{{ t('budget.typeIncome') }}</button>
       <span class="sep">|</span>
-      <button class="tab" :class="{ active: sortMode === 'date' }" @click="switchSort('date')">日期</button>
-      <button class="tab" :class="{ active: sortMode === 'amount' }" @click="switchSort('amount')">金额{{ sortMode === 'amount' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : '' }}</button>
-      <button class="tab" :class="{ active: sortMode === 'cat' }" @click="switchSort('cat')">分类</button>
-      <span class="muted" style="font-size:10px;margin-left:auto;">共 {{ monthRecords.length }} 笔</span>
+      <button class="tab" :class="{ active: sortMode === 'date' }" @click="switchSort('date')">{{ t('budget.sortByDate') }}</button>
+      <button class="tab" :class="{ active: sortMode === 'amount' }" @click="switchSort('amount')">{{ t('budget.sortByAmount') }}{{ sortMode === 'amount' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : '' }}</button>
+      <button class="tab" :class="{ active: sortMode === 'cat' }" @click="switchSort('cat')">{{ t('budget.sortByCat') }}</button>
+      <span class="muted" style="font-size:10px;margin-left:auto;">共 {{ monthRecords.length }} {{ t('budget.totalRecords') }}</span>
     </div>
     <div v-if="sortMode === 'cat'" class="cat-chips">
       <template v-if="typeFilter !== 'income'">
-        <button class="chip" :class="{ active: catFilter === 'all' }" @click="catFilter = 'all'">全部支出</button>
+        <button class="chip" :class="{ active: catFilter === 'all' }" @click="catFilter = 'all'">{{ t('budget.allExpense') }}</button>
         <button v-for="c in CATS.expense" :key="c.key" class="chip" :class="{ active: catFilter === c.key }" @click="catFilter = c.key">{{ c.icon }}{{ c.label }}</button>
       </template>
       <template v-else>
-        <button class="chip" :class="{ active: incCatFilter === 'all' }" @click="incCatFilter = 'all'">全部收入</button>
+        <button class="chip" :class="{ active: incCatFilter === 'all' }" @click="incCatFilter = 'all'">{{ t('budget.allIncome') }}</button>
         <button v-for="c in CATS.income" :key="c.key" class="chip" :class="{ active: incCatFilter === c.key }" @click="incCatFilter = c.key">{{ c.icon }}{{ c.label }}</button>
       </template>
     </div>
-    <div v-if="!sorted.length" class="muted" style="text-align:center;padding:16px;">本月还没有记录</div>
+    <div v-if="!sorted.length" class="muted" style="text-align:center;padding:16px;">{{ t('budget.noRecordMonth') }}</div>
     <div v-else class="rec-list">
       <div v-for="r in paged" :key="r.id" class="rec-row">
         <span class="rec-icon">{{ (catInfo(r.type, r.cat) || {}).icon || '📌' }}</span>
@@ -857,18 +860,18 @@ const monthLabel = computed(() => {
       </div>
     </div>
     <div v-if="pageCount > 1" class="pager">
-      <button class="btn ghost small" :disabled="page <= 1" @click="page--">‹ 上页</button>
+      <button class="btn ghost small" :disabled="page <= 1" @click="page--">{{ t('budget.paginationPrev') }}</button>
       <div class="pager-jump">
         <input v-model.number="page" type="number" class="input page-input" min="1" :max="pageCount" />
         <span>/ {{ pageCount }}</span>
       </div>
-      <button class="btn ghost small" :disabled="page >= pageCount" @click="page++">下页 ›</button>
+      <button class="btn ghost small" :disabled="page >= pageCount" @click="page++">{{ t('budget.paginationNext') }}</button>
     </div>
-    <p class="muted" style="font-size:11px;margin-top:10px;">记录保存在本机浏览器（localStorage），不会上传任何数据。</p>
+    <p class="muted" style="font-size:11px;margin-top:10px;">{{ t('budget.savedLocal') }}</p>
 
     <div class="ach-panel">
       <div class="section-head" style="align-items:center;margin:0 0 10px;">
-        <h3 class="section-title" style="margin:0;">🏅 隐藏成就</h3>
+        <h3 class="section-title" style="margin:0;">{{ t('budget.achievementTitle') }}</h3>
         <span class="ach-count">{{ achCount }} / {{ ACHIEVEMENTS.length }}</span>
       </div>
       <div class="ach-grid">
@@ -877,15 +880,15 @@ const monthLabel = computed(() => {
             <span class="ach-icon">{{ achStates[a.key].unlocked ? a.icon : '🔒' }}</span>
             <span class="ach-name">{{ achStates[a.key].unlocked ? a.name + (achStates[a.key].level > 0 ? ' · ' + MEDAL[Math.min(achStates[a.key].level, MEDAL.length - 1)] : '') : '？？？' }}</span>
           </div>
-          <div class="ach-desc">{{ achStates[a.key].unlocked ? a.desc : '达成条件后解锁' }}</div>
+          <div class="ach-desc">{{ achStates[a.key].unlocked ? a.desc : t('budget.unlocked') }}</div>
           <div v-if="achStates[a.key].unlocked" class="ach-progress">
             <div class="ach-bar"><i :style="{ width: Math.min(100, Math.round(achStates[a.key].cur / achStates[a.key].next * 100)) + '%' }"></i></div>
             <span class="muted" style="font-size:10px;">{{ achStates[a.key].cur }} / {{ achStates[a.key].next }}</span>
           </div>
         </div>
       </div>
-      <button v-if="!achExpanded" class="ach-more" @click="achExpanded = true">展开全部成就 ▾</button>
-      <button v-else class="ach-more" @click="achExpanded = false">收起成就 ▴</button>
+      <button v-if="!achExpanded" class="ach-more" @click="achExpanded = true">{{ t('budget.expandAll') }}</button>
+      <button v-else class="ach-more" @click="achExpanded = false">{{ t('budget.collapseAch') }}</button>
     </div>
   </div>
   </div>

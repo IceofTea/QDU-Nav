@@ -2,6 +2,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { foods, halls } from '../data/foods'
 import CountUp from '../components/CountUp.vue'
+import { useI18n } from '../i18n'
+
+const { t, lang } = useI18n()
 
 const emit = defineEmits(['back'])
 
@@ -60,9 +63,9 @@ onMounted(() => {
 
 <template>
   <div class="view-top">
-    <button class="back-btn" @click="emit('back')">← 返回首页</button>
-    <div class="view-title">今天吃什么</div>
-    <div class="view-sub">选择困难？帮你随机决定 · 今日已随机 <CountUp :value="pickedCount" /> 次</div>
+    <button class="back-btn" @click="emit('back')">← {{ t('common.back').slice(2) }}</button>
+    <div class="view-title">{{ t('whatToEat.title') }}</div>
+    <div class="view-sub">{{ t('whatToEat.subFull') }} <CountUp :value="pickedCount" /> {{ t('whatToEat.subTimes') }}</div>
   </div>
 
   <div class="panel" style="margin-bottom:16px;text-align:center;">
@@ -76,7 +79,7 @@ onMounted(() => {
       >{{ c }}</button>
     </div>
     <div class="muted" style="font-size:13px;margin-bottom:14px;">
-      随机推荐 3 个选择<template v-if="campusFilter !== '全部'">（仅 {{ campusFilter }}）</template>
+      {{ t('whatToEat.recommend3') }}<template v-if="campusFilter !== 'all'">（{{ t('whatToEat.onlyCampus') }} {{ campusFilter }}）</template>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;">
       <div v-for="(f, i) in picks" :key="i" class="food-card">
@@ -87,14 +90,14 @@ onMounted(() => {
       </div>
     </div>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-      <button class="btn" @click="roll">🔄 换个推荐</button>
-      <button class="btn accent" @click="pickOne">🎯 就决定这个</button>
+      <button class="btn" @click="roll">{{ t('whatToEat.reRecommend') }}</button>
+      <button class="btn accent" @click="pickOne">{{ t('whatToEat.decideThis') }}</button>
     </div>
-    <div class="muted" style="margin-top:12px;font-size:12px;">菜品均为食堂真实档口/招牌（据后勤采购公告与公开报道），价格以食堂当日公示为准</div>
+    <div class="muted" style="margin-top:12px;font-size:12px;">{{ t('whatToEat.dishNote') }}</div>
   </div>
 
   <div class="panel" style="margin-bottom:16px;">
-    <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>食堂一览（<CountUp :value="halls.length" /> 家）</div>
+    <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('whatToEat.hallList') }}<CountUp :value="halls.length" />{{ t('whatToEat.hallUnit') }}</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;">
       <div v-for="h in halls" :key="h.name" style="background:var(--soft-fg);border-radius:12px;padding:12px;">
         <b>{{ h.name }}</b>
@@ -105,8 +108,8 @@ onMounted(() => {
 
   <div class="panel">
     <div class="section-title" style="margin:0 0 12px;">
-      <span class="bar"></span>档口库（<CountUp :value="foods.length" /> 个真实档口/招牌）
-      <button class="btn ghost" style="margin-left:auto;padding:6px 12px;" @click="showAll = !showAll">{{ showAll ? '收起' : '展开' }}</button>
+      <span class="bar"></span>{{ t('whatToEat.stallLib') }}<CountUp :value="foods.length" />{{ t('whatToEat.stallUnit') }}
+      <button class="btn ghost" style="margin-left:auto;padding:6px 12px;" @click="showAll = !showAll">{{ showAll ? t('whatToEat.toggleCollapse') : t('whatToEat.toggleExpand') }}</button>
     </div>
     <div class="tab-row">
       <button
@@ -119,7 +122,7 @@ onMounted(() => {
     </div>
     <div v-if="showAll" style="overflow-x:auto;">
       <table class="data">
-        <thead><tr><th>档口 / 招牌</th><th>所在餐厅</th><th>校区</th><th>类型</th></tr></thead>
+        <thead><tr><th>{{ t('whatToEat.tableStall') }}</th><th>{{ t('whatToEat.tableHall') }}</th><th>{{ t('whatToEat.tableCampus') }}</th><th>{{ t('whatToEat.tableType') }}</th></tr></thead>
         <tbody>
           <tr v-for="f in filtered" :key="f.hall + f.name">
             <td><b>{{ f.name }}</b></td>

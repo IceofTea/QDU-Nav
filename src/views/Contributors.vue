@@ -3,6 +3,9 @@
  *  社区代码贡献（含已合入的 Pull Request）都会在此致谢。 */
 import { reactive } from 'vue'
 import { contributors } from '../data/contributors'
+import { useI18n } from '../i18n'
+
+const { t, lang } = useI18n()
 
 const emit = defineEmits(['back'])
 
@@ -27,18 +30,18 @@ function hueOf(i) {
 
 <template>
   <div class="view-top">
-    <button class="back-btn" @click="emit('back')">← 返回首页</button>
-    <div class="view-title">贡献者墙</div>
-    <div class="view-sub">感谢每一位让 QDU 校园导航变得更好的人</div>
+    <button class="back-btn" @click="emit('back')">{{ t('common.back') }}</button>
+    <div class="view-title">{{ t('contributors.title') }}</div>
+    <div class="view-sub">{{ t('contributors.subFull') }}</div>
   </div>
 
   <div class="panel" style="margin-bottom:16px;">
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
       <span style="font-size:30px;">🏆</span>
       <div style="flex:1;min-width:200px;">
-        <div style="font-weight:700;font-size:14px;">本项目由开源社区共同维护</div>
+        <div style="font-weight:700;font-size:14px;">{{ t('contributors.communityTitle') }}</div>
         <div class="muted" style="font-size:12px;margin-top:2px;">
-          除了数据抓取机器人，站点代码的每一次改进都来自真实的人类贡献者 —— 点击名字可跳转 GitHub 主页。
+          {{ t('contributors.communityDesc') }}
         </div>
       </div>
     </div>
@@ -69,7 +72,7 @@ function hueOf(i) {
   </div>
 
   <div class="panel" style="margin-top:16px;">
-    <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>社区贡献记录</div>
+    <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('contributors.community') }}</div>
     <ul class="changelog">
       <li><b>v1.1.0</b> — 数据链路附带列、贴吧舆情、官网分类等多项功能迭代。</li>
       <li><b>v1.1.1</b> — 社区 PR #1（huanuyn）：修复课程接口解析路径、美食轮盘指针偏差。</li>
@@ -91,12 +94,12 @@ function hueOf(i) {
       <li><b>v1.3.18</b> — 中英文切换：顶部栏一键切换，首页/校历/分类等核心页面全英文，底部导航同步，模块化 i18n 架构（src/i18n/）。</li>
     </ul>
     <p class="muted" style="font-size:12px;margin-top:10px;">
-      每个版本的完整改动清单见 <a href="https://github.com/IceofTea/QDU-Nav/blob/main/README.md" target="_blank" rel="noopener">README 版本历史</a>。
+      {{ t('contributors.fullHistory') }} <a href="https://github.com/IceofTea/QDU-Nav/blob/main/README.md" target="_blank" rel="noopener">{{ t('contributors.fullHistoryEnd') }}</a>。
     </p>
     <p class="muted" style="font-size:12px;margin-top:6px;">
-      想加入贡献者墙？给
+      {{ t('contributors.wantJoin') }}
       <a href="https://github.com/IceofTea/QDU-Nav" target="_blank" rel="noopener">QDU-Nav</a>
-      提 Pull Request，被合入后你的名字就会出现在这里。
+      {{ t('contributors.wantJoinEnd') }}
     </p>
   </div>
 </template>

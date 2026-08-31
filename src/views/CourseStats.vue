@@ -10,6 +10,9 @@ import CountUp from '../components/CountUp.vue'
 import KpiCard from '../components/KpiCard.vue'
 import BarRow from '../components/BarRow.vue'
 import InsightPanel from '../components/InsightPanel.vue'
+import { useI18n } from '../i18n'
+
+const { t, lang } = useI18n()
 
 const emit = defineEmits(['back'])
 
@@ -82,9 +85,9 @@ const insights = computed(() => {
 
 <template>
   <div class="view-top">
-    <button class="back-btn" @click="emit('back')">← 返回首页</button>
-    <div class="view-title">数据洞察</div>
-    <div class="view-sub">从近 {{ stats.terms.length || 7 }} 个学期课程总表（<CountUp :value="stats.periods" /> 条排课）看校园热度</div>
+    <button class="back-btn" @click="emit('back')">← {{ t('common.back').slice(2) }}</button>
+    <div class="view-title">{{ t('courseStats.title') }}</div>
+    <div class="view-sub">{{ t('courseStats.subFull', { n: stats.terms.length || 7 }) }}<CountUp :value="stats.periods" />{{ t('courseStats.subFull2') }}</div>
   </div>
 
   <div v-if="loading" class="muted" style="text-align:center;padding:40px;">统计加载中…</div>
