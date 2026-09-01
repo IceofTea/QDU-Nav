@@ -2,12 +2,12 @@
 // 不含价格/热量等未经证实数据。
 import { canteens } from './canteens'
 
-export const halls = canteens.map((c) => ({ name: c.name, campus: c.campus, zone: c.area }))
+export const halls = canteens.map((c) => ({ name: c.name, nameEn: c.nameEn, campus: c.campus, zone: c.area }))
 
 export const foods = []
 for (const c of canteens) {
-  for (const f of c.foods) {
-    foods.push({ name: f, hall: c.name, campus: c.campus, zone: c.area, tag: c.type === 'basic' ? '大众窗口' : '风味档口' })
+  for (let i = 0; i < c.foods.length; i++) {
+    foods.push({ name: c.foods[i], nameEn: (c.foodsEn && c.foodsEn[i]) || c.foods[i], hall: c.name, hallEn: c.nameEn, campus: c.campus, zone: c.area, tag: c.type === 'basic' ? '大众窗口' : '风味档口', tagEn: c.type === 'basic' ? 'Standard' : 'Specialty' })
   }
 }
 

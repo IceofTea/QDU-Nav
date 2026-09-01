@@ -20,13 +20,14 @@ const CAMPUSES = computed(() => lang.value === 'en'
 
 const CAMPUS_VALUES = ['全部', '浮山校区', '金家岭校区', '松山校区']
 
-const tags = computed(() => [t('whatToEat.all'), ...new Set(foods.map(f => f.tag))])
+const tags = computed(() => [t('whatToEat.all'), ...new Set(foods.map(f => lang.value === 'en' ? f.tagEn : f.tag))])
 
 const ALL_TAG = computed(() => t('whatToEat.all'))
 
 const filtered = computed(() => {
-  if (filter.value === ALL_TAG.value || filter.value === '全部') return foods
-  return foods.filter(f => f.tag === filter.value)
+  const tag = lang.value === 'en' ? (ALL_TAG.value) : (ALL_TAG.value)
+  if (filter.value === ALL_TAG.value || filter.value === t('whatToEat.all')) return foods
+  return foods.filter(f => (lang.value === 'en' ? f.tagEn : f.tag) === filter.value)
 })
 
 const campusPool = computed(() => {
@@ -90,8 +91,8 @@ onMounted(() => {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;">
       <div v-for="(f, i) in picks" :key="i" class="food-card">
         <div style="font-size:26px;">🍽️</div>
-        <div style="font-weight:700;margin:6px 0;">{{ f.name }}</div>
-        <div class="tag">{{ f.tag }}</div>
+        <div style="font-weight:700;margin:6px 0;">{{ lang === 'en' ? f.nameEn : f.name }}</div>
+        <div class="tag">{{ lang === 'en' ? f.tagEn : f.tag }}</div>
         <div class="muted" style="font-size:12px;margin-top:6px;">{{ f.hall }} · {{ f.campus }} {{ f.zone }}</div>
       </div>
     </div>
@@ -106,7 +107,7 @@ onMounted(() => {
     <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('whatToEat.hallList') }}<CountUp :value="halls.length" />{{ t('whatToEat.hallUnit') }}</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;">
       <div v-for="h in halls" :key="h.name" style="background:var(--soft-fg);border-radius:12px;padding:12px;">
-        <b>{{ h.name }}</b>
+        <b>{{ lang === 'en' ? h.nameEn : h.name }}</b>
         <div class="muted" style="font-size:12px;margin-top:4px;">{{ h.campus }} · {{ h.zone }}</div>
       </div>
     </div>
@@ -131,10 +132,10 @@ onMounted(() => {
         <thead><tr><th>{{ t('whatToEat.tableStall') }}</th><th>{{ t('whatToEat.tableHall') }}</th><th>{{ t('whatToEat.tableCampus') }}</th><th>{{ t('whatToEat.tableType') }}</th></tr></thead>
         <tbody>
           <tr v-for="f in filtered" :key="f.hall + f.name">
-            <td><b>{{ f.name }}</b></td>
-            <td>{{ f.hall }}</td>
+            <td><b>{{ lang === 'en' ? f.nameEn : f.name }}</b></td>
+            <td>{{ lang === 'en' ? f.hallEn : f.hall }}</td>
             <td>{{ f.campus }} {{ f.zone }}</td>
-            <td>{{ f.tag }}</td>
+            <td>{{ lang === 'en' ? f.tagEn : f.tag }}</td>
           </tr>
         </tbody>
       </table>

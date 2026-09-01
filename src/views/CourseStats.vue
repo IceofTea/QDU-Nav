@@ -48,6 +48,11 @@ const hasDist = computed(() =>
   stats.value.campusDist.some((k) => k.name !== '未标注')
 )
 
+const DAY_MAP = { '周一': 'Mon', '周二': 'Tue', '周三': 'Wed', '周四': 'Thu', '周五': 'Fri', '周六': 'Sat', '周日': 'Sun' }
+const CAMPUS_MAP = { '浮山校区': 'Fushan', '金家岭校区': 'Jinjialing', '松山校区': 'Songshan', '未标注': 'Unlabeled' }
+const LABEL_MAP = { '专业课': 'Major', '美育课': 'Aesthetic', '实践环节': 'Practical', '通识课': 'General', '公共课': 'Public', '选修课': 'Elective' }
+const translateLabel = (name) => lang.value === 'en' ? (DAY_MAP[name] || CAMPUS_MAP[name] || LABEL_MAP[name] || name) : name
+
 const total = computed(() => stats.value.periods || 1)
 const share = (v) => Math.round((v / total.value) * 1000) / 10
 
@@ -66,16 +71,17 @@ const topDay = computed(() => stats.value.dayDist[0] || null)
 const colCount = computed(() => labeledDist(stats.value.colDist).length)
 const maxPeriod = computed(() => stats.value.periodDist.reduce((m, r) => Math.max(m, r.count), 1))
 const periodLabel = (start) => lang.value === 'en' ? `Period ${start}–${start + 1}` : `第 ${start}–${start + 1} 节`
+const translatedName = (name) => lang.value === 'en' ? (CAMPUS_MAP[name] || name) : name
 
 /** 自动生成的文字洞察（数据驱动，无统计时自动降级为空） */
 const insights = computed(() => {
   const list = []
   if (topCampus.value) {
     const pct = distShare(stats.value.campusDist)(topCampus.value.count)
-    list.push(lang.value === 'en' ? `Most courses at ${topCampus.value.name}, ${pct}% of labeled schedule` : `开课最集中在 ${topCampus.value.name}，占已标注排课的 ${pct}%`)
+    list.push(lang.value === 'en' ? `Most courses at ${translatedName(topCampus.value.name)}, ${pct}% of labeled schedule` : `开课最集中在 ${topCampus.value.name}，占已标注排课的 ${pct}%`)
   }
   if (topDay.value) {
-    list.push(lang.value === 'en' ? `${topDay.value.day} is the busiest day (${topDay.value.count} periods) — library/study rooms will be tighter` : `${topDay.value.day}是全校排课最满的一天（${topDay.value.count} 节），图书馆/自习室会更紧张`)
+    list.push(lang.value === 'en' ? `${translateLabel(topDay.value.day)} is the busiest day (${topDay.value.count} periods) — library/study rooms will be tighter` : `${topDay.value.day}是全校排课最满的一天（${topDay.value.count} 节），图书馆/自习室会更紧张`)
   }
   const busy = stats.value.periodDist.reduce((a, b) => (b.count > a.count ? b : a), stats.value.periodDist[0] || null)
   if (busy) {
@@ -110,8 +116,8 @@ const insights = computed(() => {
 
     <div class="kpi-grid">
       <KpiCard :value="stats.campusDist.length" :label="t('courseStats.kpiCampus')" :sub="t('courseStats.kpiCampusSub')" />
-      <KpiCard :value="topCampus ? topCampus.name : '—'" :label="t('courseStats.kpiBusiest')" :sub="topCampus ? topCampus.count + (lang === 'en' ? ' entries · ' : ' 条 · ') + share(topCampus.count) + '%' : '—'" />
-      <KpiCard :value="topDay ? topDay.day : '—'" :label="t('courseStats.kpiBusiestDay')" :sub="topDay ? topDay.count + (lang === 'en' ? ' periods' : ' 节') : '—'" />
+      <KpiCard :value="topCampus ? translatedName(topCampus.name) : '—'" :label="t('courseStats.kpiBusiest')" :sub="topCampus ? topCampus.count + (lang === 'en' ? ' entries · ' : ' 条 · ') + share(topCampus.count) + '%' : '—'" />
+      <KpiCard :value="topDay ? translateLabel(topDay.day) : '—'" :label="t('courseStats.kpiBusiestDay')" :sub="topDay ? topDay.count + (lang === 'en' ? ' periods' : ' 节') : '—'" />
       <KpiCard :value="colCount" :label="t('courseStats.kpiCollege')" :sub="(lang === 'en' ? 'Busiest: ' : '开课最忙的是「') + ((labeledDist(stats.colDist)[0] || {}).name || '—') + (lang === 'en' ? '' : '」')" />
     </div>
 
@@ -146,7 +152,7 @@ const insights = computed(() => {
 
       <div class="panel">
         <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('courseStats.weekDistTitle') }}</div>
-        <BarRow v-for="r in stats.dayDist" :key="r.day" :label="r.day" :value="r.count" :max="maxDay" :text="r.count + (lang === 'en' ? ' periods' : ' 节')" color="linear-gradient(90deg,#d97706,#f59e0b)" />
+        <BarRow v-for="r in stats.dayDist" :key="r.day" :label="translateLabel(r.day)" :value="r.count" :max="maxDay" :text="r.count + (lang === 'en' ? ' periods' : ' 节')" color="linear-gradient(90deg,#d97706,#f59e0b)" />
         <p class="muted" style="font-size:12px;margin-top:8px;">{{ t('courseStats.weekDistNote') }}</p>
       </div>
 
@@ -160,13 +166,13 @@ const insights = computed(() => {
     <div class="panel-grid">
       <div v-if="labeledDist(stats.kindDist).length" class="panel">
         <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('courseStats.kindDistTitle') }}</div>
-        <BarRow v-for="k in labeledDist(stats.kindDist)" :key="k.name" :label="k.name" :value="k.count" :max="maxKind" :text="k.count + (lang === 'en' ? ' entries · ' : ' 条 · ') + distShare(stats.kindDist)(k.count) + '%'" color="linear-gradient(90deg,#0d9488,#2dd4bf)" />
+        <BarRow v-for="k in labeledDist(stats.kindDist)" :key="k.name" :label="translateLabel(k.name)" :value="k.count" :max="maxKind" :text="k.count + (lang === 'en' ? ' entries · ' : ' 条 · ') + distShare(stats.kindDist)(k.count) + '%'" color="linear-gradient(90deg,#0d9488,#2dd4bf)" />
         <p class="muted" style="font-size:12px;margin-top:8px;">{{ t('courseStats.kindDistNote') }}</p>
       </div>
 
       <div v-if="labeledDist(stats.campusDist).length" class="panel">
         <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('courseStats.campusDistTitle') }}</div>
-        <BarRow v-for="k in labeledDist(stats.campusDist)" :key="k.name" :label="k.name" :value="k.count" :max="maxCampus" :text="k.count + (lang === 'en' ? ' entries · ' : ' 条 · ') + distShare(stats.campusDist)(k.count) + '%'" color="linear-gradient(90deg,#2563eb,#60a5fa)" />
+        <BarRow v-for="k in labeledDist(stats.campusDist)" :key="k.name" :label="translatedName(k.name)" :value="k.count" :max="maxCampus" :text="k.count + (lang === 'en' ? ' entries · ' : ' 条 · ') + distShare(stats.campusDist)(k.count) + '%'" color="linear-gradient(90deg,#2563eb,#60a5fa)" />
         <p class="muted" style="font-size:12px;margin-top:8px;">{{ t('courseStats.campusDistNote') }}</p>
       </div>
     </div>

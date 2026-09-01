@@ -222,7 +222,7 @@ const detail = ref(null)
 function showCourse(co) {
   detail.value = co
 }
-const dayLabel = (d) => dayNames[d - 1] || ('周' + d)
+const dayLabel = (d) => dayNames[d - 1] || (lang.value === 'en' ? 'Day ' + d : '周' + d)
 
 const dayCourses = (d) => {
   const list = (opened.value?.days?.[d] || [])

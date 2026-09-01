@@ -7,11 +7,15 @@ import { useI18n } from '../i18n'
 const { t, lang } = useI18n()
 const emit = defineEmits(['back'])
 
-const fallbackLinks = [
+const fallbackLinks = computed(() => lang.value === 'en' ? [
+  { title: 'QDU 2026–2027 Academic Calendar', date: '2026-05-01', url: 'https://jwc.qdu.edu.cn/info/1005/6515.htm' },
+  { title: 'QDU 2025–2026 Academic Calendar', date: '2025-04-22', url: 'https://jwc.qdu.edu.cn/info/1005/5861.htm' },
+  { title: 'QDU Academic Affairs Office', date: '', url: 'https://jwc.qdu.edu.cn/' }
+] : [
   { title: '青岛大学2026~2027学年校历', date: '2026-05-01', url: 'https://jwc.qdu.edu.cn/info/1005/6515.htm' },
   { title: '青岛大学2025~2026学年校历', date: '2025-04-22', url: 'https://jwc.qdu.edu.cn/info/1005/5861.htm' },
   { title: '青岛大学教务处官网', date: '', url: 'https://jwc.qdu.edu.cn/' }
-]
+])
 
 const calendars = ref(fallbackLinks)
 const loading = ref(true)
@@ -128,7 +132,28 @@ function onKey(e) {
 onMounted(() => window.addEventListener('keydown', onKey))
 onUnmounted(() => window.removeEventListener('keydown', onKey))
 
-const terms = [
+const terms = computed(() => lang.value === 'en' ? [
+  {
+    term: '2026–2027 Academic Year · Fall Semester',
+    items: [
+      { name: 'Freshman Registration', time: 'As per admission notice (typically early September)' },
+      { name: 'Orientation & Military Training', time: 'Approx. 2 weeks after registration' },
+      { name: 'Autumn Teaching Weeks', time: 'Approx. early Sep – mid Jan' },
+      { name: 'Final Exam Period', time: 'Last 2 weeks of semester' },
+      { name: 'Winter Break', time: 'Approx. mid Jan – late Feb' }
+    ]
+  },
+  {
+    term: '2026–2027 Academic Year · Spring Semester',
+    items: [
+      { name: 'Spring Semester Starts', time: 'Approx. late Feb / early Mar' },
+      { name: 'Spring Teaching Weeks', time: 'Approx. early Mar – early Jul' },
+      { name: 'Sports Day', time: 'Usually held in April' },
+      { name: 'Final Exam Period', time: 'End of semester' },
+      { name: 'Summer Break', time: 'Approx. early Jul – Sep' }
+    ]
+  }
+] : [
   {
     term: '2026-2027 学年 · 第一学期（秋季）',
     items: [
@@ -149,7 +174,7 @@ const terms = [
       { name: '暑假', time: '约 7 月上旬 ～ 9 月' }
     ]
   }
-]
+])
 
 const load = async (force) => {
   refreshing.value = true
@@ -176,14 +201,14 @@ onMounted(load)
 
   <div v-if="!loading" class="source-bar">
     <span class="dot" :class="online ? 'live' : 'off'"></span>
-    <span>{{ online ? (lang === 'en' ? 'Live data from official API' : '官方实时数据') : (lang === 'en' ? 'API unavailable, showing demo links' : '官方接口暂不可达，展示演示链接') }}</span>
+    <span>{{ online ? t('calendar.liveData') : t('calendar.apiUnavailable') }}</span>
     <span class="sep">·</span>
-    <span>来源 jwc.qdu.edu.cn</span>
+    <span>{{ t('calendar.source') }} jwc.qdu.edu.cn</span>
     <template v-if="online">
       <span class="sep">·</span>
-      <span>抓取于 {{ new Date(fetchedAt).toLocaleTimeString('zh-CN', { hour12: false }) }}</span>
-      <template v-if="costMs"><span class="sep">·</span><span>耗时 {{ costMs }}ms</span></template>
-      <span v-if="cached" class="sep">·</span><span v-if="cached">命中缓存</span>
+      <span>{{ t('calendar.fetchedAt') }} {{ new Date(fetchedAt).toLocaleTimeString(lang === 'en' ? 'en-US' : 'zh-CN', { hour12: false }) }}</span>
+      <template v-if="costMs"><span class="sep">·</span><span>{{ t('calendar.costTime') }} {{ costMs }}ms</span></template>
+      <span v-if="cached" class="sep">·</span><span v-if="cached">{{ t('calendar.cacheHit') }}</span>
     </template>
     <button class="refresh-btn" :disabled="refreshing" @click="load(true)">{{ refreshing ? t('common.refreshing') : t('common.refresh') }}</button>
   </div>
@@ -194,7 +219,7 @@ onMounted(load)
     <div class="cal-toolbar">
       <button class="cal-nav-btn" :disabled="termIdx >= previewTerms.length - 1" :title="t('calendar.prevYear')" @click="goTerm(termIdx + 1, 'back')">←</button>
       <select class="cal-term-select" :value="termIdx" @change="onSelectTerm">
-        <option v-for="(trm, i) in previewTerms" :key="trm.id" :value="i">{{ trm.label }}</option>
+        <option v-for="(trm, i) in previewTerms" :key="trm.id" :value="i">{{ lang === 'en' ? trm.labelEn : trm.label }}</option>
       </select>
       <button class="cal-nav-btn" :disabled="termIdx <= 0" :title="t('calendar.nextYear')" @click="goTerm(termIdx - 1, 'fwd')">→</button>
     </div>
@@ -210,7 +235,7 @@ onMounted(load)
           :key="currentTerm.id"
           class="cal-img"
           :src="currentTerm.image"
-          :alt="currentTerm.label"
+          :alt="lang === 'en' ? currentTerm.labelEn : currentTerm.label"
           @load="onImgLoad"
           @error="onImgError"
         />
@@ -240,7 +265,7 @@ onMounted(load)
       <a v-for="l in calendars" :key="l.url" class="cal-item" :href="l.url" target="_blank" rel="noopener">
         <span class="cal-title">{{ l.title }}</span>
         <span v-if="l.date" class="cal-date">{{ l.date }}</span>
-        <span class="cal-go">{{ lang === 'en' ? 'Official Page' : '查看官方页' }} ↗</span>
+        <span class="cal-go">{{ t('calendar.officialPage') }} ↗</span>
       </a>
     </div>
   </div>
@@ -274,7 +299,7 @@ onMounted(load)
         <span class="cal-zoom-num">{{ Math.round(zoom * 100) }}%</span>
         <button class="cal-zoom-btn" @click="zoomIn">＋</button>
         <button class="cal-zoom-btn" @click="resetView">1:1</button>
-        <span class="cal-modal-term">{{ currentTerm.label }}</span>
+        <span class="cal-modal-term">{{ lang === 'en' ? currentTerm.labelEn : currentTerm.label }}</span>
         <button class="cal-close-btn" @click="closePreview">✕ {{ t('common.close').replace('✕ ', '') }}</button>
       </div>
       <div
@@ -285,17 +310,17 @@ onMounted(load)
         @mouseup="endPan"
         @mouseleave="endPan"
       >
-        <button class="cal-side-btn left" :disabled="termIdx >= previewTerms.length - 1" @click.stop="stepTerm(1)" title="上一学年">‹</button>
+        <button class="cal-side-btn left" :disabled="termIdx >= previewTerms.length - 1" @click.stop="stepTerm(1)" :title="t('calendar.prevYear')">‹</button>
         <div class="cal-viewport" @touchstart.prevent="onDragStart($event.touches[0].clientX, $event.touches[0].clientY)" @touchmove.prevent="onDragMove($event.touches[0].clientX, $event.touches[0].clientY)" @touchend="endPan">
           <div v-if="zoom > 1" class="cal-zoom-layer" @wheel.prevent>
-            <img class="cal-modal-img zoomed" :src="currentTerm.image" :alt="currentTerm.label" :style="zoomedStyle" draggable="false" />
+            <img class="cal-modal-img zoomed" :src="currentTerm.image" :alt="lang === 'en' ? currentTerm.labelEn : currentTerm.label" :style="zoomedStyle" draggable="false" />
           </div>
           <div v-else class="cal-track" :style="trackStyle">
             <div v-for="(t, i) in previewTerms" :key="t.id" class="cal-slide">
               <img
                 :class="{ active: i === termIdx }"
                 :src="t.image"
-                :alt="t.label"
+                :alt="lang === 'en' ? t.labelEn : t.label"
                 loading="lazy"
                 draggable="false"
                 @load="i === termIdx && (imgLoading = false, imgLoaded = true)"
@@ -304,7 +329,7 @@ onMounted(load)
             </div>
           </div>
         </div>
-        <button class="cal-side-btn right" :disabled="termIdx <= 0" @click.stop="stepTerm(-1)" title="下一学年">›</button>
+        <button class="cal-side-btn right" :disabled="termIdx <= 0" @click.stop="stepTerm(-1)" :title="t('calendar.nextYear')">›</button>
       </div>
       <div class="cal-modal-tip" @click.stop>{{ t('calendar.hintModal') }}</div>
     </div>

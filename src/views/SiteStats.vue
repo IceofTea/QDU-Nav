@@ -35,6 +35,8 @@ const pct = (v, m) => Math.round((v / m) * 100)
 const sumArr = (arr) => arr.reduce((s, x) => s + x.v, 0)
 const pctOf = (arr, v) => Math.round(v / Math.max(1, sumArr(arr)) * 100)
 const maxItem = (arr, k) => (arr.length ? arr.reduce((a, b) => (b.v > a.v ? b : a), arr[0]) : null)
+const DAY_MAP = { '周一': 'Mon', '周二': 'Tue', '周三': 'Wed', '周四': 'Thu', '周五': 'Fri', '周六': 'Sat', '周日': 'Sun' }
+const translateLabel = (name) => lang.value === 'en' ? (DAY_MAP[name] || (typeof name === 'string' ? name.replace('点', '') : name)) : name
 
 /* 图表类型：近 7 天 / 24h 支持 柱状/折线/圆饼（默认柱状）；横条类支持 条形/圆饼 */
 const chartTypes = ref({ week: 'bar', hour: 'bar', week2: 'bar', device: 'bar', os: 'bar', ref: 'bar', app: 'bar' })
@@ -132,7 +134,7 @@ onMounted(async () => {
         </div>
         <div v-if="stats.hours.length">
           <div v-if="chartTypes.hour === 'bar'" class="mini-bars">
-            <div v-for="h in stats.hours" :key="h.label" class="mini-col" :title="h.label + (lang === 'en' ? ': ' : '：') + h.v">
+            <div v-for="h in stats.hours" :key="h.label" class="mini-col" :title="(lang === 'en' ? (h.label + '').replace('点', '') : (h.label + '').replace('点', '')) + (lang === 'en' ? ': ' : '：') + h.v">
               <div class="mini-bar"><i :style="{ height: Math.max(3, pct(h.v, maxHour)) + '%' }"></i></div>
               <span class="mini-label">{{ (h.label + '').replace('点', '') }}</span>
             </div>
@@ -154,12 +156,12 @@ onMounted(async () => {
         <div v-if="stats.weekdays.length">
           <div v-if="chartTypes.week2 === 'bar'" class="row-list">
             <div v-for="d in stats.weekdays" :key="d.label" class="row-item">
-              <span class="row-label">{{ d.label }}</span>
+              <span class="row-label">{{ translateLabel(d.label) }}</span>
               <span class="row-bar"><i :style="{ width: pct(d.v, maxBar(stats.weekdays)) + '%' }"></i></span>
               <span class="row-val">{{ d.v }}</span>
             </div>
           </div>
-          <PieChart v-else :segments="stats.weekdays.map((d) => ({ name: d.label, icon: '', v: d.v }))" :total="sumArr(stats.weekdays)" />
+          <PieChart v-else :segments="stats.weekdays.map((d) => ({ name: translateLabel(d.label), icon: '', v: d.v }))" :total="sumArr(stats.weekdays)" />
         </div>
         <p v-else class="muted" style="text-align:center;padding:10px;">{{ t('siteStats.noData') }}</p>
       </div>
