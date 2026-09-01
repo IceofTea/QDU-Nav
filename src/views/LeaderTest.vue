@@ -129,21 +129,21 @@ const third = computed(() => ranked.value[2] || null)
 const whyText = computed(() => {
   if (!best.value || !user.value) return ''
   const nearest = [...DIMS]
-    .map((d) => ({ k: d.key, label: d.label, diff: Math.abs(norm(user.value[d.key]) - best.value.vec[d.key]) }))
+    .map((d) => ({ k: d.key, label: lang.value === 'en' ? d.labelEn : d.label, diff: Math.abs(norm(user.value[d.key]) - best.value.vec[d.key]) }))
     .sort((a, b) => a.diff - b.diff)
     .slice(0, 3)
   const topDims = [...DIMS].sort((a, b) => (user.value[b.key] || 0) - (user.value[a.key] || 0)).slice(0, 2)
   return t('leaderTest.whyText')
     .replace('{name}', best.value.name)
     .replace('{dims}', nearest.map((n) => n.label).join(lang.value === 'en' ? ', ' : '、'))
-    .replace('{style}', topDims.map((td) => td.label).join(lang.value === 'en' ? ', ' : '、'))
+    .replace('{style}', topDims.map((td) => lang.value === 'en' ? td.labelEn : td.label).join(lang.value === 'en' ? ', ' : '、'))
 })
 
 /** 结果条：用户向量中心化（-1..1）映射回 0-10，与原型 vec 同量纲 */
 const norm = (v) => Math.max(0, Math.min(10, Math.round((v + 1) * 5)))
 const pct = (v) => Math.round((v / 10) * 100)
 
-const shareText = computed(() => (best.value ? shareLine(best.value) : ''))
+const shareText = computed(() => (best.value ? shareLine(best.value, lang.value) : ''))
 const copied = ref(false)
 async function copyShare() {
   try {
@@ -188,9 +188,9 @@ const initial = (name) => name.charAt(0)
   <!-- 答题页 -->
   <div v-else-if="phase === 'quiz'" class="panel">
     <div class="quiz-progress"><i :style="{ width: progress + '%' }"></i></div>
-    <div class="muted" style="font-size:12px;margin:8px 0 2px;">{{ t('leaderTest.questionOf', { cur: step + 1, total: totalQ }) }} · {{ current.kicker }}</div>
-    <div style="font-size:17px;font-weight:800;margin:10px 0 4px;">{{ current.title }}</div>
-    <div class="muted" style="font-size:12px;margin-bottom:14px;">{{ current.desc }}</div>
+    <div class="muted" style="font-size:12px;margin:8px 0 2px;">{{ t('leaderTest.questionOf', { cur: step + 1, total: totalQ }) }} · {{ lang === 'en' ? current.kickerEn : current.kicker }}</div>
+    <div style="font-size:17px;font-weight:800;margin:10px 0 4px;">{{ lang === 'en' ? current.titleEn : current.title }}</div>
+    <div class="muted" style="font-size:12px;margin-bottom:14px;">{{ lang === 'en' ? current.descEn : current.desc }}</div>
 
       <div v-if="current.type === 'likert'" class="likert">
       <button v-for="(l, i) in LIKERT" :key="l" class="likert-btn" :class="{ active: selected === i }" @click="chooseLikert(i)">{{ l }}</button>
@@ -198,14 +198,14 @@ const initial = (name) => name.charAt(0)
     <div v-else-if="current.type === 'multi'" class="opt-list">
       <button v-for="(o, i) in current.options" :key="i" class="opt-btn" :class="{ active: (selected || []).includes(i) }" @click="choose(i)">
         <span class="opt-tag">{{ (selected || []).indexOf(i) >= 0 ? (selected || []).indexOf(i) + 1 : String.fromCharCode(65 + i) }}</span>
-        <span>{{ o.label }}</span>
+        <span>{{ lang === 'en' ? o.labelEn : o.label }}</span>
       </button>
       <div class="muted" style="font-size:11px;margin-top:6px;">{{ t('leaderTest.selectedMulti').replace('{n}', (selected || []).length).replace('{m}', current.max || 2) }}</div>
     </div>
     <div v-else class="opt-list">
       <button v-for="(o, i) in current.options" :key="i" class="opt-btn" :class="{ active: selected === i }" @click="choose(i)">
         <span class="opt-tag">{{ String.fromCharCode(65 + i) }}</span>
-        <span>{{ o.label }}</span>
+        <span>{{ lang === 'en' ? o.labelEn : o.label }}</span>
       </button>
     </div>
 
@@ -225,8 +225,8 @@ const initial = (name) => name.charAt(0)
       <div class="result-hero-txt">
         <div class="muted" style="font-size:11px;">{{ t('leaderTest.resultMatch') }} {{ best.match }}{{ t('leaderTest.percent') }}</div>
         <div class="result-name">{{ best.name }}</div>
-        <div class="muted" style="font-size:12px;">{{ best.period }} · {{ best.role }}</div>
-        <div class="result-bio">{{ best.bio }}</div>
+        <div class="muted" style="font-size:12px;">{{ lang === 'en' ? best.periodEn : best.period }} · {{ lang === 'en' ? best.roleEn : best.role }}</div>
+        <div class="result-bio">{{ lang === 'en' ? best.bioEn : best.bio }}</div>
       </div>
     </div>
 
@@ -239,7 +239,7 @@ const initial = (name) => name.charAt(0)
       <div class="sec-title">{{ t('leaderTest.multiDim') }} <span class="sec-note">{{ t('leaderTest.dimNote') }}{{ best.name }}{{ t('leaderTest.dimNoteEnd') }}</span></div>
       <div v-for="d in DIMS" :key="d.key" class="dim-block">
         <div class="dim-head">
-          <span class="dim-name">{{ d.label }}</span>
+          <span class="dim-name">{{ lang === 'en' ? d.labelEn : d.label }}</span>
           <span class="dim-nums">{{ t('leaderTest.dimYou') }} <b>{{ norm(user[d.key]) }}</b> / {{ t('leaderTest.dimProto') }} <b>{{ best.vec[d.key] }}</b></span>
         </div>
         <div class="dim-track">
@@ -251,7 +251,7 @@ const initial = (name) => name.charAt(0)
 
     <div class="result-sec">
       <div class="sec-title">{{ t('leaderTest.briefBio') }}</div>
-      <p class="muted" style="font-size:13px;line-height:1.8;margin:0;">{{ best.summary }}</p>
+      <p class="muted" style="font-size:13px;line-height:1.8;margin:0;">{{ lang === 'en' ? best.summaryEn : best.summary }}</p>
     </div>
 
     <div class="result-sec">
@@ -262,7 +262,7 @@ const initial = (name) => name.charAt(0)
         <span v-else class="near-avatar" :style="avatarStyle(o)">{{ initial(o.name) }}</span>
         <div class="near-main">
           <div class="near-name">{{ o.name }}</div>
-          <div class="muted" style="font-size:12px;">{{ o.bio }}</div>
+          <div class="muted" style="font-size:12px;">{{ lang === 'en' ? o.bioEn : o.bio }}</div>
         </div>
       </div>
     </div>

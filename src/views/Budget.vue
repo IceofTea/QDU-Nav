@@ -18,35 +18,35 @@ const subView = ref('main')
 
 const CATS = {
   expense: [
-    { key: 'food', icon: '🍚', label: '伙食费', hint: '食堂 · 外卖 · 小卖部' },
-    { key: 'party', icon: '🍻', label: '聚餐费', hint: '团建 · 约饭 · 奶茶局' },
-    { key: 'transport', icon: '🚌', label: '交通费', hint: '公交 · 打车 · 共享电车' },
-    { key: 'fruit', icon: '🍎', label: '水果零食', hint: '水果 · 酸奶 · 零食' },
-    { key: 'study', icon: '📚', label: '学习资料', hint: '教材 · 打印 · 报名费' },
-    { key: 'cloth', icon: '👕', label: '衣物鞋帽', hint: '衣服 · 鞋 · 配饰' },
-    { key: 'medical', icon: '💊', label: '医疗保健', hint: '药品 · 挂号 · 体检' },
-    { key: 'daily', icon: '🧴', label: '日常用品', hint: '洗发水 · 纸巾 · 洗衣液' },
-    { key: 'phone', icon: '📱', label: '电话费', hint: '话费 · 流量 · 校园网' },
-    { key: 'fun', icon: '🎮', label: '娱乐游戏', hint: '游戏 · 电影 · 门票' },
-    { key: 'beauty', icon: '💇', label: '美容美发', hint: '理发 · 美甲 · 护肤' },
-    { key: 'digital', icon: '📱', label: '数码家电', hint: '手机 · 耳机 · 家电' },
-    { key: 'sport', icon: '🏃', label: '运动户外', hint: '健身 · 球类 · 户外' },
-    { key: 'virtual', icon: '🎭', label: '网络虚拟', hint: '游戏充值 · 会员 · 虚拟商品' },
-    { key: 'housing', icon: '🏠', label: '房屋住宿', hint: '房租 · 水电 · 宿舍' },
-    { key: 'transfer', icon: '💸', label: '转账支出', hint: '微信/支付宝转给他人' },
-    { key: 'trouble', icon: '💥', label: '闯祸费', hint: '赔了舍友的碗 / 打碎东西' },
-    { key: 'other', icon: '📦', label: '其它支出', hint: '说不清的一笔' }
+    { key: 'food', icon: '🍚', label: '伙食费', labelEn: 'Food', hint: '食堂 · 外卖 · 小卖部', hintEn: 'Canteen · Takeout · Shop' },
+    { key: 'party', icon: '🍻', label: '聚餐费', labelEn: 'Dining', hint: '团建 · 约饭 · 奶茶局', hintEn: 'Team dinner · Date · Milk tea' },
+    { key: 'transport', icon: '🚌', label: '交通费', labelEn: 'Transport', hint: '公交 · 打车 · 共享电车', hintEn: 'Bus · Taxi · E-bike' },
+    { key: 'fruit', icon: '🍎', label: '水果零食', labelEn: 'Snacks', hint: '水果 · 酸奶 · 零食', hintEn: 'Fruit · Yogurt · Snacks' },
+    { key: 'study', icon: '📚', label: '学习资料', labelEn: 'Study Materials', hint: '教材 · 打印 · 报名费', hintEn: 'Textbooks · Printing · Fees' },
+    { key: 'cloth', icon: '👕', label: '衣物鞋帽', labelEn: 'Clothing', hint: '衣服 · 鞋 · 配饰', hintEn: 'Clothes · Shoes · Accessories' },
+    { key: 'medical', icon: '💊', label: '医疗保健', labelEn: 'Medical', hint: '药品 · 挂号 · 体检', hintEn: 'Meds · Checkup · Hospital' },
+    { key: 'daily', icon: '🧴', label: '日常用品', labelEn: 'Daily Items', hint: '洗发水 · 纸巾 · 洗衣液', hintEn: 'Shampoo · Tissues · Detergent' },
+    { key: 'phone', icon: '📱', label: '电话费', labelEn: 'Phone Bill', hint: '话费 · 流量 · 校园网', hintEn: 'Calls · Data · Campus WiFi' },
+    { key: 'fun', icon: '🎮', label: '娱乐游戏', labelEn: 'Entertainment', hint: '游戏 · 电影 · 门票', hintEn: 'Games · Movies · Tickets' },
+    { key: 'beauty', icon: '💇', label: '美容美发', labelEn: 'Beauty', hint: '理发 · 美甲 · 护肤', hintEn: 'Hair · Nails · Skincare' },
+    { key: 'digital', icon: '📱', label: '数码家电', labelEn: 'Electronics', hint: '手机 · 耳机 · 家电', hintEn: 'Phone · Earbuds · Appliances' },
+    { key: 'sport', icon: '🏃', label: '运动户外', labelEn: 'Sports', hint: '健身 · 球类 · 户外', hintEn: 'Gym · Ball games · Outdoor' },
+    { key: 'virtual', icon: '🎭', label: '网络虚拟', labelEn: 'Virtual', hint: '游戏充值 · 会员 · 虚拟商品', hintEn: 'Game top-up · Membership' },
+    { key: 'housing', icon: '🏠', label: '房屋住宿', labelEn: 'Housing', hint: '房租 · 水电 · 宿舍', hintEn: 'Rent · Utilities · Dorm' },
+    { key: 'transfer', icon: '💸', label: '转账支出', labelEn: 'Transfer Out', hint: '微信/支付宝转给他人', hintEn: 'WeChat/Alipay to others' },
+    { key: 'trouble', icon: '💥', label: '闯祸费', labelEn: 'Trouble Fee', hint: '赔了舍友的碗 / 打碎东西', hintEn: 'Broke something' },
+    { key: 'other', icon: '📦', label: '其它支出', labelEn: 'Other', hint: '说不清的一笔', hintEn: 'Miscellaneous' }
   ],
   income: [
-    { key: 'allowance', icon: '💰', label: '生活费', hint: '爸妈打款' },
-    { key: 'scholarship', icon: '🏅', label: '奖学金', hint: '知识就是金钱' },
-    { key: 'parttime', icon: '💼', label: '兼职', hint: '搬砖收入' },
-    { key: 'prize', icon: '🎁', label: '红包/奖金', hint: '意外之财' },
-    { key: 'resale', icon: '🏷️', label: '闲置转卖', hint: '断舍离变现' },
-    { key: 'refund', icon: '↩️', label: '退款', hint: '买贵了退回来' },
-    { key: 'invest', icon: '📈', label: '理财收益', hint: '余额宝 · 利息' },
-    { key: 'transfer', icon: '💌', label: '转账收入', hint: '好友转账 · 收款' },
-    { key: 'other', icon: '📥', label: '其它收入', hint: '天降横财' }
+    { key: 'allowance', icon: '💰', label: '生活费', labelEn: 'Allowance', hint: '爸妈打款', hintEn: 'From parents' },
+    { key: 'scholarship', icon: '🏅', label: '奖学金', labelEn: 'Scholarship', hint: '知识就是金钱', hintEn: 'Academic rewards' },
+    { key: 'parttime', icon: '💼', label: '兼职', labelEn: 'Part-time', hint: '搬砖收入', hintEn: 'Side job income' },
+    { key: 'prize', icon: '🎁', label: '红包/奖金', labelEn: 'Bonus', hint: '意外之财', hintEn: 'Red packets · Awards' },
+    { key: 'resale', icon: '🏷️', label: '闲置转卖', labelEn: 'Resale', hint: '断舍离变现', hintEn: 'Selling unused items' },
+    { key: 'refund', icon: '↩️', label: '退款', labelEn: 'Refund', hint: '买贵了退回来', hintEn: 'Returned purchases' },
+    { key: 'invest', icon: '📈', label: '理财收益', labelEn: 'Investment', hint: '余额宝 · 利息', hintEn: 'Interest · Returns' },
+    { key: 'transfer', icon: '💌', label: '转账收入', labelEn: 'Transfer In', hint: '好友转账 · 收款', hintEn: 'From friends' },
+    { key: 'other', icon: '📥', label: '其它收入', labelEn: 'Other Income', hint: '天降横财', hintEn: 'Unexpected windfall' }
   ]
 }
 
@@ -54,18 +54,18 @@ const CATS = {
  *  优秀奖学金 1000/600/400 ·每学期；国家助学金三档 2300/3300/4300 ·每学年；
  *  竞赛奖励参照《博学奖学金评审办法》；实际发放以学校最新通知为准） */
 const SCHOLARS = [
-  { name: '国家奖学金', amount: 8000 },
-  { name: '国家励志奖学金', amount: 5000 },
-  { name: '省政府奖学金', amount: 6000 },
-  { name: '优秀奖学金（一等）', amount: 1000 },
-  { name: '优秀奖学金（二等）', amount: 600 },
-  { name: '优秀奖学金（三等）', amount: 400 },
-  { name: '国家助学金（一档）', amount: 2300 },
-  { name: '国家助学金（二档）', amount: 3300 },
-  { name: '国家助学金（三档）', amount: 4300 },
-  { name: '竞赛奖学金（挑战杯·国特）', amount: 30000 },
-  { name: '竞赛奖学金（A类·国一）', amount: 5000 },
-  { name: '博学奖学金（发明专利）', amount: 5000 }
+  { name: '国家奖学金', nameEn: 'National Scholarship', amount: 8000 },
+  { name: '国家励志奖学金', nameEn: 'National Encouragement', amount: 5000 },
+  { name: '省政府奖学金', nameEn: 'Provincial Scholarship', amount: 6000 },
+  { name: '优秀奖学金（一等）', nameEn: 'Excellence (1st)', amount: 1000 },
+  { name: '优秀奖学金（二等）', nameEn: 'Excellence (2nd)', amount: 600 },
+  { name: '优秀奖学金（三等）', nameEn: 'Excellence (3rd)', amount: 400 },
+  { name: '国家助学金（一档）', nameEn: 'National Aid (Tier 1)', amount: 2300 },
+  { name: '国家助学金（二档）', nameEn: 'National Aid (Tier 2)', amount: 3300 },
+  { name: '国家助学金（三档）', nameEn: 'National Aid (Tier 3)', amount: 4300 },
+  { name: '竞赛奖学金（挑战杯·国特）', nameEn: 'Competition (Challenge Cup)', amount: 30000 },
+  { name: '竞赛奖学金（A类·国一）', nameEn: 'Competition (A-class)', amount: 5000 },
+  { name: '博学奖学金（发明专利）', nameEn: 'Patent Award', amount: 5000 }
 ]
 
 /** 导入账单时按商品名关键词猜测类别（与 utils/billImport.js 的 KEYWORDS 一致） */
@@ -135,6 +135,11 @@ const importMsg = ref('')
 
 const cats = computed(() => CATS[mode.value])
 const catInfo = (type, key) => (CATS[type] || []).find((c) => c.key === key)
+const catLabelOf = (type, key) => { const c = catInfo(type, key); return c ? (lang.value === 'en' ? c.labelEn : c.label) : null }
+const catHintOf = (type, key) => { const c = catInfo(type, key); return c ? (lang.value === 'en' ? c.hintEn : c.hint) : null }
+const achNameOf = (a) => lang.value === 'en' ? a.nameEn : a.name
+const achDescOf = (a) => lang.value === 'en' ? a.descEn : a.desc
+const scholarNameOf = (s) => lang.value === 'en' ? s.nameEn : s.name
 
 function pickCat(key) {
   cat.value = key
@@ -185,7 +190,7 @@ function save() {
   }
   amount.value = ''
   note.value = ''
-  if (amt === 404) showToast('收支未找到，但你的努力已经找到方向了！', 3200)
+  if (amt === 404) showToast(t('budget.egg404'), 3200)
   else if (n === 1) triggerEggs(saved)
   bannerEggFlash()
 }
@@ -228,7 +233,7 @@ function comboEgg() {
   comboState.last = now
   if (comboState.count >= 10) {
     comboState.active = false
-    showToast('开发者觉得你很闲，送你个彩蛋')
+    showToast(t('budget.eggDev'))
     return true
   }
   return true
@@ -251,42 +256,41 @@ function rainTap() {
 /** 单笔金额彩蛋：保存后按金额 / 类别判断（文本彩蛋每次可触发，无冷却） */
 function triggerEggs(r) {
   if (r.cat === 'other' && r.type === 'expense' && Math.abs(r.amount - 9876547210.33) < 0.01) {
-    showToast('你买b站手办了？', 3200)
+    showToast(t('budget.eggBuy'), 3200)
     return
   }
   if (r.cat === 'prize' && r.type === 'income' && r.amount === 500000) {
-    showToast('你抓到间谍了🫨？')
+    showToast(t('budget.eggSpy'))
     return
   }
   if (r.type === 'expense' && r.cat === 'party' && r.amount > 100) {
-    showToast('呦，吃了顿漂亮饭😋')
+    showToast(t('budget.eggParty'))
     return
   }
   if (r.type === 'expense' && r.cat === 'trouble') {
     const tiers = [
-      [50, '给谁暖壶踢倒了😄？'],
-      [100, '碎碎平安😁'],
-      [500, '还不如充三国杀呢😡'],
-      [1000, '😨'],
-      [10000, '你给人车撞了？'],
-      [100000, '咱有坐牢的风险吗😰']
+      [50, t('budget.eggTrouble50')],
+      [100, t('budget.eggTrouble100')],
+      [500, t('budget.eggTrouble500')],
+      [1000, t('budget.eggTrouble1000')],
+      [10000, t('budget.eggTrouble10000')],
+      [100000, t('budget.eggTrouble100000')]
     ]
     const hit = tiers.find(([hi]) => r.amount <= hi)
-    showToast(hit ? hit[1] : '吹牛逼呢😅')
+    showToast(hit ? hit[1] : t('budget.eggTroubleMax'))
     return
   }
-  /* 生活费（allowance）单笔录入 ≥10000 → 吹牛彩蛋（其他收入类别不触发，既有彩蛋不受影响） */
   if (r.type === 'income' && r.cat === 'allowance' && r.amount >= 10000) {
-    showToast('吹牛逼呢😅')
+    showToast(t('budget.eggAllowance'))
   }
 }
 
 /** 月结余彩蛋：当月结余命中极端值 → 结余卡片常驻显示（每次保存后都会刷新提示） */
 const bannerEgg = computed(() => {
   const bal = balance.value
-  if (bal > 100000) return { emoji: '😅', text: '吹牛逼呢' }
-  if (bal < -1000000) return { emoji: '😅', text: '百万负翁' }
-  if (bal < -100000) return { emoji: '😰', text: '你给双子楼炸了？' }
+  if (bal > 100000) return { emoji: '😅', text: t('budget.eggBannerHigh') }
+  if (bal < -1000000) return { emoji: '😅', text: t('budget.eggBannerLow') }
+  if (bal < -100000) return { emoji: '😰', text: t('budget.eggBannerMid') }
   return null
 })
 function bannerEggFlash() {
@@ -302,7 +306,7 @@ function unlockCyber() {
   if (cyberOn.value) return
   cyberOn.value = true
   localStorage.setItem('qdu_cyber', '1')
-  showToast('⚡ 解锁隐藏皮肤：赛博账本', 3000)
+  showToast(t('budget.eggCyber'), 3000)
 }
 function segTap() {
   segHits++
@@ -355,28 +359,30 @@ function festivalNow() {
 const festival = ref(festivalNow())
 
 /* ---- 隐藏成就墙：20 个徽章，支持等级（tiers）与进度显示（localStorage qdu_ach 记录已解锁） ---- */
-const MEDAL = ['🥉 初阶', '🥈 进阶', '🥇 大师', '💎 传奇']
+const MEDAL_ZH = ['🥉 初阶', '🥈 进阶', '🥇 大师', '💎 传奇']
+const MEDAL_EN = ['🥉 Beginner', '🥈 Advanced', '🥇 Master', '💎 Legend']
+const MEDAL = computed(() => lang.value === 'en' ? MEDAL_EN : MEDAL_ZH)
 const ACHIEVEMENTS = [
-  { key: 'tea', icon: '🥤', name: '奶茶品鉴师', desc: '备注含「奶茶」的支出累计', tiers: [20, 50, 100], progress: (all) => all.filter((r) => r.type === 'expense' && (r.note || '').includes('奶茶')).length },
-  { key: 'food50', icon: '🍚', name: '干饭人干饭魂', desc: '伙食费累计', tiers: [50, 150, 300], progress: (all) => cnt(all, 'expense', 'food') },
-  { key: 'party20', icon: '🍻', name: '干杯！社交达人', desc: '聚餐费累计', tiers: [20, 60, 120], progress: (all) => cnt(all, 'expense', 'party') },
-  { key: 'trans20', icon: '🚌', name: '风一样的学生', desc: '交通费累计', tiers: [20, 60, 120], progress: (all) => cnt(all, 'expense', 'transport') },
-  { key: 'fruit30', icon: '🍎', name: '水果自由人', desc: '水果零食累计', tiers: [30, 80, 150], progress: (all) => cnt(all, 'expense', 'fruit') },
-  { key: 'study10', icon: '📚', name: '卷王本卷', desc: '学习资料累计', tiers: [10, 30, 60], progress: (all) => cnt(all, 'expense', 'study') },
-  { key: 'cloth10', icon: '👕', name: '时尚弄潮儿', desc: '衣物鞋帽累计', tiers: [10, 30, 60], progress: (all) => cnt(all, 'expense', 'cloth') },
-  { key: 'med5', icon: '💊', name: '养生青年', desc: '医疗保健累计', tiers: [5, 15, 30], progress: (all) => cnt(all, 'expense', 'medical') },
-  { key: 'daily20', icon: '🧴', name: '生活小能手', desc: '日常用品累计', tiers: [20, 60, 120], progress: (all) => cnt(all, 'expense', 'daily') },
-  { key: 'phone10', icon: '📱', name: '永不失联', desc: '话费 / 网费累计', tiers: [10, 30, 60], progress: (all) => cnt(all, 'expense', 'phone') },
-  { key: 'fun30', icon: '🎮', name: '快乐肥宅', desc: '娱乐游戏 + 网络虚拟累计', tiers: [30, 80, 150], progress: (all) => cnt(all, 'expense', 'fun') + cnt(all, 'expense', 'virtual') },
-  { key: 'beauty5', icon: '💇', name: '精致生活', desc: '美容美发累计', tiers: [5, 15, 30], progress: (all) => cnt(all, 'expense', 'beauty') },
-  { key: 'housing3', icon: '🏠', name: '居家小能手', desc: '房屋住宿累计', tiers: [3, 10, 20], progress: (all) => cnt(all, 'expense', 'housing') },
-  { key: 'rec100', icon: '📝', name: '记账达人', desc: '累计记账', tiers: [100, 300, 600], progress: (all) => all.length },
-  { key: 'three', icon: '📅', name: '三个月全勤', desc: '有记账记录的月份数', tiers: [3, 6, 12], progress: (all) => activeMonths(all) },
-  { key: 'scholar', icon: '🏆', name: '奖学金收割机', desc: '记过奖学金收入', tiers: [1, 3, 6], progress: (all) => all.filter((r) => r.type === 'income' && r.cat === 'scholarship').length },
-  { key: 'worker', icon: '💼', name: '卑微打工人', desc: '兼职收入笔数', tiers: [1, 5, 15], progress: (all) => all.filter((r) => r.type === 'income' && r.cat === 'parttime').length },
-  { key: 'invest', icon: '📈', name: '睡后收入', desc: '理财收益笔数', tiers: [1, 5, 15], progress: (all) => all.filter((r) => r.type === 'income' && r.cat === 'invest').length },
-  { key: 'rich', icon: '💎', name: '一夜暴富', desc: '单笔收入 ≥ 5000 的笔数', tiers: [1, 3, 6], progress: (all) => all.filter((r) => r.type === 'income' && r.amount >= 5000).length },
-  { key: 'surplus', icon: '💰', name: '月底有余粮', desc: '结余为正的月份数', tiers: [5, 10, 18], progress: (all) => surplusMonths(all) }
+  { key: 'tea', icon: '🥤', name: '奶茶品鉴师', nameEn: 'Tea Connoisseur', desc: '备注含「奶茶」的支出累计', descEn: 'Notes containing "milk tea"', tiers: [20, 50, 100], progress: (all) => all.filter((r) => r.type === 'expense' && (r.note || '').includes('奶茶')).length },
+  { key: 'food50', icon: '🍚', name: '干饭人干饭魂', nameEn: 'Foodie Champion', desc: '伙食费累计', descEn: 'Food expenses total', tiers: [50, 150, 300], progress: (all) => cnt(all, 'expense', 'food') },
+  { key: 'party20', icon: '🍻', name: '干杯！社交达人', nameEn: 'Party Animal', desc: '聚餐费累计', descEn: 'Dining expenses total', tiers: [20, 60, 120], progress: (all) => cnt(all, 'expense', 'party') },
+  { key: 'trans20', icon: '🚌', name: '风一样的学生', nameEn: 'Speed Demon', desc: '交通费累计', descEn: 'Transport expenses total', tiers: [20, 60, 120], progress: (all) => cnt(all, 'expense', 'transport') },
+  { key: 'fruit30', icon: '🍎', name: '水果自由人', nameEn: 'Fruit Freedom', desc: '水果零食累计', descEn: 'Snack expenses total', tiers: [30, 80, 150], progress: (all) => cnt(all, 'expense', 'fruit') },
+  { key: 'study10', icon: '📚', name: '卷王本卷', nameEn: 'Study Machine', desc: '学习资料累计', descEn: 'Study material total', tiers: [10, 30, 60], progress: (all) => cnt(all, 'expense', 'study') },
+  { key: 'cloth10', icon: '👕', name: '时尚弄潮儿', nameEn: 'Fashion Icon', desc: '衣物鞋帽累计', descEn: 'Clothing expenses total', tiers: [10, 30, 60], progress: (all) => cnt(all, 'expense', 'cloth') },
+  { key: 'med5', icon: '💊', name: '养生青年', nameEn: 'Health Nut', desc: '医疗保健累计', descEn: 'Medical expenses total', tiers: [5, 15, 30], progress: (all) => cnt(all, 'expense', 'medical') },
+  { key: 'daily20', icon: '🧴', name: '生活小能手', nameEn: 'Life Hack', desc: '日常用品累计', descEn: 'Daily supplies total', tiers: [20, 60, 120], progress: (all) => cnt(all, 'expense', 'daily') },
+  { key: 'phone10', icon: '📱', name: '永不失联', nameEn: 'Always Connected', desc: '话费 / 网费累计', descEn: 'Phone/WiFi expenses total', tiers: [10, 30, 60], progress: (all) => cnt(all, 'expense', 'phone') },
+  { key: 'fun30', icon: '🎮', name: '快乐肥宅', nameEn: 'Happy Gamer', desc: '娱乐游戏 + 网络虚拟累计', descEn: 'Entertainment + Virtual total', tiers: [30, 80, 150], progress: (all) => cnt(all, 'expense', 'fun') + cnt(all, 'expense', 'virtual') },
+  { key: 'beauty5', icon: '💇', name: '精致生活', nameEn: 'Glam Life', desc: '美容美发累计', descEn: 'Beauty expenses total', tiers: [5, 15, 30], progress: (all) => cnt(all, 'expense', 'beauty') },
+  { key: 'housing3', icon: '🏠', name: '居家小能手', nameEn: 'Homebody', desc: '房屋住宿累计', descEn: 'Housing expenses total', tiers: [3, 10, 20], progress: (all) => cnt(all, 'expense', 'housing') },
+  { key: 'rec100', icon: '📝', name: '记账达人', nameEn: 'Accounting Pro', desc: '累计记账', descEn: 'Total entries recorded', tiers: [100, 300, 600], progress: (all) => all.length },
+  { key: 'three', icon: '📅', name: '三个月全勤', nameEn: '3-Month Streak', desc: '有记账记录的月份数', descEn: 'Months with records', tiers: [3, 6, 12], progress: (all) => activeMonths(all) },
+  { key: 'scholar', icon: '🏆', name: '奖学金收割机', nameEn: 'Scholarship Hunter', desc: '记过奖学金收入', descEn: 'Scholarship income entries', tiers: [1, 3, 6], progress: (all) => all.filter((r) => r.type === 'income' && r.cat === 'scholarship').length },
+  { key: 'worker', icon: '💼', name: '卑微打工人', nameEn: 'Hustler', desc: '兼职收入笔数', descEn: 'Part-time income entries', tiers: [1, 5, 15], progress: (all) => all.filter((r) => r.type === 'income' && r.cat === 'parttime').length },
+  { key: 'invest', icon: '📈', name: '睡后收入', nameEn: 'Passive Income', desc: '理财收益笔数', descEn: 'Investment income entries', tiers: [1, 5, 15], progress: (all) => all.filter((r) => r.type === 'income' && r.cat === 'invest').length },
+  { key: 'rich', icon: '💎', name: '一夜暴富', nameEn: 'Overnight Rich', desc: '单笔收入 ≥ 5000 的笔数', descEn: 'Single income ≥ 5000', tiers: [1, 3, 6], progress: (all) => all.filter((r) => r.type === 'income' && r.amount >= 5000).length },
+  { key: 'surplus', icon: '💰', name: '月底有余粮', nameEn: 'Month-End Surplus', desc: '结余为正的月份数', descEn: 'Months with positive balance', tiers: [5, 10, 18], progress: (all) => surplusMonths(all) }
 ]
 function cnt(all, type, cat) {
   return all.filter((r) => r.type === type && r.cat === cat).length
@@ -423,7 +429,7 @@ watch(achStates, (cur, prev) => {
   for (const a of ACHIEVEMENTS) {
     if (cur[a.key].unlocked && (!prev || !prev[a.key].unlocked) && !achShown.value[a.key]) {
       markAch(a.key)
-      showToast(`${a.icon} 成就解锁：${a.name}（${MEDAL[0]}）`, 3200)
+      showToast(t('budget.eggAchieveUnlock', { name: achNameOf(a), tier: MEDAL.value[0] }), 3200)
     }
   }
 }, { immediate: true })
@@ -444,9 +450,10 @@ function sum(list, type) {
 
 /** 选中奖学金预设：自动带出金额与备注 */
 function pickScholar(s) {
-  if (Number(amount.value) && Number(amount.value) !== s.amount && !window.confirm(`当前金额为 ¥${fmt(Number(amount.value))}，要替换为 ¥${fmt(s.amount)} 吗？`)) return
+  const currentAmt = Number(amount.value)
+  if (currentAmt && currentAmt !== s.amount && !window.confirm(t('budget.pickScholarConfirm', { from: fmt(currentAmt), to: fmt(s.amount) }))) return
   amount.value = String(s.amount)
-  note.value = s.name
+  note.value = scholarNameOf(s)
 }
 
 /** 导入微信 / 支付宝账单文件（csv/xlsx 均支持，全部在浏览器本地解析） */
@@ -460,7 +467,7 @@ async function billImport(file) {
   }
   let { added, skipped, brand, source } = res
   if (!added.length) {
-    importMsg.value = `未找到可导入的收支记录（跳过中性交易/无效记录 ${skipped.neutral + skipped.closed} 笔）。请确认账单文件为微信「用于个人对账」或支付宝「交易明细」导出。`
+    importMsg.value = t('budget.importedNoRecord', { n: skipped.neutral + skipped.closed })
     return
   }
 
@@ -476,7 +483,7 @@ async function billImport(file) {
     })
     added = keep
     if (!added.length) {
-      importMsg.value = `该账单 ${res.added.length} 笔全部为转账 / 红包 / 收款等大额中转，已按「智能清洗」跳过。如需保留可关闭智能清洗后重新导入。`
+      importMsg.value = t('budget.importedCleanAll', { n: res.added.length })
       return
     }
   }
@@ -495,7 +502,7 @@ async function billImport(file) {
     fresh.push({ id: newId() + Math.random(), ...r })
   }
   if (!fresh.length) {
-    importMsg.value = '导入的记录与本机已有记录完全重复，未新增任何条目（可先「清空全部」后重新导入）。'
+    importMsg.value = t('budget.importedDup')
     return
   }
   records.value = fresh.concat(records.value)
@@ -505,18 +512,19 @@ async function billImport(file) {
   for (const r of fresh) if (r.date > latest) latest = r.date.slice(0, 7)
   if (latest) month.value = latest
 
-  const brandName = brand === 'alipay' ? '支付宝' : '微信'
-  const typeName = source === 'xlsx' ? 'Excel(xlsx)' : '表格'
+  const brandName = brand === 'alipay' ? (lang.value === 'en' ? 'Alipay' : '支付宝') : (lang.value === 'en' ? 'WeChat' : '微信')
+  const typeName = source === 'xlsx' ? 'Excel(xlsx)' : (lang.value === 'en' ? 'Spreadsheet' : '表格')
   const byMonth = {}
   for (const r of fresh) {
     const mk = r.date.slice(0, 7)
     byMonth[mk] = (byMonth[mk] || 0) + 1
   }
-  const monthList = Object.keys(byMonth).sort().map((mk) => `${mk.slice(5)}月 ${byMonth[mk]}笔`).join('、')
-  const skipMsg = skipped.neutral + skipped.closed ? `跳过无效/中性 ${skipped.neutral + skipped.closed} 笔；` : ''
-  const cleanMsg = cleaned ? `智能清洗跳过转账/红包大额中转 ${cleaned} 笔 ¥${fmt(cleanedAmt)}；` : ''
-  const dupMsg = dup ? `去重忽略重复 ${dup} 笔；` : ''
-  importMsg.value = `✅ 已识别为${brandName}账单（${typeName}）并导入 ${fresh.length} 笔：支出 ¥${fmt(sum(fresh, 'expense'))} / 收入 ¥${fmt(sum(fresh, 'income'))}。${skipMsg}${cleanMsg}${dupMsg}已按各自日期归入对应月份（${monthList}），自动切到最新月份，可点「← 上月 / 下月 →」切换查看。`
+  const monthSep = lang.value === 'en' ? ', ' : '、'
+  const monthList = Object.keys(byMonth).sort().map((mk) => `${mk.slice(5)}${t('budget.mon')} ${byMonth[mk]}${t('budget.totalRecords')}`).join(monthSep)
+  const skipMsg = skipped.neutral + skipped.closed ? t('budget.importSkipMsg', { n: skipped.neutral + skipped.closed }) : ''
+  const cleanMsg = cleaned ? t('budget.importCleanMsg', { n: cleaned, amt: fmt(cleanedAmt) }) : ''
+  const dupMsg = dup ? t('budget.importDupMsg', { n: dup }) : ''
+  importMsg.value = t('budget.importedMsg', { brand: brandName, type: typeName, n: fresh.length, exp: fmt(sum(fresh, 'expense')), inc: fmt(sum(fresh, 'income')), skip: skipMsg, clean: cleanMsg, dup: dupMsg, months: monthList })
 }
 
 const monthRecords = computed(() => records.value.filter((r) => r.date.startsWith(month.value)))
@@ -544,20 +552,19 @@ const catStats = computed(() => {
   for (const r of monthRecords.value) {
     if (r.type !== 'expense') continue
     const info = catInfo('expense', r.cat)
-    const key = info ? info.label : r.cat
+    const key = info ? info.key : r.cat
     map[key] = (map[key] || 0) + r.amount
   }
-  return Object.entries(map).map(([name, v]) => {
-    const found = CATS.expense.find((c) => c.label === name)
-    return { key: found ? found.key : name, icon: found ? found.icon : '📦', name, v: Math.round(v * 100) / 100 }
+  return Object.entries(map).map(([key, v]) => {
+    const found = CATS.expense.find((c) => c.key === key)
+    return { key, icon: found ? found.icon : '📦', name: found ? (lang.value === 'en' ? found.labelEn : found.label) : key, v: Math.round(v * 100) / 100 }
   }).sort((a, b) => b.v - a.v)
 })
 const maxCat = computed(() => Math.max(1, ...catStats.value.map((c) => c.v)))
-/** 本月支出构成图表类型：bar 条形 / pie 圆饼 */
 const catChartType = ref('bar')
-const catChartSegs = computed(() => catStats.value.map((c) => ({ name: c.name, icon: c.icon, v: c.v })))
+const catChartSegs = computed(() => catStats.value.map((c) => ({ key: c.key, name: c.name, icon: c.icon, v: c.v })))
 function selectCatByLabel(label) {
-  const found = CATS.expense.find((c) => c.label === label)
+  const found = CATS.expense.find((c) => c.label === label || c.labelEn === label)
   catFilter.value = found ? found.key : 'all'
   sortMode.value = 'cat'
   page.value = 1
@@ -569,7 +576,7 @@ const trend = computed(() => {
     const key = monthOffset(month.value, off)
     arr.push({
       key,
-      label: key.slice(5) + '月',
+      label: key.slice(5) + t('budget.mon'),
       v: Math.round(records.value.filter((r) => r.type === 'expense' && r.date.startsWith(key)).reduce((s, r) => s + r.amount, 0) * 100) / 100
     })
   }
@@ -598,7 +605,7 @@ const sorted = computed(() => {
   if (incCatFilter.value !== 'all') list = list.filter((r) => r.type === 'income' && r.cat === incCatFilter.value)
   const arr = [...list]
   if (sortMode.value === 'amount') arr.sort((a, b) => (sortDir.value === 'asc' ? a.amount - b.amount : b.amount - a.amount) || (a.date < b.date ? 1 : -1))
-  else if (sortMode.value === 'cat') arr.sort((a, b) => (catInfo('expense', a.cat) || {}).label?.localeCompare((catInfo('expense', b.cat) || {}).label || '') || (a.date < b.date ? 1 : -1))
+  else if (sortMode.value === 'cat') arr.sort((a, b) => (catInfo('expense', a.cat) || {}).key?.localeCompare((catInfo('expense', b.cat) || {}).key || '') || (a.date < b.date ? 1 : -1))
   else arr.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id))
   return arr
 })
@@ -611,37 +618,37 @@ watch(pageCount, () => { if (page.value > pageCount.value) page.value = pageCoun
 watch(page, (v) => { if (!Number.isFinite(v)) page.value = 1; else if (v < 1) page.value = 1; else if (v > pageCount.value) page.value = pageCount.value })
 
 function balanceMsg() {
-  if (!monthRecords.value.length) return '本月还没记一笔，先「记一笔」开始吧'
+  if (!monthRecords.value.length) return t('budget.balanceMsgNoRecord')
   if (allowance.value > 0) {
-    if (expense.value === 0) return `生活费已到账 ¥${fmt(allowance.value)}，本月刚开始，稳住 ✊`
-    if (budgetBalance.value < 0) return `生活费已花超 ¥${fmt(Math.abs(budgetBalance.value))} 元，别让下月生活费提前消失 😱`
+    if (expense.value === 0) return t('budget.balanceMsgAllowanceReceived', { n: fmt(allowance.value) })
+    if (budgetBalance.value < 0) return t('budget.balanceMsgAllowanceOverspend', { n: fmt(Math.abs(budgetBalance.value)) })
     const used = allowanceUsed.value
-    if (used > 90) return `生活费已用 ${used}%（剩 ¥${fmt(budgetBalance.value)}），食堂走起 🍚`
-    if (used > 65) return `生活费已用 ${used}%（剩 ¥${fmt(budgetBalance.value)}），下半月悠着点 ⚠️`
-    return `生活费已用 ${used}%（剩 ¥${fmt(budgetBalance.value)}），节奏不错 🎉`
+    if (used > 90) return t('budget.balanceMsgAllowanceHigh', { pct: used, n: fmt(budgetBalance.value) })
+    if (used > 65) return t('budget.balanceMsgAllowanceMid', { pct: used, n: fmt(budgetBalance.value) })
+    return t('budget.balanceMsgAllowanceLow', { pct: used, n: fmt(budgetBalance.value) })
   }
   if (balance.value < 0) {
     const over = Math.abs(balance.value)
-    if (over > 500) return '已超支 ' + fmt(over) + ' 元！得认真记账了，别让下月生活费提前消失 😱'
-    if (over > 200) return '本月超支 ' + fmt(over) + ' 元，接下来省着点，靠食堂续命 🥲'
-    return '轻微超支 ' + fmt(over) + ' 元，还有机会抢救 🫠'
+    if (over > 500) return t('budget.balanceMsgOverHigh', { n: fmt(over) })
+    if (over > 200) return t('budget.balanceMsgOverMid', { n: fmt(over) })
+    return t('budget.balanceMsgOverLow', { n: fmt(over) })
   }
-  if (income.value === 0) return '光花不挣，奖学金 / 兼职该提上日程了 😏'
+  if (income.value === 0) return t('budget.balanceMsgNoIncome')
   const rate = balance.value / income.value
-  if (rate >= 0.5) return '结余过半，理财小能手就是你 🤑'
-  if (rate >= 0.25) return '收支健康，继续保持 🎉'
-  return '结余不多，月底前记得悠着点 ⚠️'
+  if (rate >= 0.5) return t('budget.balanceMsgGood')
+  if (rate >= 0.25) return t('budget.balanceMsgOk')
+  return t('budget.balanceMsgLow')
 }
 
 function clearAll() {
-  if (window.confirm('确定清空全部记账记录？此操作不可恢复。')) {
+  if (window.confirm(t('budget.clearAllConfirm'))) {
     records.value = []
   }
 }
 
 const monthLabel = computed(() => {
   const [y, m] = month.value.split('-').map(Number)
-  return `${y}年${m}月`
+  return t('budget.monthLabel', { y, m })
 })
 </script>
 
@@ -661,10 +668,10 @@ const monthLabel = computed(() => {
   <div class="view-top">
     <button class="back-btn" @click="emit('back')">← {{ t('common.back').slice(2) }}</button>
     <div class="view-title">{{ t('budget.title') }}</div>
-    <div class="view-sub">随手记一笔，月底少流一滴泪 · 奖学金、兼职收入也能入账</div>
+    <div class="view-sub">{{ t('budget.subFull') }}</div>
     <div class="top-actions">
-      <button class="btn ghost small" @click="subView = 'sim'">📊 生活费模拟 ›</button>
-      <button class="btn ghost small pro-btn" @click="subView = 'pro'">⚙️ 专业版 ›</button>
+      <button class="btn ghost small" @click="subView = 'sim'">{{ t('budget.simBtn') }}</button>
+      <button class="btn ghost small pro-btn" @click="subView = 'pro'">{{ t('budget.proBtn') }}</button>
     </div>
   </div>
 
@@ -680,11 +687,11 @@ const monthLabel = computed(() => {
       <div class="balance-num"><span class="balance-sym">¥</span>{{ fmt(Math.abs(balance)) }}</div>
       <div class="balance-hint">{{ balanceMsg() }}</div>
       <div v-if="allowance" class="balance-live">
-        生活费 ¥{{ fmt(allowance) }} · 已用 {{ allowanceUsed }}%（剩 ¥{{ fmt(Math.max(0, budgetBalance)) }}）
+        {{ t('budget.allowanceHint') }} ¥{{ fmt(allowance) }} · {{ t('budget.allowanceUsed') }} {{ allowanceUsed }}%（{{ t('budget.allowanceRemain') }} ¥{{ fmt(Math.max(0, budgetBalance)) }}）
         <div class="balance-live-bar"><i :style="{ width: Math.min(100, allowanceUsed) + '%' }"></i></div>
       </div>
       <div v-if="prevDiff" class="balance-cmp" :class="prevDiff > 0 ? 'up' : 'down'">
-        {{ prevDiff > 0 ? '▲' : '▼' }} 支出较上月 {{ prevDiff > 0 ? '+' : '' }}{{ fmt(prevDiff) }} 元
+        {{ prevDiff > 0 ? '▲' : '▼' }} {{ t('budget.prevMonthCompare') }} {{ prevDiff > 0 ? '+' : '' }}{{ fmt(prevDiff) }} {{ t('budget.mon') }}
       </div>
       <div class="balance-row">
         <div class="balance-item income"><span>{{ t('budget.income') }}</span><b>+¥{{ fmt(income) }}</b></div>
@@ -728,17 +735,17 @@ const monthLabel = computed(() => {
         @click="pickCat(c.key)"
       >
         <span class="cat-icon">{{ c.icon }}</span>
-        <span class="cat-name">{{ c.label }}</span>
-        <span class="cat-hint">{{ c.hint }}</span>
+        <span class="cat-name">{{ lang === 'en' ? c.labelEn : c.label }}</span>
+        <span class="cat-hint">{{ lang === 'en' ? c.hintEn : c.hint }}</span>
       </button>
     </div>
     <template v-if="mode === 'income' && cat === 'scholarship'">
       <div class="scholar-box">
-        <div class="scholar-label">🏅 奖学金 / 助学金预设（点击自动带出金额）</div>
-        <div class="muted" style="font-size:11px;margin:2px 0 8px;">优秀奖学金 1000/600/400 ·每学期；国家助学金三档 2300/3300/4300 ·每学年；竞赛奖励参照博学奖学金办法。以学校最新通知为准。</div>
+        <div class="scholar-label">{{ t('budget.scholarTitle') }}</div>
+        <div class="muted" style="font-size:11px;margin:2px 0 8px;">{{ t('budget.scholarDesc') }}</div>
         <div class="scholar-grid">
           <button v-for="s in SCHOLARS" :key="s.name" class="scholar-chip" @click="pickScholar(s)">
-            {{ s.name }} <b>¥{{ s.amount }}</b>
+            {{ scholarNameOf(s) }} <b>¥{{ s.amount }}</b>
           </button>
         </div>
       </div>
@@ -749,10 +756,10 @@ const monthLabel = computed(() => {
     </div>
     <input v-model="note" class="input" style="margin-top:10px;" :placeholder="t('budget.notePlaceholder')" @keyup.enter="save" />
     <div class="batch-row" v-if="!editing">
-      <span class="muted" style="font-size:11px;">批量：</span>
+      <span class="muted" style="font-size:11px;">{{ t('budget.batchLabel') }}</span>
       <input v-model.number="batchN" type="number" min="1" max="99" class="input batch-input" @keyup.enter="save" />
-      <span class="muted" style="font-size:11px;">笔 × ¥{{ fmt(Number(amount) || 0) }}</span>
-      <span v-if="Number(batchN) > 1" class="batch-tip">一次记 {{ Number(batchN) }} 条相同记录</span>
+      <span class="muted" style="font-size:11px;">{{ t('budget.batchUnit') }}{{ fmt(Number(amount) || 0) }}</span>
+      <span v-if="Number(batchN) > 1" class="batch-tip">{{ t('budget.batchHint', { n: Number(batchN) }) }}</span>
     </div>
     <button class="btn accent big" style="margin-top:12px;width:100%;" :class="festival ? 'festival-on ' + festival : ''" :disabled="!(Number(amount) > 0)" @click="save">
       {{ editing ? t('budget.saveEdit') : (mode === 'expense' ? t('budget.addExpense') : t('budget.addIncome')) + (Number(batchN) > 1 ? ' ×' + Number(batchN) : '') }}
@@ -763,17 +770,17 @@ const monthLabel = computed(() => {
   <div class="panel">
     <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('budget.importTitle') }}</div>
     <p class="muted" style="font-size:12px;margin-bottom:10px;">
-      直接选择从微信 / 支付宝下载的账单文件即可自动识别：微信「支付 → 钱包 → 账单 → 常见问题 → 下载账单 → 用于个人对账」或支付宝「我的 → 账单 → 右上角 ⋯ → 开具交易流水证明 / 导出」，下载的 CSV 或 Excel(xlsx) 都能识别。金额按「收/支」自动记入，支出按交易分类与商品名自动归类。
+      {{ t('budget.importDesc') }}
     </p>
     <input id="csv-file" type="file" accept=".csv,.xlsx,text/csv" style="display:none;" @change="billImport($event.target.files[0])" />
     <label for="csv-file" class="btn ghost" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">{{ t('budget.selectFile') }}</label>
     <div class="clean-toggle">
       <input id="clean-switch" type="checkbox" v-model="cleanMode" />
-      <label for="clean-switch">智能清洗：自动跳过转账 / 红包 / 收款类<b>大额中转</b>（≥1000 元，如别人转几万给你、你再转去他另一张卡这类过账，避免虚增当月收支；小额 AA 饭钱等转账仍保留）</label>
+      <label for="clean-switch">{{ t('budget.cleanLabel') }}<b>{{ t('budget.cleanBig') }}</b>{{ t('budget.cleanDesc') }}</label>
     </div>
     <div v-if="importMsg" class="import-msg">{{ importMsg }}</div>
     <div class="privacy-note">
-      🔒 隐私说明：本站为纯静态网页（无后端服务器），账单文件只在你自己的浏览器里本地解析，<b>不会上传到任何服务器</b>，也不会被任何服务方获取；导入的记账记录仅保存在本机浏览器 localStorage，可安心试用。清除浏览器数据会一并清空记录。
+      {{ t('budget.privacyNote') }}<b>{{ t('budget.privacyBold') }}</b>{{ t('budget.privacyRest') }}
     </div>
   </div>
 
@@ -784,11 +791,11 @@ const monthLabel = computed(() => {
     </button>
     <div v-if="showRef" class="ref-list">
       <div v-for="r in REF" :key="r.key" class="ref-row">
-        <span>{{ r.label }}</span>
+        <span>{{ catLabelOf('expense', r.key) || r.label }}</span>
         <span class="muted">¥{{ r.lo }} ~ {{ r.hi }}</span>
       </div>
       <p class="muted" style="font-size:11px;margin-top:8px;">
-        参考知乎 / 小红书 / 贴吧等社区常见讨论整理，个体差异大，仅供参考
+        {{ t('budget.refNote') }}
       </p>
     </div>
   </div>
@@ -834,16 +841,16 @@ const monthLabel = computed(() => {
       <button class="tab" :class="{ active: sortMode === 'date' }" @click="switchSort('date')">{{ t('budget.sortByDate') }}</button>
       <button class="tab" :class="{ active: sortMode === 'amount' }" @click="switchSort('amount')">{{ t('budget.sortByAmount') }}{{ sortMode === 'amount' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : '' }}</button>
       <button class="tab" :class="{ active: sortMode === 'cat' }" @click="switchSort('cat')">{{ t('budget.sortByCat') }}</button>
-      <span class="muted" style="font-size:10px;margin-left:auto;">共 {{ monthRecords.length }} {{ t('budget.totalRecords') }}</span>
+      <span class="muted" style="font-size:10px;margin-left:auto;">{{ t('budget.totalRecords', { n: monthRecords.length }) }}</span>
     </div>
     <div v-if="sortMode === 'cat'" class="cat-chips">
       <template v-if="typeFilter !== 'income'">
         <button class="chip" :class="{ active: catFilter === 'all' }" @click="catFilter = 'all'">{{ t('budget.allExpense') }}</button>
-        <button v-for="c in CATS.expense" :key="c.key" class="chip" :class="{ active: catFilter === c.key }" @click="catFilter = c.key">{{ c.icon }}{{ c.label }}</button>
+        <button v-for="c in CATS.expense" :key="c.key" class="chip" :class="{ active: catFilter === c.key }" @click="catFilter = c.key">{{ c.icon }}{{ lang === 'en' ? c.labelEn : c.label }}</button>
       </template>
       <template v-else>
         <button class="chip" :class="{ active: incCatFilter === 'all' }" @click="incCatFilter = 'all'">{{ t('budget.allIncome') }}</button>
-        <button v-for="c in CATS.income" :key="c.key" class="chip" :class="{ active: incCatFilter === c.key }" @click="incCatFilter = c.key">{{ c.icon }}{{ c.label }}</button>
+        <button v-for="c in CATS.income" :key="c.key" class="chip" :class="{ active: incCatFilter === c.key }" @click="incCatFilter = c.key">{{ c.icon }}{{ lang === 'en' ? c.labelEn : c.label }}</button>
       </template>
     </div>
     <div v-if="!sorted.length" class="muted" style="text-align:center;padding:16px;">{{ t('budget.noRecordMonth') }}</div>
@@ -851,12 +858,12 @@ const monthLabel = computed(() => {
       <div v-for="r in paged" :key="r.id" class="rec-row">
         <span class="rec-icon">{{ (catInfo(r.type, r.cat) || {}).icon || '📌' }}</span>
         <span class="rec-main">
-          <span class="rec-name">{{ (catInfo(r.type, r.cat) || {}).label || r.cat }}<em v-if="r.merchant"> · {{ r.merchant }}</em><em v-if="r.refunded"> ↩︎已退款</em><em v-if="r.note && r.note !== r.merchant"> · {{ r.note }}</em></span>
+          <span class="rec-name">{{ catLabelOf(r.type, r.cat) || r.cat }}<em v-if="r.merchant"> · {{ r.merchant }}</em><em v-if="r.refunded"> ↩︎{{ t('budget.refunded') }}</em><em v-if="r.note && r.note !== r.merchant"> · {{ r.note }}</em></span>
           <span class="muted" style="font-size:11px;">{{ r.date }}</span>
         </span>
         <span class="rec-amt" :class="r.type === 'income' ? 'in' : 'out'">{{ r.type === 'income' ? '+' : '-' }}¥{{ fmt(r.amount) }}</span>
-        <button class="rec-del" @click="editStart(r)" title="编辑">✎</button>
-        <button class="rec-del" @click="remove(r.id)" title="删除">✕</button>
+        <button class="rec-del" @click="editStart(r)" :title="t('budget.edit')">✎</button>
+        <button class="rec-del" @click="remove(r.id)" :title="t('budget.delete')">✕</button>
       </div>
     </div>
     <div v-if="pageCount > 1" class="pager">
@@ -878,9 +885,9 @@ const monthLabel = computed(() => {
         <div v-for="a in achVisible" :key="a.key" class="ach-item" :class="{ on: achStates[a.key].unlocked }">
           <div class="ach-top">
             <span class="ach-icon">{{ achStates[a.key].unlocked ? a.icon : '🔒' }}</span>
-            <span class="ach-name">{{ achStates[a.key].unlocked ? a.name + (achStates[a.key].level > 0 ? ' · ' + MEDAL[Math.min(achStates[a.key].level, MEDAL.length - 1)] : '') : '？？？' }}</span>
+            <span class="ach-name">{{ achStates[a.key].unlocked ? achNameOf(a) + (achStates[a.key].level > 0 ? ' · ' + MEDAL[Math.min(achStates[a.key].level, MEDAL.length - 1)] : '') : '？？？' }}</span>
           </div>
-          <div class="ach-desc">{{ achStates[a.key].unlocked ? a.desc : t('budget.unlocked') }}</div>
+          <div class="ach-desc">{{ achStates[a.key].unlocked ? achDescOf(a) : t('budget.unlocked') }}</div>
           <div v-if="achStates[a.key].unlocked" class="ach-progress">
             <div class="ach-bar"><i :style="{ width: Math.min(100, Math.round(achStates[a.key].cur / achStates[a.key].next * 100)) + '%' }"></i></div>
             <span class="muted" style="font-size:10px;">{{ achStates[a.key].cur }} / {{ achStates[a.key].next }}</span>

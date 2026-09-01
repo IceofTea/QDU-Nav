@@ -24,6 +24,13 @@ const EXP_LABEL = {
   beauty: '美容美发', digital: '数码家电', sport: '运动户外', virtual: '网络虚拟',
   housing: '房屋住宿', transfer: '转账支出', trouble: '闯祸费', other: '其它'
 }
+const EXP_LABEL_EN = {
+  food: 'Food', party: 'Dining', transport: 'Transport', fruit: 'Snacks', study: 'Study',
+  cloth: 'Clothes', medical: 'Medical', daily: 'Daily', phone: 'Phone', fun: 'Entertainment',
+  beauty: 'Beauty', digital: 'Digital', sport: 'Sport', virtual: 'Virtual',
+  housing: 'Housing', transfer: 'Transfer', trouble: 'Trouble', other: 'Other'
+}
+const expLabel = (key) => lang.value === 'en' ? (EXP_LABEL_EN[key] || key) : (EXP_LABEL[key] || key)
 const EXP_ICON = {
   food: '🍚', party: '🍻', transport: '🚌', fruit: '🍎', study: '📚', cloth: '👕', medical: '💊',
   daily: '🧴', phone: '📱', fun: '🎮', beauty: '💇', digital: '📱', sport: '🏃', virtual: '🎭',
@@ -33,6 +40,11 @@ const INC_LABEL = {
   allowance: '生活费', scholarship: '奖学金', parttime: '兼职', prize: '红包/奖金',
   resale: '闲置转卖', refund: '退款', invest: '理财收益', transfer: '转账收入', other: '其它收入'
 }
+const INC_LABEL_EN = {
+  allowance: 'Allowance', scholarship: 'Scholarship', parttime: 'Part-time', prize: 'Bonus',
+  resale: 'Resale', refund: 'Refund', invest: 'Investment', transfer: 'Transfer In', other: 'Other Income'
+}
+const incLabel = (key) => lang.value === 'en' ? (INC_LABEL_EN[key] || key) : (INC_LABEL[key] || key)
 const INC_ICON = {
   allowance: '💰', scholarship: '🏅', parttime: '💼', prize: '🎁', resale: '🏷️', refund: '↩️',
   invest: '📈', transfer: '💌', other: '📥'
@@ -55,11 +67,11 @@ function monthOffset(base, off) {
 const rangeEnd = ref(curMonthStr(0))
 const rangeStart = ref(curMonthStr(-11))
 const RANGE_PRESETS = [
-  { label: '近3月', n: -2 },
-  { label: '近6月', n: -5 },
-  { label: '近12月', n: -11 },
-  { label: '近2年', n: -23 },
-  { label: '近3年', n: -35 }
+  { label: '近3月', labelEn: 'Last 3 mo', n: -2 },
+  { label: '近6月', labelEn: 'Last 6 mo', n: -5 },
+  { label: '近12月', labelEn: 'Last 12 mo', n: -11 },
+  { label: '近2年', labelEn: 'Last 2 yr', n: -23 },
+  { label: '近3年', labelEn: 'Last 3 yr', n: -35 }
 ]
 function presetRange(n) {
   rangeStart.value = curMonthStr(n)
@@ -187,7 +199,7 @@ const catAgg = computed(() => {
   return Object.entries(map).map(([key, v]) => ({
     key,
     icon: EXP_ICON[key] || '📦',
-    name: EXP_LABEL[key] || key,
+    name: expLabel(key),
     v: Math.round(v * 100) / 100
   })).sort((a, b) => b.v - a.v)
 })
@@ -197,7 +209,7 @@ const incAgg = computed(() => {
     if (r.type !== 'income' || r.cat === 'refund') continue
     map[r.cat] = (map[r.cat] || 0) + r.amount
   }
-  return Object.entries(map).map(([key, v]) => ({ key, icon: INC_ICON[key] || '📥', name: INC_LABEL[key] || key, v: Math.round(v * 100) / 100 })).sort((a, b) => b.v - a.v)
+  return Object.entries(map).map(([key, v]) => ({ key, icon: INC_ICON[key] || '📥', name: incLabel(key), v: Math.round(v * 100) / 100 })).sort((a, b) => b.v - a.v)
 })
 const maxCat = computed(() => Math.max(1, ...catAgg.value.map((c) => c.v)))
 const maxInc = computed(() => Math.max(1, ...incAgg.value.map((c) => c.v)))
@@ -207,7 +219,7 @@ const merchantAgg = computed(() => {
   const map = {}
   for (const r of inRange.value) {
     if (!isExp(r)) continue
-    const m = cleanMerchant(r.merchant) || '其他'
+    const m = cleanMerchant(r.merchant) || (lang.value === 'en' ? 'Other' : '其他')
     map[m] = (map[m] || 0) + r.amount
   }
   return Object.entries(map).map(([name, v]) => ({ name, icon: '🏪', v: Math.round(v * 100) / 100 })).sort((a, b) => b.v - a.v)
@@ -217,7 +229,7 @@ const merchantIncAgg = computed(() => {
   const map = {}
   for (const r of inRange.value) {
     if (r.type !== 'income') continue
-    const m = cleanMerchant(r.merchant) || '其他'
+    const m = cleanMerchant(r.merchant) || (lang.value === 'en' ? 'Other' : '其他')
     map[m] = (map[m] || 0) + r.amount
   }
   return Object.entries(map).map(([name, v]) => ({ name, icon: '🏪', v: Math.round(v * 100) / 100 })).sort((a, b) => b.v - a.v)
@@ -261,7 +273,7 @@ const filtered = computed(() => {
   }
   const arr = [...list]
   if (proSort.value === 'amount') arr.sort((a, b) => (proDir.value === 'asc' ? a.amount - b.amount : b.amount - a.amount) || (a.date < b.date ? 1 : -1))
-  else if (proSort.value === 'cat') arr.sort((a, b) => (EXP_LABEL[a.cat] || '').localeCompare(EXP_LABEL[b.cat] || '') || (a.date < b.date ? 1 : -1))
+  else if (proSort.value === 'cat') arr.sort((a, b) => expLabel(a.cat).localeCompare(expLabel(b.cat)) || (a.date < b.date ? 1 : -1))
   else arr.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id))
   return arr
 })
@@ -294,7 +306,7 @@ function selectMerchant(name) {
 /* ---- 导出分析文件（CSV，Excel 可直接打开）---- */
 function exportCsv() {
   exportXlsx({
-    fileName: `生活费分析_${rangeStart.value}_${rangeEnd.value}.xlsx`,
+    fileName: lang.value === 'en' ? `Budget_${rangeStart.value}_${rangeEnd.value}.xlsx` : `生活费分析_${rangeStart.value}_${rangeEnd.value}.xlsx`,
     inc: totalInc.value,
     exp: totalExp.value,
     bal: totalBal.value,
@@ -306,7 +318,7 @@ function exportCsv() {
     rows: filtered.value.map((r) => ({
       date: r.date,
       type: r.type,
-      cat: EXP_LABEL[r.cat] || INC_LABEL[r.cat] || r.cat,
+      cat: isExp(r) ? expLabel(r.cat) : incLabel(r.cat),
       merchant: r.merchant || '',
       amount: r.amount,
       note: r.note || ''
@@ -317,36 +329,36 @@ function exportCsv() {
 
 <template>
   <div class="view-top">
-    <button class="back-btn" @click="emit('back')">← 返回生活费计数器</button>
-    <div class="view-title">生活费 · 专业版</div>
-    <div class="view-sub">多维图表 · 同商户聚合 · 自由日期范围 · 导出分析（全部本地计算）</div>
+    <button class="back-btn" @click="emit('back')">{{ t('budgetPro.backToBudget') }}</button>
+    <div class="view-title">{{ t('budgetPro.title') }}</div>
+    <div class="view-sub">{{ t('budgetPro.sub') }}</div>
   </div>
 
   <div class="panel">
     <div class="kpi-row">
-      <div class="kpi"><span>累计收入</span><b class="in">+¥{{ fmt(totalInc) }}</b></div>
-      <div class="kpi"><span>累计支出</span><b class="out">-¥{{ fmt(totalExp) }}</b></div>
-      <div class="kpi"><span>结余</span><b :class="totalBal >= 0 ? 'in' : 'out'">{{ totalBal >= 0 ? '+' : '' }}¥{{ fmt(totalBal) }}</b></div>
-      <div class="kpi"><span>退款冲抵</span><b>{{ refundCount }} 笔 ¥{{ fmt(refundTotal) }}</b></div>
+      <div class="kpi"><span>{{ t('budgetPro.totalIncome') }}</span><b class="in">+¥{{ fmt(totalInc) }}</b></div>
+      <div class="kpi"><span>{{ t('budgetPro.totalExpense') }}</span><b class="out">-¥{{ fmt(totalExp) }}</b></div>
+      <div class="kpi"><span>{{ t('budgetPro.balanceLabel') }}</span><b :class="totalBal >= 0 ? 'in' : 'out'">{{ totalBal >= 0 ? '+' : '' }}¥{{ fmt(totalBal) }}</b></div>
+      <div class="kpi"><span>{{ t('budgetPro.refundOffset') }}</span><b>{{ refundCount }} {{ t('budgetPro.refundUnit') }} ¥{{ fmt(refundTotal) }}</b></div>
     </div>
   </div>
 
   <div class="panel">
     <div class="section-head" style="align-items:center;margin:0 0 10px;">
-      <h3 class="section-title" style="margin:0;"><span class="bar"></span>区间收支对比</h3>
+      <h3 class="section-title" style="margin:0;"><span class="bar"></span>{{ t('budgetPro.rangeTitle') }}</h3>
       <div class="chart-type">
-        <button class="tab" :class="{ active: rangeChartType === 'bar' }" @click="rangeChartType = 'bar'">▥ 柱状</button>
-        <button class="tab" :class="{ active: rangeChartType === 'line' }" @click="rangeChartType = 'line'">📈 折线</button>
+        <button class="tab" :class="{ active: rangeChartType === 'bar' }" @click="rangeChartType = 'bar'">{{ t('budgetPro.chartBar') }}</button>
+        <button class="tab" :class="{ active: rangeChartType === 'line' }" @click="rangeChartType = 'line'">{{ t('budgetPro.chartLine') }}</button>
       </div>
     </div>
     <div class="range-row">
       <div class="range-inputs">
         <input v-model="rangeStart" type="month" class="input" />
-        <span class="muted">至</span>
+        <span class="muted">{{ t('budgetPro.rangeTo') }}</span>
         <input v-model="rangeEnd" type="month" class="input" />
       </div>
       <div class="range-presets">
-        <button v-for="p in RANGE_PRESETS" :key="p.label" class="tab" @click="presetRange(p.n)">{{ p.label }}</button>
+        <button v-for="p in RANGE_PRESETS" :key="p.label" class="tab" @click="presetRange(p.n)">{{ lang === 'en' ? p.labelEn : p.label }}</button>
       </div>
     </div>
     <div v-if="rangeChartType === 'bar'" class="bar-chart">
@@ -366,29 +378,29 @@ function exportCsv() {
       { label: '收入', color: '#0d9488', data: monthly.map((m) => m.inc) },
       { label: '支出', color: '#b63a46', data: monthly.map((m) => m.exp) }
     ]" :labels="monthly.map((m) => m.label)" :height="160" value-prefix="¥" :max-width="760" />
-    <p class="muted" style="font-size:11px;margin-top:8px;">点击月份可跳转到该月主视图 · 绿=收入 红=支出</p>
+    <p class="muted" style="font-size:11px;margin-top:8px;">{{ t('budgetPro.rangeClickNote') }}</p>
   </div>
 
   <div class="pro-duo">
   <div class="panel">
-    <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>区间结余趋势</div>
+    <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('budgetPro.balanceTrendTitle') }}</div>
     <LineChart :series="balanceTrend.series" :labels="balanceTrend.labels" :height="150" value-prefix="¥" />
-    <p class="muted" style="font-size:11px;margin-top:6px;">每月「收入 - 支出」结余，低于 0 表示该月超支 · 悬浮 / 点击查看各节点数值</p>
+    <p class="muted" style="font-size:11px;margin-top:6px;">{{ t('budgetPro.balanceTrendNote') }}</p>
   </div>
 
   <div class="panel">
     <div class="section-head" style="align-items:center;margin:0 0 10px;">
-      <h3 class="section-title" style="margin:0;"><span class="bar"></span>收支日历</h3>
+      <h3 class="section-title" style="margin:0;"><span class="bar"></span>{{ t('budgetPro.calendarTitle') }}</h3>
       <div class="chart-type">
-        <button v-for="m in [{ k: 'day', t: '日' }, { k: 'week', t: '周' }, { k: 'month', t: '月' }, { k: 'year', t: '年' }]" :key="m.k" class="tab" :class="{ active: calMode === m.k }" @click="calMode = m.k">{{ m.t }}</button>
+        <button v-for="m in [{ k: 'day', t: t('budgetPro.calendarDay') }, { k: 'week', t: t('budgetPro.calendarWeek') }, { k: 'month', t: t('budgetPro.calendarMonth') }, { k: 'year', t: t('budgetPro.calendarYear') }]" :key="m.k" class="tab" :class="{ active: calMode === m.k }" @click="calMode = m.k">{{ m.t }}</button>
       </div>
     </div>
 
     <template v-if="calMode === 'day'">
       <div class="cal-nav">
-        <button class="btn ghost small" @click="calCursor = { y: calCursor.y, m: calCursor.m === 1 ? 12 : calCursor.m - 1 }; if (calCursor.m === 12) calCursor.y--">‹ 上月</button>
-        <span class="cal-title">{{ calCursor.y }}年{{ calCursor.m }}月</span>
-        <button class="btn ghost small" @click="calCursor = { y: calCursor.y, m: calCursor.m === 12 ? 1 : calCursor.m + 1 }; if (calCursor.m === 1) calCursor.y++">下月 ›</button>
+        <button class="btn ghost small" @click="calCursor = { y: calCursor.y, m: calCursor.m === 1 ? 12 : calCursor.m - 1 }; if (calCursor.m === 12) calCursor.y--">‹ {{ lang === 'en' ? 'Prev' : '上月' }}</button>
+        <span class="cal-title">{{ calCursor.y }}{{ lang === 'en' ? '/' : '年' }}{{ calCursor.m }}{{ lang === 'en' ? '' : '月' }}</span>
+        <button class="btn ghost small" @click="calCursor = { y: calCursor.y, m: calCursor.m === 12 ? 1 : calCursor.m + 1 }; if (calCursor.m === 1) calCursor.y++">{{ lang === 'en' ? 'Next' : '下月' }} ›</button>
       </div>
       <div class="cal-grid">
         <span v-for="w in ['日', '一', '二', '三', '四', '五', '六']" :key="w" class="cal-wd">{{ w }}</span>
@@ -427,20 +439,20 @@ function exportCsv() {
         </button>
       </div>
     </template>
-    <p class="muted" style="font-size:11px;margin-top:8px;">绿=当日/当周/当月盈利 · 红=亏损 · 点击可筛选下方明细</p>
+    <p class="muted" style="font-size:11px;margin-top:8px;">{{ t('budgetPro.calendarNote') }}</p>
   </div>
   </div>
 
   <div class="g2">
   <div class="panel">
     <div class="section-head" style="align-items:center;margin:0 0 10px;">
-      <h3 class="section-title" style="margin:0;"><span class="bar"></span>支出分类构成</h3>
+      <h3 class="section-title" style="margin:0;"><span class="bar"></span>{{ t('budgetPro.expCatTitle') }}</h3>
       <div class="chart-type">
-        <button class="tab" :class="{ active: expChartType === 'bar' }" @click="expChartType = 'bar'">▥ 条形</button>
-        <button class="tab" :class="{ active: expChartType === 'pie' }" @click="expChartType = 'pie'">◔ 圆饼</button>
+        <button class="tab" :class="{ active: expChartType === 'bar' }" @click="expChartType = 'bar'">▥ {{ lang === 'en' ? 'Bar' : '条形' }}</button>
+        <button class="tab" :class="{ active: expChartType === 'pie' }" @click="expChartType = 'pie'">◔ {{ lang === 'en' ? 'Pie' : '圆饼' }}</button>
       </div>
     </div>
-    <div v-if="!catAgg.length" class="muted" style="text-align:center;padding:10px;">区间内暂无支出</div>
+    <div v-if="!catAgg.length" class="muted" style="text-align:center;padding:10px;">{{ t('budgetPro.noData') }}</div>
     <template v-else>
       <div v-if="expChartType === 'bar'" class="chart-rows">
         <button v-for="c in catAgg" :key="c.key" class="chart-row" @click="selectExpCat(c.name)">
@@ -453,13 +465,13 @@ function exportCsv() {
 
   <div class="panel">
     <div class="section-head" style="align-items:center;margin:0 0 10px;">
-      <h3 class="section-title" style="margin:0;"><span class="bar"></span>收入分类构成</h3>
+      <h3 class="section-title" style="margin:0;"><span class="bar"></span>{{ t('budgetPro.incCatTitle') }}</h3>
       <div class="chart-type">
-        <button class="tab" :class="{ active: incChartType === 'bar' }" @click="incChartType = 'bar'">▥ 条形</button>
-        <button class="tab" :class="{ active: incChartType === 'pie' }" @click="incChartType = 'pie'">◔ 圆饼</button>
+        <button class="tab" :class="{ active: incChartType === 'bar' }" @click="incChartType = 'bar'">▥ {{ lang === 'en' ? 'Bar' : '条形' }}</button>
+        <button class="tab" :class="{ active: incChartType === 'pie' }" @click="incChartType = 'pie'">◔ {{ lang === 'en' ? 'Pie' : '圆饼' }}</button>
       </div>
     </div>
-    <div v-if="!incAgg.length" class="muted" style="text-align:center;padding:10px;">区间内暂无收入</div>
+    <div v-if="!incAgg.length" class="muted" style="text-align:center;padding:10px;">{{ t('budgetPro.noData') }}</div>
     <template v-else>
       <div v-if="incChartType === 'bar'" class="chart-rows">
         <button v-for="c in incAgg" :key="c.key" class="chart-row" @click="selectIncCat(c.name)">
@@ -474,13 +486,13 @@ function exportCsv() {
   <div class="g2">
   <div class="panel">
     <div class="section-head" style="align-items:center;margin:0 0 10px;">
-      <h3 class="section-title" style="margin:0;"><span class="bar"></span>同商户支出排行</h3>
+      <h3 class="section-title" style="margin:0;"><span class="bar"></span>{{ t('budgetPro.merExpTitle') }}</h3>
       <div class="chart-type">
-        <button class="tab" :class="{ active: merChartType === 'bar' }" @click="merChartType = 'bar'">▥ 条形</button>
-        <button class="tab" :class="{ active: merChartType === 'pie' }" @click="merChartType = 'pie'">◔ 圆饼</button>
+        <button class="tab" :class="{ active: merChartType === 'bar' }" @click="merChartType = 'bar'">▥ {{ lang === 'en' ? 'Bar' : '条形' }}</button>
+        <button class="tab" :class="{ active: merChartType === 'pie' }" @click="merChartType = 'pie'">◔ {{ lang === 'en' ? 'Pie' : '圆饼' }}</button>
       </div>
     </div>
-    <div v-if="!merchantAgg.length" class="muted" style="text-align:center;padding:10px;">区间内暂无商户数据</div>
+    <div v-if="!merchantAgg.length" class="muted" style="text-align:center;padding:10px;">{{ t('budgetPro.noData') }}</div>
     <template v-else>
       <div v-if="merChartType === 'bar'" class="chart-rows">
         <button v-for="m in merchantAgg.slice(0, 15)" :key="m.name" class="chart-row" @click="selectMerchant(m.name)">
@@ -493,13 +505,13 @@ function exportCsv() {
 
   <div class="panel">
     <div class="section-head" style="align-items:center;margin:0 0 10px;">
-      <h3 class="section-title" style="margin:0;"><span class="bar"></span>同商户收入排行</h3>
+      <h3 class="section-title" style="margin:0;"><span class="bar"></span>{{ t('budgetPro.merIncTitle') }}</h3>
       <div class="chart-type">
-        <button class="tab" :class="{ active: merIncChartType === 'bar' }" @click="merIncChartType = 'bar'">▥ 条形</button>
-        <button class="tab" :class="{ active: merIncChartType === 'pie' }" @click="merIncChartType = 'pie'">◔ 圆饼</button>
+        <button class="tab" :class="{ active: merIncChartType === 'bar' }" @click="merIncChartType = 'bar'">▥ {{ lang === 'en' ? 'Bar' : '条形' }}</button>
+        <button class="tab" :class="{ active: merIncChartType === 'pie' }" @click="merIncChartType = 'pie'">◔ {{ lang === 'en' ? 'Pie' : '圆饼' }}</button>
       </div>
     </div>
-    <div v-if="!merchantIncAgg.length" class="muted" style="text-align:center;padding:10px;">区间内暂无收入商户数据</div>
+    <div v-if="!merchantIncAgg.length" class="muted" style="text-align:center;padding:10px;">{{ t('budgetPro.noData') }}</div>
     <template v-else>
       <div v-if="merIncChartType === 'bar'" class="chart-rows">
         <button v-for="m in merchantIncAgg.slice(0, 15)" :key="m.name" class="chart-row" @click="selectMerchant(m.name)">
@@ -513,37 +525,37 @@ function exportCsv() {
 
   <div class="panel">
     <div class="section-head" style="align-items:center;margin:0 0 8px;">
-      <h3 class="section-title" style="margin:0;">收支明细</h3>
-      <button class="btn ghost small" @click="exportCsv">⬇️ 导出 Excel</button>
+      <h3 class="section-title" style="margin:0;">{{ t('budgetPro.detailTitle') }}</h3>
+      <button class="btn ghost small" @click="exportCsv">{{ t('budgetPro.exportBtn') }}</button>
     </div>
     <div class="sort-row">
-      <button class="tab" :class="{ active: typeFilterP === 'all' }" @click="typeFilterP = 'all'; catFilterP = 'all'; incFilter = ''">全部</button>
-      <button class="tab" :class="{ active: typeFilterP === 'expense' }" @click="typeFilterP = 'expense'; catFilterP = 'all'; incFilter = ''">支出</button>
-      <button class="tab" :class="{ active: typeFilterP === 'income' }" @click="typeFilterP = 'income'; incFilter = ''">收入</button>
+      <button class="tab" :class="{ active: typeFilterP === 'all' }" @click="typeFilterP = 'all'; catFilterP = 'all'; incFilter = ''">{{ t('budgetPro.typeAll') }}</button>
+      <button class="tab" :class="{ active: typeFilterP === 'expense' }" @click="typeFilterP = 'expense'; catFilterP = 'all'; incFilter = ''">{{ t('budgetPro.typeExpense') }}</button>
+      <button class="tab" :class="{ active: typeFilterP === 'income' }" @click="typeFilterP = 'income'; incFilter = ''">{{ t('budgetPro.typeIncome') }}</button>
       <span class="sep">|</span>
-      <button class="tab" :class="{ active: proSort === 'date' }" @click="switchProSort('date')">日期</button>
-      <button class="tab" :class="{ active: proSort === 'amount' }" @click="switchProSort('amount')">金额{{ proSort === 'amount' ? (proDir === 'asc' ? ' ↑' : ' ↓') : '' }}</button>
-      <button class="tab" :class="{ active: proSort === 'cat' }" @click="switchProSort('cat')">分类</button>
-      <span class="muted" style="font-size:10px;margin-left:auto;">{{ filtered.length }} 笔</span>
+      <button class="tab" :class="{ active: proSort === 'date' }" @click="switchProSort('date')">{{ t('budgetPro.sortByDate') }}</button>
+      <button class="tab" :class="{ active: proSort === 'amount' }" @click="switchProSort('amount')">{{ t('budgetPro.sortByAmount') }}{{ proSort === 'amount' ? (proDir === 'asc' ? ' ↑' : ' ↓') : '' }}</button>
+      <button class="tab" :class="{ active: proSort === 'cat' }" @click="switchProSort('cat')">{{ t('budgetPro.sortByCat') }}</button>
+      <span class="muted" style="font-size:10px;margin-left:auto;">{{ filtered.length }} {{ lang === 'en' ? 'entries' : '笔' }}</span>
     </div>
     <div v-if="proSort === 'cat'" class="cat-chips">
-      <button v-if="typeFilterP !== 'income'" class="chip" :class="{ active: catFilterP === 'all' }" @click="catFilterP = 'all'">全部支出</button>
+      <button v-if="typeFilterP !== 'income'" class="chip" :class="{ active: catFilterP === 'all' }" @click="catFilterP = 'all'">{{ lang === 'en' ? 'All Expenses' : '全部支出' }}</button>
       <button v-for="c in catAgg" :key="c.key" class="chip" :class="{ active: catFilterP === c.key }" @click="catFilterP = c.key">{{ c.icon }}{{ c.name }}</button>
       <template v-if="typeFilterP === 'income'">
-        <button class="chip" :class="{ active: incFilter === '' }" @click="incFilter = ''">全部收入</button>
+        <button class="chip" :class="{ active: incFilter === '' }" @click="incFilter = ''">{{ lang === 'en' ? 'All Income' : '全部收入' }}</button>
         <button v-for="c in incAgg" :key="c.key" class="chip" :class="{ active: incFilter === c.key }" @click="incFilter = c.key">{{ c.icon }}{{ c.name }}</button>
       </template>
     </div>
     <div v-if="catFilterP !== 'all' || merchantFilterP || incFilter" class="pro-filter-tip">
-      已筛选：<b>{{ incFilter ? INC_LABEL[incFilter] : catFilterP !== 'all' ? EXP_LABEL[catFilterP] : merchantFilterP }}</b>
-      <button class="btn ghost small" @click="catFilterP = 'all'; merchantFilterP = ''; incFilter = ''">✕ 清除筛选</button>
+      {{ t('budgetPro.filteredBy') }}<b>{{ incFilter ? incLabel(incFilter) : catFilterP !== 'all' ? expLabel(catFilterP) : merchantFilterP }}</b>
+      <button class="btn ghost small" @click="catFilterP = 'all'; merchantFilterP = ''; incFilter = ''">✕ {{ t('budgetPro.clearFilter') }}</button>
     </div>
-    <div v-if="!filtered.length" class="muted" style="text-align:center;padding:16px;">区间内暂无记录</div>
+    <div v-if="!filtered.length" class="muted" style="text-align:center;padding:16px;">{{ t('budgetPro.noRecord') }}</div>
     <div v-else class="rec-list">
       <div v-for="r in filteredPage" :key="r.id" class="rec-row">
         <span class="rec-icon">{{ isExp(r) ? (EXP_ICON[r.cat] || '📦') : (INC_ICON[r.cat] || '💵') }}</span>
         <span class="rec-main">
-          <span class="rec-name">{{ (isExp(r) ? EXP_LABEL[r.cat] : INC_LABEL[r.cat]) || r.cat }}<em v-if="r.merchant"> · {{ r.merchant }}</em><em v-if="r.refunded"> ↩︎已退款</em><em v-if="r.note && r.note !== r.merchant"> · {{ r.note }}</em></span>
+          <span class="rec-name">{{ (isExp(r) ? expLabel(r.cat) : incLabel(r.cat)) || r.cat }}<em v-if="r.merchant"> · {{ r.merchant }}</em><em v-if="r.refunded"> ↩︎{{ lang === 'en' ? 'Refunded' : '已退款' }}</em><em v-if="r.note && r.note !== r.merchant"> · {{ r.note }}</em></span>
           <span class="muted" style="font-size:11px;">{{ r.date }}</span>
         </span>
         <span class="rec-amt" :class="isExp(r) ? 'out' : 'in'">{{ isExp(r) ? '-' : '+' }}¥{{ fmt(r.amount) }}</span>
@@ -551,17 +563,17 @@ function exportCsv() {
       </div>
     </div>
     <div v-if="filteredCount > 1" class="pager">
-      <button class="btn ghost small" :disabled="proPage <= 1" @click="proPage--">‹ 上页</button>
+      <button class="btn ghost small" :disabled="proPage <= 1" @click="proPage--">‹ {{ lang === 'en' ? 'Prev' : '上页' }}</button>
       <div class="pager-jump">
         <input v-model.number="proPage" type="number" class="input page-input" min="1" :max="filteredCount" />
         <span>/ {{ filteredCount }}</span>
       </div>
-      <button class="btn ghost small" :disabled="proPage >= filteredCount" @click="proPage++">下页 ›</button>
+      <button class="btn ghost small" :disabled="proPage >= filteredCount" @click="proPage++">{{ lang === 'en' ? 'Next' : '下页' }} ›</button>
     </div>
   </div>
 
   <p class="muted" style="font-size:12px;text-align:center;padding:4px 0 10px;">
-    专业版所有分析均在本地浏览器完成，导出文件仅包含你的记账数据，不会上传任何服务器
+    {{ t('budgetPro.proPrivacyNote') }}
   </p>
 </template>
 

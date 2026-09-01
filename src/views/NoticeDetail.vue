@@ -56,7 +56,7 @@ onMounted(async () => {
       <span class="dot live"></span>
       <span>{{ t('noticeDetail.source') }}</span>
       <span class="sep">·</span>
-      <span>{{ t('noticeDetail.fetchedAt') }} {{ new Date(detail.fetchedAt).toLocaleTimeString('zh-CN', { hour12: false }) }}</span>
+      <span>{{ t('noticeDetail.fetchedAt') }} {{ new Date(detail.fetchedAt).toLocaleTimeString(lang === 'en' ? 'en-US' : 'zh-CN', { hour12: false }) }}</span>
       <template v-if="detail.costMs"><span class="sep">·</span><span>{{ t('noticeDetail.costMs') }} {{ detail.costMs }}ms</span></template>
     </div>
 

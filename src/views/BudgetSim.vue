@@ -22,33 +22,33 @@ const social = ref(2) // 社交：1 少 / 2 一般 / 3 活跃
 const shop = ref(2) // 购物：1 低 / 2 中 / 3 高
 const score = computed(() => meal.value + social.value + shop.value)
 const simpleRange = computed(() => {
-  if (score.value <= 4) return { lo: 1100, hi: 1500, name: '简朴型', tip: '食堂为主、少社交，够用还能攒下一点' }
-  if (score.value <= 6) return { lo: 1400, hi: 1900, name: '标准型', tip: '日常舒适，偶尔改善伙食，大多数同学的档位' }
-  if (score.value <= 8) return { lo: 1800, hi: 2400, name: '舒适型', tip: '外卖社交比较自由，注意别月初光月末吃土' }
-  return { lo: 2300, hi: 3000, name: '高配型', tip: '生活品质优先，理性消费，别让账单支配人生' }
+  if (score.value <= 4) return { lo: 1100, hi: 1500, name: '简朴型', nameEn: 'Frugal', tip: '食堂为主、少社交，够用还能攒下一点', tipEn: 'Mainly cafeteria, minimal socializing, enough to save a bit' }
+  if (score.value <= 6) return { lo: 1400, hi: 1900, name: '标准型', nameEn: 'Standard', tip: '日常舒适，偶尔改善伙食，大多数同学的档位', tipEn: 'Comfortable daily life, occasional treats, the most common tier' }
+  if (score.value <= 8) return { lo: 1800, hi: 2400, name: '舒适型', nameEn: 'Comfortable', tip: '外卖社交比较自由，注意别月初光月末吃土', tipEn: 'Freedom with dining out and socializing, watch your budget' }
+  return { lo: 2300, hi: 3000, name: '高配型', nameEn: 'Premium', tip: '生活品质优先，理性消费，别让账单支配人生', tipEn: 'Quality of life first, spend wisely, don\'t let bills rule you' }
 })
 
 const fam = ref(2)
 const famLevels = [
-  { label: '6000 元以下', lo: 1000, hi: 1400 },
-  { label: '6000 – 10000 元', lo: 1200, hi: 1700 },
-  { label: '10000 – 15000 元', lo: 1500, hi: 2000 },
-  { label: '15000 – 25000 元', lo: 1800, hi: 2500 },
-  { label: '25000 元以上', lo: 2200, hi: 3000 }
+  { label: '6000 元以下', labelEn: 'Under ¥6,000', lo: 1000, hi: 1400 },
+  { label: '6000 – 10000 元', labelEn: '¥6,000 – ¥10,000', lo: 1200, hi: 1700 },
+  { label: '10000 – 15000 元', labelEn: '¥10,000 – ¥15,000', lo: 1500, hi: 2000 },
+  { label: '15000 – 25000 元', labelEn: '¥15,000 – ¥25,000', lo: 1800, hi: 2500 },
+  { label: '25000 元以上', labelEn: 'Over ¥25,000', lo: 2200, hi: 3000 }
 ]
 const mid = computed(() => Math.round((famLevels[fam.value].lo + famLevels[fam.value].hi) / 2))
 const fineBudget = computed(() => {
   const m = mid.value
   return [
-    { name: '🍚 食堂伙食', pct: 45, v: Math.round(m * 0.45) },
-    { name: '🍕 外卖 / 聚餐', pct: 10, v: Math.round(m * 0.1) },
-    { name: '🍎 水果零食', pct: 8, v: Math.round(m * 0.08) },
-    { name: '🚌 交通出行', pct: 5, v: Math.round(m * 0.05) },
-    { name: '🧴 日用品 + 话费', pct: 10, v: Math.round(m * 0.1) },
-    { name: '📚 学习资料', pct: 5, v: Math.round(m * 0.05) },
-    { name: '🎮 娱乐社交', pct: 10, v: Math.round(m * 0.1) },
-    { name: '👕 衣帽鞋', pct: 7, v: Math.round(m * 0.07) },
-    { name: '🛟 备用金', pct: 5, v: Math.round(m * 0.05) }
+    { name: '🍚 食堂伙食', nameEn: '🍚 Cafeteria', pct: 45, v: Math.round(m * 0.45) },
+    { name: '🍕 外卖 / 聚餐', nameEn: '🍕 Delivery / Dining', pct: 10, v: Math.round(m * 0.1) },
+    { name: '🍎 水果零食', nameEn: '🍎 Snacks', pct: 8, v: Math.round(m * 0.08) },
+    { name: '🚌 交通出行', nameEn: '🚌 Transport', pct: 5, v: Math.round(m * 0.05) },
+    { name: '🧴 日用品 + 话费', nameEn: '🧴 Daily + Phone', pct: 10, v: Math.round(m * 0.1) },
+    { name: '📚 学习资料', nameEn: '📚 Study', pct: 5, v: Math.round(m * 0.05) },
+    { name: '🎮 娱乐社交', nameEn: '🎮 Entertainment', pct: 10, v: Math.round(m * 0.1) },
+    { name: '👕 衣帽鞋', nameEn: '👕 Clothing', pct: 7, v: Math.round(m * 0.07) },
+    { name: '🛟 备用金', nameEn: '🛟 Reserve', pct: 5, v: Math.round(m * 0.05) }
   ]
 })
 
@@ -56,23 +56,23 @@ const fineBudget = computed(() => {
 const PLAN_STORAGE = 'qdu_budget_plan'
 const planMsg = ref('')
 const ALLOC_CATS = [
-  { key: 'food', label: '🍚 伙食', def: 45, min: 20, max: 70 },
-  { key: 'party', label: '🍻 聚餐', def: 8, min: 0, max: 30 },
-  { key: 'transport', label: '🚌 交通', def: 5, min: 0, max: 20 },
-  { key: 'fruit', label: '🍎 水果零食', def: 8, min: 0, max: 20 },
-  { key: 'study', label: '📚 学习资料', def: 5, min: 0, max: 20 },
-  { key: 'cloth', label: '👕 衣物鞋帽', def: 6, min: 0, max: 25 },
-  { key: 'daily', label: '🧴 日用品', def: 7, min: 0, max: 20 },
-  { key: 'phone', label: '📱 话费网费', def: 6, min: 0, max: 15 },
-  { key: 'fun', label: '🎮 娱乐', def: 5, min: 0, max: 20 },
-  { key: 'save', label: '🛟 备用金', def: 5, min: 0, max: 25 }
+  { key: 'food', label: '🍚 伙食', labelEn: '🍚 Food', def: 45, min: 20, max: 70 },
+  { key: 'party', label: '🍻 聚餐', labelEn: '🍻 Dining', def: 8, min: 0, max: 30 },
+  { key: 'transport', label: '🚌 交通', labelEn: '🚌 Transport', def: 5, min: 0, max: 20 },
+  { key: 'fruit', label: '🍎 水果零食', labelEn: '🍎 Snacks', def: 8, min: 0, max: 20 },
+  { key: 'study', label: '📚 学习资料', labelEn: '📚 Study', def: 5, min: 0, max: 20 },
+  { key: 'cloth', label: '👕 衣物鞋帽', labelEn: '👕 Clothing', def: 6, min: 0, max: 25 },
+  { key: 'daily', label: '🧴 日用品', labelEn: '🧴 Daily', def: 7, min: 0, max: 20 },
+  { key: 'phone', label: '📱 话费网费', labelEn: '📱 Phone', def: 6, min: 0, max: 15 },
+  { key: 'fun', label: '🎮 娱乐', labelEn: '🎮 Fun', def: 5, min: 0, max: 20 },
+  { key: 'save', label: '🛟 备用金', labelEn: '🛟 Reserve', def: 5, min: 0, max: 25 }
 ]
 const alloc = ref(ALLOC_CATS.map((a) => ({ ...a, pct: a.def })))
 const budgetTotal = ref(1600)
 const PRESETS = [
-  { name: '😌 极简省', pct: { food: 55, party: 3, transport: 4, fruit: 5, study: 4, cloth: 3, daily: 5, phone: 5, fun: 2, save: 14 } },
-  { name: '😄 标准', pct: { food: 45, party: 8, transport: 5, fruit: 8, study: 5, cloth: 6, daily: 7, phone: 6, fun: 5, save: 5 } },
-  { name: '😎 舒适', pct: { food: 36, party: 12, transport: 5, fruit: 10, study: 6, cloth: 8, daily: 8, phone: 6, fun: 8, save: 1 } }
+  { name: '😌 极简省', nameEn: '😌 Minimal', pct: { food: 55, party: 3, transport: 4, fruit: 5, study: 4, cloth: 3, daily: 5, phone: 5, fun: 2, save: 14 } },
+  { name: '😄 标准', nameEn: '😄 Standard', pct: { food: 45, party: 8, transport: 5, fruit: 8, study: 5, cloth: 6, daily: 7, phone: 6, fun: 5, save: 5 } },
+  { name: '😎 舒适', nameEn: '😎 Comfortable', pct: { food: 36, party: 12, transport: 5, fruit: 10, study: 6, cloth: 8, daily: 8, phone: 6, fun: 8, save: 1 } }
 ]
 function applyPreset(p) {
   alloc.value = alloc.value.map((a) => ({ ...a, pct: p.pct[a.key] }))
@@ -84,13 +84,13 @@ const allocSpent = computed(() => alloc.value.reduce((s, a) => s + allocAmt(a), 
 const allocRemain = computed(() => budgetTotal.value - allocSpent.value)
 const allocStatus = computed(() => {
   const diff = allocSum.value - 100
-  if (diff > 0.01) return { cls: 'over', text: `占比已超过 100%（+${Math.round(diff)}%），某项该砍一砍` }
-  if (diff < -0.01) return { cls: 'low', text: `占比还差 ${Math.round(-diff)}%，剩下算机动余量` }
-  return { cls: 'ok', text: '占比正好 100%，分配完整' }
+  if (diff > 0.01) return { cls: 'over', text: lang.value === 'en' ? `Over 100% (+${Math.round(diff)}%). Cut something.` : `占比已超过 100%（+${Math.round(diff)}%），某项该砍一砍` }
+  if (diff < -0.01) return { cls: 'low', text: lang.value === 'en' ? `${Math.round(-diff)}% under. Remainder is reserve.` : `占比还差 ${Math.round(-diff)}%，剩下算机动余量` }
+  return { cls: 'ok', text: lang.value === 'en' ? 'Exactly 100%. Complete.' : '占比正好 100%，分配完整' }
 })
 function savePlan() {
   localStorage.setItem(PLAN_STORAGE, JSON.stringify({ total: budgetTotal.value, pct: alloc.value.map((a) => a.pct) }))
-  planMsg.value = '✅ 预算方案已保存到本机浏览器（清缓存会丢失）'
+  planMsg.value = lang.value === 'en' ? '✅ Budget plan saved locally (clearing cache will lose it)' : '✅ 预算方案已保存到本机浏览器（清缓存会丢失）'
 }
 
 /* ---- ③ 真实账单校准 ---- */
@@ -104,16 +104,23 @@ const EXP_LABEL = {
   beauty: '美容美发', digital: '数码家电', sport: '运动户外', virtual: '网络虚拟',
   housing: '房屋住宿', transfer: '转账支出', trouble: '闯祸费', other: '其它'
 }
+const EXP_LABEL_EN = {
+  food: 'Food', party: 'Dining', transport: 'Transport', fruit: 'Snacks', study: 'Study',
+  cloth: 'Clothes', medical: 'Medical', daily: 'Daily', phone: 'Phone', fun: 'Entertainment',
+  beauty: 'Beauty', digital: 'Digital', sport: 'Sport', virtual: 'Virtual',
+  housing: 'Housing', transfer: 'Transfer', trouble: 'Trouble', other: 'Other'
+}
+const expLabel = (key) => lang.value === 'en' ? (EXP_LABEL_EN[key] || key) : (EXP_LABEL[key] || key)
 const REF = [
-  { key: 'food', label: '伙食费', lo: 800, hi: 1500 },
-  { key: 'party', label: '聚餐费', lo: 200, hi: 600 },
-  { key: 'transport', label: '交通费', lo: 60, hi: 250 },
-  { key: 'fruit', label: '水果零食', lo: 80, hi: 300 },
-  { key: 'study', label: '学习资料', lo: 20, hi: 150 },
-  { key: 'cloth', label: '衣物鞋帽', lo: 0, hi: 300 },
-  { key: 'daily', label: '日常用品', lo: 50, hi: 200 },
-  { key: 'phone', label: '电话费', lo: 50, hi: 150 },
-  { key: 'fun', label: '娱乐游戏', lo: 0, hi: 300 }
+  { key: 'food', label: '伙食费', labelEn: 'Food', lo: 800, hi: 1500 },
+  { key: 'party', label: '聚餐费', labelEn: 'Dining', lo: 200, hi: 600 },
+  { key: 'transport', label: '交通费', labelEn: 'Transport', lo: 60, hi: 250 },
+  { key: 'fruit', label: '水果零食', labelEn: 'Snacks', lo: 80, hi: 300 },
+  { key: 'study', label: '学习资料', labelEn: 'Study', lo: 20, hi: 150 },
+  { key: 'cloth', label: '衣物鞋帽', labelEn: 'Clothes', lo: 0, hi: 300 },
+  { key: 'daily', label: '日常用品', labelEn: 'Daily', lo: 50, hi: 200 },
+  { key: 'phone', label: '电话费', labelEn: 'Phone', lo: 50, hi: 150 },
+  { key: 'fun', label: '娱乐游戏', labelEn: 'Entertainment', lo: 0, hi: 300 }
 ]
 const REF_LO = 1100
 const REF_HI = 1900
@@ -125,12 +132,12 @@ function refreshCalib() {
   calibMsg.value = ''
   calibConclusion.value = ''
   if (!Array.isArray(records) || !records.length) {
-    calibMsg.value = '还没有记账数据：先回「生活费计数器」记几笔，或直接导入微信 / 支付宝账单，再来这里校准。'
+    calibMsg.value = lang.value === 'en' ? 'No records yet: go back to "Budget Tracker" to add some, or import WeChat / Alipay bills first.' : '还没有记账数据：先回「生活费计数器」记几笔，或直接导入微信 / 支付宝账单，再来这里校准。'
     return
   }
   const exp = records.filter((r) => r.type === 'expense')
   if (!exp.length) {
-    calibMsg.value = '已找到记账数据，但没有支出记录，无法校准支出预算。'
+    calibMsg.value = lang.value === 'en' ? 'Found records but no expense entries. Cannot calibrate expense budget.' : '已找到记账数据，但没有支出记录，无法校准支出预算。'
     return
   }
   const byMonth = {}
@@ -142,7 +149,7 @@ function refreshCalib() {
   }
   const months = Object.keys(byMonth).sort().slice(-3)
   if (!months.length) {
-    calibMsg.value = '记账记录缺少日期，无法按月校准。'
+    calibMsg.value = lang.value === 'en' ? 'Records missing dates. Cannot calibrate by month.' : '记账记录缺少日期，无法按月校准。'
     return
   }
   const avgTotal = months.reduce((s, mk) => s + byMonth[mk].reduce((x, r) => x + r.amount, 0), 0) / months.length
@@ -153,18 +160,24 @@ function refreshCalib() {
     for (const [c, v] of Object.entries(seen)) catSum[c] = (catSum[c] || 0) + v / months.length
   }
   const list = Object.entries(catSum)
-    .map(([c, v]) => ({ cat: c, label: EXP_LABEL[c] || c, v: Math.round(v * 100) / 100 }))
+    .map(([c, v]) => ({ cat: c, label: expLabel(c), v: Math.round(v * 100) / 100 }))
     .sort((a, b) => b.v - a.v)
   calib.value = {
-    months: months.map((m) => m.slice(2) + '月'),
+    months: months.map((m) => lang.value === 'en' ? m.slice(2) + '/mo' : m.slice(2) + '月'),
     avgTotal: Math.round(avgTotal * 100) / 100,
     list,
     max: Math.max(1, ...list.map((i) => i.v))
   }
   const overRate = Math.round((avgTotal / REF_HI - 1) * 100)
-  if (avgTotal < REF_LO) calibConclusion.value = `你的月均支出 ¥${calib.value.avgTotal} 低于常见区间下限 ¥${REF_LO}，说明生活很省（或账单没记全），注意营养均衡。`
-  else if (avgTotal <= REF_HI) calibConclusion.value = `你的月均支出 ¥${calib.value.avgTotal} 落在常见区间 ¥${REF_LO} ~ ${REF_HI} 内，与多数同学相当，节奏健康。`
-  else calibConclusion.value = `你的月均支出 ¥${calib.value.avgTotal} 比常见区间上限 ¥${REF_HI} 高出约 ${overRate}%，看看下方哪一项最重，优先从那入手。`
+  if (lang.value === 'en') {
+    if (avgTotal < REF_LO) calibConclusion.value = `Your monthly spending ¥${calib.value.avgTotal} is below the typical range ¥${REF_LO}. You're very frugal (or missing some records). Remember to eat well!`
+    else if (avgTotal <= REF_HI) calibConclusion.value = `Your monthly spending ¥${calib.value.avgTotal} falls within the typical range ¥${REF_LO} ~ ${REF_HI}, similar to most students. Healthy rhythm.`
+    else calibConclusion.value = `Your monthly spending ¥${calib.value.avgTotal} exceeds the typical range upper limit ¥${REF_HI} by ~${overRate}%. Check which category is heaviest and cut there first.`
+  } else {
+    if (avgTotal < REF_LO) calibConclusion.value = `你的月均支出 ¥${calib.value.avgTotal} 低于常见区间下限 ¥${REF_LO}，说明生活很省（或账单没记全），注意营养均衡。`
+    else if (avgTotal <= REF_HI) calibConclusion.value = `你的月均支出 ¥${calib.value.avgTotal} 落在常见区间 ¥${REF_LO} ~ ${REF_HI} 内，与多数同学相当，节奏健康。`
+    else calibConclusion.value = `你的月均支出 ¥${calib.value.avgTotal} 比常见区间上限 ¥${REF_HI} 高出约 ${overRate}%，看看下方哪一项最重，优先从那入手。`
+  }
 }
 
 function applyRealAlloc() {
@@ -177,7 +190,7 @@ function applyRealAlloc() {
     return { ...a, pct: total ? Math.round(v / total * 100) : a.def }
   })
   budgetTotal.value = Math.round(total)
-  planMsg.value = '已按真实账单的平均占比填入分配器，可再微调。'
+  planMsg.value = lang.value === 'en' ? 'Filled with real bill proportions. Feel free to fine-tune.' : '已按真实账单的平均占比填入分配器，可再微调。'
   tab.value = 'alloc'
 }
 
@@ -202,30 +215,39 @@ const SAVE_TIPS = [
   '⏸ 冲动消费冷静期 24 小时：想买的东西先加入购物车，第二天还想再下单',
   '📝 坚持记账（本应用就能用），月底看「支出构成」，超支项一目了然'
 ]
+const SAVE_TIPS_EN = [
+  '🍚 Cafeteria is the best value: a set meal costs ¥10-15, half the price of delivery, and avoids "bundle deals"',
+  '🚲 Use bus / bike-sharing monthly passes, avoid taxis; don\'t waste your student metro discount',
+  '🛒 Stock up on daily items during 11.11 / 6.18 sales, compare prices across JD, Taobao, Pinduoduo',
+  '📖 Check seniors for second-hand textbooks / borrow from library, campus printing is much cheaper',
+  '💳 Subscribe to services as needed, share video / music accounts or get student plans, don\'t overdo it',
+  '⏸ 24-hour cool-down for impulse buys: add to cart first, if you still want it tomorrow, then buy',
+  '📝 Keep track of expenses (this app works), check "expense breakdown" at month-end to see overspending'
+]
 
 const PARTTIME = [
-  { name: '校内勤工俭学', tip: '图书馆 / 食堂 / 行政助管，时薪 15-20，安全稳定还能自习', tag: '最稳妥' },
-  { name: '家教', tip: '青岛家教行情约 60-150 元/小时，一次 2 小时够一周水果', tag: '性价比高' },
-  { name: '助研 / 实验室助理', tip: '跟导师做项目，既能积累经验又有补贴，还能写进简历', tag: '涨履历' },
-  { name: '咖啡店 / 餐饮兼职', tip: '时薪 15-25，缺点占时间，适合周末', tag: '灵活' },
-  { name: '假期实习 / 竞赛拿奖', tip: '寒暑假实习 + 奖学金（优秀奖学金 1000/600/400·学期），一次顶半年生活费', tag: '收益大' }
+  { name: '校内勤工俭学', nameEn: 'Campus Work-Study', tip: '图书馆 / 食堂 / 行政助管，时薪 15-20，安全稳定还能自习', tipEn: 'Library / Cafeteria / Admin assistant, ¥15-20/hr, safe and stable', tag: '最稳妥', tagEn: 'Safest' },
+  { name: '家教', nameEn: 'Tutoring', tip: '青岛家教行情约 60-150 元/小时，一次 2 小时够一周水果', tipEn: 'Tutoring pays ¥60-150/hr in Qingdao, 2 hours covers a week of fruit', tag: '性价比高', tagEn: 'Best value' },
+  { name: '助研 / 实验室助理', nameEn: 'Research Assistant', tip: '跟导师做项目，既能积累经验又有补贴，还能写进简历', tipEn: 'Work with professors, gain experience, earn stipend, boost resume', tag: '涨履历', tagEn: 'Resume boost' },
+  { name: '咖啡店 / 餐饮兼职', nameEn: 'Cafe / Restaurant', tip: '时薪 15-25，缺点占时间，适合周末', tipEn: '¥15-25/hr, takes time, good for weekends', tag: '灵活', tagEn: 'Flexible' },
+  { name: '假期实习 / 竞赛拿奖', nameEn: 'Internships / Competitions', tip: '寒暑假实习 + 奖学金（优秀奖学金 1000/600/400·学期），一次顶半年生活费', tipEn: 'Holiday internships + scholarships (¥1000/600/400 per semester), one award covers half a year', tag: '收益大', tagEn: 'High return' }
 ]
 
 const QD_PRICES = [
-  { icon: '🍚', name: '食堂一餐', v: '8 ~ 15 元' },
-  { icon: '🍱', name: '外卖一餐', v: '18 ~ 30 元' },
-  { icon: '🥤', name: '奶茶 / 咖啡', v: '10 ~ 20 元' },
-  { icon: '🍎', name: '水果（一周）', v: '20 ~ 40 元' },
-  { icon: '🚌', name: '公交 / 地铁一次', v: '1 ~ 4 元' },
-  { icon: '🧴', name: '日用品月均', v: '30 ~ 60 元' },
-  { icon: '💇', name: '理发一次', v: '20 ~ 45 元' },
-  { icon: '📖', name: '教材（二手一本）', v: '10 ~ 30 元' }
+  { icon: '🍚', name: '食堂一餐', nameEn: 'Cafeteria meal', v: '8 ~ 15 元' },
+  { icon: '🍱', name: '外卖一餐', nameEn: 'Delivery meal', v: '18 ~ 30 元' },
+  { icon: '🥤', name: '奶茶 / 咖啡', nameEn: 'Milk tea / Coffee', v: '10 ~ 20 元' },
+  { icon: '🍎', name: '水果（一周）', nameEn: 'Fruit (weekly)', v: '20 ~ 40 元' },
+  { icon: '🚌', name: '公交 / 地铁一次', nameEn: 'Bus / Metro ride', v: '1 ~ 4 元' },
+  { icon: '🧴', name: '日用品月均', nameEn: 'Daily items (monthly)', v: '30 ~ 60 元' },
+  { icon: '💇', name: '理发一次', nameEn: 'Haircut', v: '20 ~ 45 元' },
+  { icon: '📖', name: '教材（二手一本）', nameEn: 'Textbook (used)', v: '10 ~ 30 元' }
 ]
 const SEM_RHYTHM = [
-  { t: '开学季（9月 / 3月）', tip: '教材、日用品、宿舍水电网集中支出，当月生活费通常要高 10~20%', cls: 'up' },
-  { t: '学期中（平稳期）', tip: '食堂为主、节奏最稳，是最适合定预算、坚持记账的阶段', cls: 'flat' },
-  { t: '期末周（1月 / 6月）', tip: '打印、资料、宵夜奶茶增多，结余紧的话提前预留应急金', cls: 'warn' },
-  { t: '假期（寒暑假）', tip: '回家 / 留校支出结构变化很大，生活费建议单独做计划', cls: 'low' }
+  { t: '开学季（9月 / 3月）', tEn: 'Semester Start (Sep / Mar)', tip: '教材、日用品、宿舍水电网集中支出，当月生活费通常要高 10~20%', tipEn: 'Textbooks, supplies, dorm utilities spike. Budget usually 10-20% higher', cls: 'up' },
+  { t: '学期中（平稳期）', tEn: 'Mid-Semester (Stable)', tip: '食堂为主、节奏最稳，是最适合定预算、坚持记账的阶段', tipEn: 'Mainly cafeteria, most stable period. Best time to set budgets and track', cls: 'flat' },
+  { t: '期末周（1月 / 6月）', tEn: 'Finals (Jan / Jun)', tip: '打印、资料、宵夜奶茶增多，结余紧的话提前预留应急金', tipEn: 'Printing, study materials, late-night snacks increase. Set aside emergency fund', cls: 'warn' },
+  { t: '假期（寒暑假）', tEn: 'Break (Winter / Summer)', tip: '回家 / 留校支出结构变化很大，生活费建议单独做计划', tipEn: 'Spending patterns change drastically whether going home or staying. Plan separately', cls: 'low' }
 ]
 const FUN_TIPS = [
   '🥤 一杯奶茶 ≈ 一顿食堂，月底算算「奶茶成就」就知道钱去哪了',
@@ -234,76 +256,94 @@ const FUN_TIPS = [
   '🛒 大额刚需（数码/衣物）等开学季、双11、618 促销，能省 20%+',
   '🎓 奖学金/助学金到账别一次性花完，拆成 3 个月生活费更稳'
 ]
+const FUN_TIPS_EN = [
+  '🥤 One milk tea ≈ one cafeteria meal. Check your "tea achievement" at month-end to see where money went',
+  '🧾 Save 10% of your allowance immediately: it could be a nice nest egg by graduation',
+  '📉 Check the Pro "income/expense calendar" at month-end: find "deficit days" and avoid them next month',
+  '🛒 For big purchases (tech/clothes), wait for semester start, 11.11, or 6.18 sales — save 20%+',
+  '🎓 Don\'t spend scholarship / aid all at once. Split into 3 months for a steadier budget'
+]
+const mealOpts = computed(() => lang.value === 'en' ? ['Cafeteria mainly', 'Occasional delivery', 'Frequent delivery'] : ['食堂为主', '偶尔外卖', '常点外卖'])
+const socialOpts = computed(() => lang.value === 'en' ? ['Introvert', 'Moderate', 'Social butterfly'] : ['独行侠', '一般', '社交达人'])
+const shopOpts = computed(() => lang.value === 'en' ? ['Low', 'Medium', 'High'] : ['低', '中', '高'])
+const allocList = computed(() => alloc.value.map(a => ({ ...a, label: lang.value === 'en' ? (ALLOC_CATS.find(c => c.key === a.key)?.labelEn || a.label) : a.label })))
+const presetList = computed(() => PRESETS.map(p => ({ ...p, name: lang.value === 'en' ? p.nameEn : p.name })))
+const refList = computed(() => REF.map(r => ({ ...r, label: lang.value === 'en' ? r.labelEn : r.label })))
+const priceList = computed(() => QD_PRICES.map(p => ({ ...p, name: lang.value === 'en' ? p.nameEn : p.name })))
+const rhythmList = computed(() => SEM_RHYTHM.map(s => ({ ...s, t: lang.value === 'en' ? s.tEn : s.t, tip: lang.value === 'en' ? s.tipEn : s.tip })))
+const saveTipsList = computed(() => lang.value === 'en' ? SAVE_TIPS_EN : SAVE_TIPS)
+const funTipsList = computed(() => lang.value === 'en' ? FUN_TIPS_EN : FUN_TIPS)
+const parttimeList = computed(() => PARTTIME.map(p => ({ ...p, name: lang.value === 'en' ? p.nameEn : p.name, tip: lang.value === 'en' ? p.tipEn : p.tip, tag: lang.value === 'en' ? p.tagEn : p.tag })))
 </script>
 
 <template>
   <div class="view-top">
-    <button class="back-btn" @click="emit('back')">← 返回生活费计数器</button>
-    <div class="view-title">生活费模拟</div>
-    <div class="view-sub">在青岛一个月多少生活费合适？估算、亲手分配、再拿真实账单校准</div>
+    <button class="back-btn" @click="emit('back')">{{ t('budgetSim.backToBudget') }}</button>
+    <div class="view-title">{{ t('budgetSim.title') }}</div>
+    <div class="view-sub">{{ t('budgetSim.sub') }}</div>
   </div>
 
   <div class="panel">
     <div class="seg">
-      <button class="seg-btn" :class="{ active: tab === 'estimate' }" @click="tab = 'estimate'">🧮 估算</button>
-      <button class="seg-btn" :class="{ active: tab === 'alloc' }" @click="tab = 'alloc'">🎛️ 分配器</button>
-      <button class="seg-btn" :class="{ active: tab === 'calib' }" @click="tab = 'calib'">📊 账单校准</button>
-      <button class="seg-btn" :class="{ active: tab === 'life' }" @click="tab = 'life'">📋 生活参考</button>
+      <button class="seg-btn" :class="{ active: tab === 'estimate' }" @click="tab = 'estimate'">{{ t('budgetSim.tabEstimate') }}</button>
+      <button class="seg-btn" :class="{ active: tab === 'alloc' }" @click="tab = 'alloc'">{{ t('budgetSim.tabAlloc') }}</button>
+      <button class="seg-btn" :class="{ active: tab === 'calib' }" @click="tab = 'calib'">{{ t('budgetSim.tabCalib') }}</button>
+      <button class="seg-btn" :class="{ active: tab === 'life' }" @click="tab = 'life'">{{ t('budgetSim.tabLife') }}</button>
     </div>
   </div>
 
   <template v-if="tab === 'estimate'">
     <div class="panel">
       <div class="seg">
-        <button class="seg-btn" :class="{ active: estSub === 'simple' }" @click="estSub = 'simple'">⚡ 按习惯粗估</button>
-        <button class="seg-btn" :class="{ active: estSub === 'fine' }" @click="estSub = 'fine'">🎯 按家庭收入</button>
+        <button class="seg-btn" :class="{ active: estSub === 'simple' }" @click="estSub = 'simple'">{{ t('budgetSim.subSimple') }}</button>
+        <button class="seg-btn" :class="{ active: estSub === 'fine' }" @click="estSub = 'fine'">{{ t('budgetSim.subFine') }}</button>
       </div>
 
       <template v-if="estSub === 'simple'">
         <div class="sim-group">
-          <div class="sim-label">🍚 伙食习惯</div>
+          <div class="sim-label">{{ t('budgetSim.mealLabel') }}</div>
           <div class="sim-opts">
-            <button v-for="(o, i) in ['食堂为主', '偶尔外卖', '常点外卖']" :key="o" class="tab" :class="{ active: meal === i + 1 }" @click="meal = i + 1">{{ o }}</button>
+            <button v-for="(o, i) in mealOpts" :key="o" class="tab" :class="{ active: meal === i + 1 }" @click="meal = i + 1">{{ o }}</button>
           </div>
         </div>
         <div class="sim-group">
-          <div class="sim-label">🎉 社交活跃度</div>
+          <div class="sim-label">{{ t('budgetSim.socialLabel') }}</div>
           <div class="sim-opts">
-            <button v-for="(o, i) in ['独行侠', '一般', '社交达人']" :key="o" class="tab" :class="{ active: social === i + 1 }" @click="social = i + 1">{{ o }}</button>
+            <button v-for="(o, i) in socialOpts" :key="o" class="tab" :class="{ active: social === i + 1 }" @click="social = i + 1">{{ o }}</button>
           </div>
         </div>
         <div class="sim-group">
-          <div class="sim-label">🛍️ 购物欲</div>
+          <div class="sim-label">{{ t('budgetSim.shopLabel') }}</div>
           <div class="sim-opts">
-            <button v-for="(o, i) in ['低', '中', '高']" :key="o" class="tab" :class="{ active: shop === i + 1 }" @click="shop = i + 1">{{ o }}</button>
+            <button v-for="(o, i) in shopOpts" :key="o" class="tab" :class="{ active: shop === i + 1 }" @click="shop = i + 1">{{ o }}</button>
           </div>
         </div>
 
         <div class="sim-result">
-          <div class="sim-result-label">{{ simpleRange.name }} · 推荐月生活费</div>
+          <div class="sim-result-label">{{ lang === 'en' ? simpleRange.nameEn : simpleRange.name }} · {{ lang === 'en' ? 'Recommended monthly budget' : '推荐月生活费' }}</div>
           <div class="sim-result-num">¥{{ simpleRange.lo }} ~ {{ simpleRange.hi }}</div>
-          <div class="muted" style="font-size:12px;">{{ simpleRange.tip }}</div>
+          <div class="muted" style="font-size:12px;">{{ lang === 'en' ? simpleRange.tipEn : simpleRange.tip }}</div>
         </div>
       </template>
 
       <template v-else>
         <div class="sim-group">
-          <div class="sim-label">🏠 家庭月收入（可选，用于智能推荐）</div>
+          <div class="sim-label">{{ t('budgetSim.familyLabel') }}</div>
           <div class="sim-opts" style="flex-wrap:wrap;">
-            <button v-for="(f, i) in famLevels" :key="f.label" class="tab" :class="{ active: fam === i }" @click="fam = i">{{ f.label }}</button>
+            <button v-for="(f, i) in famLevels" :key="f.label" class="tab" :class="{ active: fam === i }" @click="fam = i">{{ lang === 'en' ? f.labelEn : f.label }}</button>
           </div>
         </div>
 
         <div class="sim-result">
-          <div class="sim-result-label">智能推荐月生活费区间</div>
+          <div class="sim-result-label">{{ t('budgetSim.recommendLabel') }}</div>
           <div class="sim-result-num">¥{{ famLevels[fam].lo }} ~ {{ famLevels[fam].hi }}</div>
-          <div class="muted" style="font-size:12px;">按青岛在校生常见成本测算，可随学期节奏上下浮动 10%</div>
+          <div class="muted" style="font-size:12px;">{{ t('budgetSim.recommendNote') }}</div>
         </div>
 
-        <div class="section-title" style="margin:18px 0 10px;"><span class="bar"></span>各项预算明细（按月 ¥{{ mid }} 估算）</div>
+        <div class="section-title" style="margin:18px 0 10px;"><span class="bar"></span>{{ t('budgetSim.budgetDetailTitle').replace('{n}', mid) }}</div>
         <div v-for="b in fineBudget" :key="b.name" style="margin-bottom:8px;">
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
-            <span>{{ b.name }}</span><span class="muted">¥{{ b.v }} · {{ b.pct }}%</span>
+            <span>{{ lang === 'en' ? b.nameEn : b.name }}</span><span class="muted">¥{{ b.v }} · {{ b.pct }}%</span>
           </div>
           <div style="background:var(--bar);border-radius:8px;overflow:hidden;">
             <div style="height:12px;background:linear-gradient(90deg,#0d9488,#2dd4bf);border-radius:8px;" :style="{ width: b.pct * 2 + '%' }"></div>
@@ -313,15 +353,15 @@ const FUN_TIPS = [
     </div>
 
     <div class="panel">
-      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>💡 省钱小技巧</div>
+      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('budgetSim.saveTipsTitle') }}</div>
       <ul style="margin:0;padding-left:18px;font-size:13px;line-height:2;color:var(--text);">
-        <li v-for="s in SAVE_TIPS" :key="s">{{ s }}</li>
+        <li v-for="s in saveTipsList" :key="s">{{ s }}</li>
       </ul>
     </div>
 
     <div class="panel">
-      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>💼 兼职怎么找</div>
-      <div v-for="p in PARTTIME" :key="p.name" class="pt-row">
+      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('budgetSim.parttimeTitle') }}</div>
+      <div v-for="p in parttimeList" :key="p.name" class="pt-row">
         <span class="pt-tag">{{ p.tag }}</span>
         <div>
           <div class="pt-name">{{ p.name }}</div>
@@ -333,21 +373,21 @@ const FUN_TIPS = [
 
   <template v-else-if="tab === 'alloc'">
     <div class="panel">
-      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>每月生活费预算</div>
+      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('budgetSim.allocTitle') }}</div>
       <div class="budget-total-row">
         <span>¥</span>
         <input v-model.number="budgetTotal" type="number" inputmode="numeric" class="input" min="200" max="99999" style="flex:1;font-size:20px;font-weight:800;" />
       </div>
       <div class="preset-row">
-        <span class="muted" style="font-size:11px;">一键套用档位：</span>
-        <button v-for="p in PRESETS" :key="p.name" class="tab" @click="applyPreset(p)">{{ p.name }}</button>
+        <span class="muted" style="font-size:11px;">{{ t('budgetSim.allocPreset') }}</span>
+        <button v-for="p in presetList" :key="p.name" class="tab" @click="applyPreset(p)">{{ p.name }}</button>
       </div>
     </div>
 
     <div class="panel">
-      <div class="section-title" style="margin:0 0 4px;"><span class="bar"></span>拖动滑块分配占比</div>
-      <p class="muted" style="font-size:11px;margin-bottom:8px;">每项金额 = 预算 × 占比，实时联动；总和不足 100% 的部分算机动余量，超出会提示你砍项。</p>
-      <div v-for="a in alloc" :key="a.key" class="alloc-row">
+      <div class="section-title" style="margin:0 0 4px;"><span class="bar"></span>{{ t('budgetSim.allocSliderTitle') }}</div>
+      <p class="muted" style="font-size:11px;margin-bottom:8px;">{{ t('budgetSim.allocSliderNote') }}</p>
+      <div v-for="a in allocList" :key="a.key" class="alloc-row">
         <div class="alloc-head">
           <span class="alloc-label">{{ a.label }}</span>
           <span class="alloc-val"><b>{{ a.pct }}%</b> · ¥{{ allocAmt(a) }}</span>
@@ -359,55 +399,55 @@ const FUN_TIPS = [
       </div>
 
       <div class="alloc-sum" :class="allocStatus.cls">
-        <div>已分配 <b>{{ allocSum }}%</b>（¥{{ allocSpent }}） / 预算 ¥{{ budgetTotal }}</div>
-        <div>结余 <b :class="allocRemain >= 0 ? '' : 'over'">¥{{ allocRemain }}</b></div>
+        <div>{{ lang === 'en' ? 'Allocated' : '已分配' }} <b>{{ allocSum }}%</b>（¥{{ allocSpent }}） / {{ lang === 'en' ? 'Budget' : '预算' }} ¥{{ budgetTotal }}</div>
+        <div>{{ lang === 'en' ? 'Remaining' : '结余' }} <b :class="allocRemain >= 0 ? '' : 'over'">¥{{ allocRemain }}</b></div>
         <div class="muted" style="font-size:11px;">{{ allocStatus.text }}</div>
       </div>
-      <button class="btn accent big" style="margin-top:12px;width:100%;" @click="savePlan">💾 保存预算方案（本机）</button>
+      <button class="btn accent big" style="margin-top:12px;width:100%;" @click="savePlan">{{ t('budgetSim.allocSave') }}</button>
       <div v-if="planMsg" class="alloc-msg">{{ planMsg }}</div>
     </div>
   </template>
 
   <template v-else-if="tab === 'calib'">
     <div class="panel">
-      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>你的真实月均支出</div>
+      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('budgetSim.calibTitle') }}</div>
       <div v-if="!calib" class="calib-empty">
         {{ calibMsg }}
-        <div v-if="!calibMsg" class="muted" style="font-size:12px;">正在读取本机记账数据…</div>
+        <div v-if="!calibMsg" class="muted" style="font-size:12px;">{{ t('budgetSim.calibReading') }}</div>
       </div>
       <template v-else>
         <div class="sim-result">
-          <div class="sim-result-label">近 {{ calib.months.length }} 个有支出的月份均值</div>
-          <div class="sim-result-num">¥{{ calib.avgTotal }}<span style="font-size:14px;">/月</span></div>
-          <div class="muted" style="font-size:12px;">统计月份：{{ calib.months.join('、') }}</div>
+          <div class="sim-result-label">{{ t('budgetSim.calibMonths').replace('{n}', calib.months.length) }}</div>
+          <div class="sim-result-num">¥{{ calib.avgTotal }}<span style="font-size:14px;">{{ t('budgetSim.calibMonthUnit') }}</span></div>
+          <div class="muted" style="font-size:12px;">{{ t('budgetSim.calibMonthsList') }}{{ calib.months.join('、') }}</div>
         </div>
 
-        <div class="section-title" style="margin:16px 0 10px;"><span class="bar"></span>支出构成（月均）</div>
-        <BarRow v-for="i in calib.list" :key="i.cat" :label="i.label" :value="i.v" :max="calib.max" :text="'¥' + i.v" color="linear-gradient(90deg,#0d9488,#2dd4bf)" />
+        <div class="section-title" style="margin:16px 0 10px;"><span class="bar"></span>{{ t('budgetSim.calibExpTitle') }}</div>
+        <BarRow v-for="i in calib.list" :key="i.cat" :label="expLabel(i.cat)" :value="i.v" :max="calib.max" :text="'¥' + i.v" color="linear-gradient(90deg,#0d9488,#2dd4bf)" />
 
         <div class="calib-conclusion">{{ calibConclusion }}</div>
 
-        <button class="btn accent big" style="margin-top:12px;width:100%;" @click="applyRealAlloc">🎛️ 把真实占比抄进分配器 ›</button>
+        <button class="btn accent big" style="margin-top:12px;width:100%;" @click="applyRealAlloc">{{ t('budgetSim.calibApply') }}</button>
       </template>
     </div>
 
     <div class="panel">
-      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>常见参考区间（元/月）</div>
-      <div v-for="r in REF" :key="r.key" class="ref-row">
+      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('budgetSim.calibRefTitle') }}</div>
+      <div v-for="r in refList" :key="r.key" class="ref-row">
         <span>{{ r.label }}</span>
         <span class="muted">¥{{ r.lo }} ~ {{ r.hi }}</span>
       </div>
       <p class="muted" style="font-size:11px;margin-top:8px;">
-        参考知乎 / 小红书 / 贴吧等社区常见讨论整理，个体差异大，仅供参考
+        {{ t('budgetSim.calibRefNote') }}
       </p>
     </div>
   </template>
 
   <template v-else>
     <div class="panel">
-      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>🍜 青岛物价速览</div>
+      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('budgetSim.lifePriceTitle') }}</div>
       <div class="price-grid">
-        <div v-for="p in QD_PRICES" :key="p.name" class="price-item">
+        <div v-for="p in priceList" :key="p.name" class="price-item">
           <span class="price-icon">{{ p.icon }}</span>
           <div class="price-main">
             <div class="price-name">{{ p.name }}</div>
@@ -415,27 +455,27 @@ const FUN_TIPS = [
           </div>
         </div>
       </div>
-      <p class="muted" style="font-size:11px;margin-top:8px;">参考在校生日常开销与外卖平台价格整理，仅作预算参考</p>
+      <p class="muted" style="font-size:11px;margin-top:8px;">{{ t('budgetSim.lifePriceNote') }}</p>
     </div>
 
     <div class="panel">
-      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>🗓 学期消费节奏</div>
-      <div v-for="s in SEM_RHYTHM" :key="s.t" class="rhythm-row">
+      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('budgetSim.lifeRhythmTitle') }}</div>
+      <div v-for="s in rhythmList" :key="s.t" class="rhythm-row">
         <span class="rhythm-tag" :class="s.cls">{{ s.t }}</span>
         <span class="muted" style="font-size:12px;">{{ s.tip }}</span>
       </div>
     </div>
 
     <div class="panel">
-      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>💡 生活费小贴士</div>
+      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('budgetSim.lifeTipsTitle') }}</div>
       <ul class="tip-list">
-        <li v-for="t in FUN_TIPS" :key="t">{{ t }}</li>
+        <li v-for="tip in funTipsList" :key="tip">{{ tip }}</li>
       </ul>
     </div>
   </template>
 
   <p class="muted" style="font-size:12px;text-align:center;padding:4px 0 8px;">
-    所有模拟与校准均在本地浏览器完成，账单数据不会离开你的设备
+    {{ t('budgetSim.lifePrivacyNote') }}
   </p>
 </template>
 

@@ -75,7 +75,7 @@ onMounted(loadAll)
       <span>{{ t('campusNews.dataSource') }}</span>
       <template v-if="online">
         <span class="sep">·</span>
-        <span>{{ t('campusNews.fetchedAt') }} {{ new Date(fetchedAt).toLocaleTimeString('zh-CN', { hour12: false }) }}</span>
+        <span>{{ t('campusNews.fetchedAt') }} {{ new Date(fetchedAt).toLocaleTimeString(lang === 'en' ? 'en-US' : 'zh-CN', { hour12: false }) }}</span>
         <template v-if="costMs"><span class="sep">·</span><span>{{ t('campusNews.costTime') }} {{ costMs }}ms</span></template>
         <span v-if="cached" class="sep">·</span><span v-if="cached">{{ t('campusNews.cacheHit') }}</span>
       </template>
