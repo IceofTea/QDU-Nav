@@ -9,7 +9,7 @@ const { t, lang } = useI18n()
 const emit = defineEmits(['back'])
 const view = ref('main')
 const keyword = ref('')
-const campus = ref('全部')
+const campus = ref(lang.value === 'en' ? 'All' : '全部')
 const expanded = ref(null)
 
 const currentCampusFilters = computed(() => lang.value === 'en' ? campusFiltersEn : campusFilters)
@@ -69,7 +69,7 @@ const emptyGroups = computed(() => {
 
 const list = computed(() => {
   let r = searchRooms(keyword.value)
-  if (campus.value !== '全部') r = r.filter((b) => b.campus === campus.value)
+  if (campus.value !== (lang.value === 'en' ? 'All' : '全部')) r = r.filter((b) => b.campus === campus.value)
   return r
 })
 

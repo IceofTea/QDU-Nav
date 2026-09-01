@@ -66,8 +66,8 @@ async function copyMail() {
         <div class="mail-out" :class="{ empty: !email }">{{ email || t('officialSites.mailOutput') }}</div>
         <div class="mail-quip">{{ t('officialSites.mailQuip') }} <b>xiaozhang@qdu.edu.cn</b>{{ t('officialSites.mailQuipEnd') }}</div>
         <p class="muted" style="font-size:12px;margin-top:8px;line-height:1.8;">
-          {{ t('officialSites.mailGuide') }}<a class="link" href="https://mail.qdu.edu.cn" target="_blank" rel="noopener">mail.qdu.edu.cn</a>{{ t('officialSites.mailGuide2') }}<b>学号@qdu.edu.cn</b>{{ t('officialSites.mailGuideEnd') }}
-          <a class="link" href="https://ehall.qdu.edu.cn" target="_blank" rel="noopener">网上办事大厅</a>{{ t('officialSites.mailGuideEnd2') }}
+          {{ t('officialSites.mailGuide') }}<a class="link" href="https://mail.qdu.edu.cn" target="_blank" rel="noopener">mail.qdu.edu.cn</a>{{ t('officialSites.mailGuide2') }}<b>{{ lang === 'en' ? 'Student ID' + '@qdu.edu.cn' : '学号@qdu.edu.cn' }}</b>{{ t('officialSites.mailGuideEnd') }}
+          <a class="link" href="https://ehall.qdu.edu.cn" target="_blank" rel="noopener">{{ lang === 'en' ? 'Online Service Hall' : '网上办事大厅' }}</a>{{ t('officialSites.mailGuideEnd2') }}
         </p>
       </div>
 

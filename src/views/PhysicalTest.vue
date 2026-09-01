@@ -100,16 +100,16 @@ const activeTableData = computed(() => {
     const rows = [
       { v: `${lo} ~ ${hi}`, s: 100 },
       { v: `${rule.overweight} ~ ${rule.obese - 0.1}`, s: 80 },
-      { v: `低于 ${lo}`, s: 80 },
-      { v: `${rule.obese} 及以上`, s: 60 }
+      { v: lang.value === 'en' ? `Below ${lo}` : `低于 ${lo}`, s: 80 },
+      { v: lang.value === 'en' ? `${rule.obese} and above` : `${rule.obese} 及以上`, s: 60 }
     ]
-    return { key: 'bmi', unit: 'kg/m²', dir: '区间对应', cur: cur != null ? cur : null, score, rows }
+    return { key: 'bmi', unit: 'kg/m²', dir: lang.value === 'en' ? 'within range' : '区间对应', cur: cur != null ? cur : null, score, rows }
   }
   const st = standards[g][activeTable.value]
   if (!st || !st.table) return null
   const cur = rawOf(years[activeYear.value], activeTable.value)
   const score = cur != null ? itemScore(g, activeTable.value, cur) : null
-  const dir = st.higher ? '达到或超过' : '不超过'
+  const dir = st.higher ? (lang.value === 'en' ? 'at or above' : '达到或超过') : (lang.value === 'en' ? 'no more than' : '不超过')
   return {
     key: activeTable.value,
     unit: st.unit,
@@ -175,7 +175,7 @@ const activeTableData = computed(() => {
         <input v-model.number="years[activeYear].longJump" class="input" type="number" :placeholder="t('physicalTest.placeholderLongJump')" @focus="activeTable = 'longJump'" />
       </label>
       <label class="field">
-        <span class="field-label">{{ standards[gender].strength.label }}（{{ gender === 'male' ? t('physicalTest.unitReps') : t('physicalTest.unitRepsMin') }}）</span>
+        <span class="field-label">{{ lang.value === 'en' ? standards[gender].strength.labelEn : standards[gender].strength.label }}（{{ gender === 'male' ? t('physicalTest.unitReps') : t('physicalTest.unitRepsMin') }}）</span>
         <input v-model.number="years[activeYear].strength" class="input" type="number" :placeholder="t('physicalTest.placeholderStrength')" @focus="activeTable = 'strength'" />
       </label>
       <div class="field field-split">

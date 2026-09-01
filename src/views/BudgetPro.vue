@@ -106,7 +106,7 @@ const monthly = computed(() => monthList().map((key) => {
   const list = props.records.filter((r) => r.date.startsWith(key))
   return {
     key,
-    label: key.slice(5) + '月',
+    label: key.slice(5) + (lang.value === 'en' ? '' : '月'),
     inc: sum(list, 'income'),
     exp: sum(list, 'expense'),
     bal: Math.round((sum(list, 'income') - sum(list, 'expense')) * 100) / 100
@@ -117,7 +117,7 @@ const rangeChartType = ref('bar') // 区间收支：bar 柱状 / line 折线
 /* 结余趋势（区间内每月结余，折线） */
 const balanceTrend = computed(() => {
   const line = monthly.value.map((m) => m.bal)
-  return { labels: monthly.value.map((m) => m.label), series: [{ label: '结余', color: '#0d9488', data: line }] }
+  return { labels: monthly.value.map((m) => m.label), series: [{ label: lang.value === 'en' ? 'Balance' : '结余', color: '#0d9488', data: line }] }
 })
 
 /* ---- 收支日历：日 / 周 / 月 / 年 视图，按当日盈亏着色 ---- */
@@ -375,8 +375,8 @@ function exportCsv() {
       </div>
     </div>
     <LineChart v-else :series="[
-      { label: '收入', color: '#0d9488', data: monthly.map((m) => m.inc) },
-      { label: '支出', color: '#b63a46', data: monthly.map((m) => m.exp) }
+      { label: lang.value === 'en' ? 'Income' : '收入', color: '#0d9488', data: monthly.map((m) => m.inc) },
+      { label: lang.value === 'en' ? 'Expense' : '支出', color: '#b63a46', data: monthly.map((m) => m.exp) }
     ]" :labels="monthly.map((m) => m.label)" :height="160" value-prefix="¥" :max-width="760" />
     <p class="muted" style="font-size:11px;margin-top:8px;">{{ t('budgetPro.rangeClickNote') }}</p>
   </div>
@@ -403,7 +403,7 @@ function exportCsv() {
         <button class="btn ghost small" @click="calCursor = { y: calCursor.y, m: calCursor.m === 12 ? 1 : calCursor.m + 1 }; if (calCursor.m === 1) calCursor.y++">{{ lang === 'en' ? 'Next' : '下月' }} ›</button>
       </div>
       <div class="cal-grid">
-        <span v-for="w in ['日', '一', '二', '三', '四', '五', '六']" :key="w" class="cal-wd">{{ w }}</span>
+        <span v-for="w in (lang === 'en' ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] : ['日', '一', '二', '三', '四', '五', '六'])" :key="w" class="cal-wd">{{ w }}</span>
         <button v-for="(c, i) in calGrid" :key="i" class="cal-cell" :class="{ empty: !c.d, pos: c.d && c.bal > 0, neg: c.d && c.bal < 0 }" @click="calSelDay(c.d)">
           <template v-if="c.d">
             <span class="cal-d">{{ c.d }}</span>
@@ -434,7 +434,7 @@ function exportCsv() {
     <template v-else>
       <div class="cal-grid2">
         <button v-for="y in yearAgg" :key="y.key" class="cal-tile" :class="y.bal > 0 ? 'pos' : y.bal < 0 ? 'neg' : ''" @click="calSelRange('year', y.key)">
-          <span>{{ y.label }} 年</span>
+          <span>{{ y.label }}{{ lang === 'en' ? '' : ' 年' }}</span>
           <b>{{ y.bal > 0 ? '+' : '' }}{{ fmt(y.bal) }}</b>
         </button>
       </div>
@@ -559,7 +559,7 @@ function exportCsv() {
           <span class="muted" style="font-size:11px;">{{ r.date }}</span>
         </span>
         <span class="rec-amt" :class="isExp(r) ? 'out' : 'in'">{{ isExp(r) ? '-' : '+' }}¥{{ fmt(r.amount) }}</span>
-        <button class="rec-del" @click="emit('remove', r.id)" title="删除">✕</button>
+        <button class="rec-del" @click="emit('remove', r.id)" :title="t('budget.delete')">✕</button>
       </div>
     </div>
     <div v-if="filteredCount > 1" class="pager">

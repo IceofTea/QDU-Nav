@@ -17,7 +17,7 @@ const picks = ref([])
 const pickedCount = ref(0)
 const filter = ref('全部')
 const showAll = ref(false)
-const campusFilter = ref('全部')
+const campusFilter = ref(lang.value === 'en' ? 'All' : '全部')
 
 const CAMPUSES = computed(() => lang.value === 'en'
   ? ['All', 'Fushan', 'Jinjialing', 'Songshan']
@@ -36,7 +36,7 @@ const filtered = computed(() => {
 })
 
 const campusPool = computed(() => {
-  if (campusFilter.value === '全部') return foods
+  if (campusFilter.value === (lang.value === 'en' ? 'All' : '全部')) return foods
   return foods.filter(f => f.campus === campusFilter.value)
 })
 
@@ -91,7 +91,7 @@ onMounted(() => {
       >{{ CAMPUSES[i] }}</button>
     </div>
     <div class="muted" style="font-size:13px;margin-bottom:14px;">
-      {{ t('whatToEat.recommend3') }}<template v-if="campusFilter !== '全部'">（{{ t('whatToEat.onlyCampus') }} {{ campusFilter }}）</template>
+      {{ t('whatToEat.recommend3') }}<template v-if="campusFilter !== (lang === 'en' ? 'All' : '全部')">（{{ t('whatToEat.onlyCampus') }} {{ campusFilter }}）</template>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;">
       <div v-for="(f, i) in picks" :key="i" class="food-card">

@@ -247,7 +247,7 @@ function clsNote(co) {
   if (!raw) return ''
   if (opened.value?.mode !== 'class') return raw
   if (raw === opened.value.name) return ''
-  return '合班 ' + raw
+  return (lang.value === 'en' ? 'Joint: ' : '合班 ') + raw
 }
 
 const posStyle = (co) => ({
@@ -310,7 +310,7 @@ onMounted(loadCourses)
             <div v-for="co in dayCourses(i + 1)" :key="co.c + co.s + co.r" class="wg-cell" :style="posStyle(co)" @click="showCourse(co)">
               <b>{{ co.c }}</b>
               <div class="wg-sub">{{ subOf(co) }}</div>
-              <div class="wg-sub muted">{{ co.campus && co.campus !== '未标注' ? co.campus + ' · ' : '' }}{{ t('timetable.weekLabel', { n: co.w }) }}</div>
+              <div class="wg-sub muted">{{ co.campus && co.campus !== (lang === 'en' ? 'Unlabeled' : '未标注') ? co.campus + ' · ' : '' }}{{ t('timetable.weekLabel', { n: co.w }) }}</div>
             </div>
           </div>
         </div>
@@ -344,7 +344,7 @@ onMounted(loadCourses)
         <div class="course-detail-row"><span>{{ t('timetable.detailClass') }}</span><b>{{ detail.cls || '—' }}</b></div>
         <div class="course-detail-row"><span>{{ t('timetable.detailTime') }}</span><b>{{ dayLabel(detail.d) }} · {{ t('timetable.period') }} {{ detail.s }}–{{ detail.e }}</b></div>
         <div class="course-detail-row"><span>{{ t('timetable.detailWeek') }}</span><b>{{ t('timetable.weekLabel', { n: detail.w }) }}</b></div>
-        <div v-if="detail.campus && detail.campus !== '未标注'" class="course-detail-row"><span>{{ t('timetable.detailCampus') }}</span><b>{{ detail.campus }}</b></div>
+        <div v-if="detail.campus && detail.campus !== (lang === 'en' ? 'Unlabeled' : '未标注')" class="course-detail-row"><span>{{ t('timetable.detailCampus') }}</span><b>{{ detail.campus }}</b></div>
         <div v-if="detail.cat" class="course-detail-row"><span>{{ t('timetable.detailCategory') }}</span><b>{{ detail.cat }}</b></div>
         <div v-if="detail.credit" class="course-detail-row"><span>{{ t('timetable.detailCredit') }}</span><b>{{ detail.credit }}</b></div>
         <button class="btn accent" style="width:100%;margin-top:14px;" @click="detail = null">{{ t('timetable.detailOk') }}</button>

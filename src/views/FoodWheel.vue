@@ -105,7 +105,7 @@ function spin() {
 }
 
 function pushHistory(hall, dish, tier) {
-  history.value.unshift({ at: new Date().toLocaleTimeString(), hall: hall || '—', dish, tier })
+  history.value.unshift({ at: new Date().toLocaleTimeString(lang.value === 'en' ? 'en-US' : 'zh-CN'), hall: hall || '—', dish, tier })
   history.value = history.value.slice(0, 10)
   localStorage.setItem('qdu_wheel_history', JSON.stringify(history.value))
   sessionStorage.setItem('qdu_wheel_spins', String(spins.value))
