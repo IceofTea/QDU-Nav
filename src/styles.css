@@ -1007,7 +1007,7 @@ table.data th { background: var(--primary-soft); color: var(--primary-dark); fon
   .brand-name { font-size: 15px; }
   .header-right { gap: 6px; }
   .ghost-btn { padding: 7px 10px; font-size: 12px; }
-  .home-btn .home-text { display: none; }
+  .desktop-only { display: none !important; }
   .lang-btn { padding: 6px 8px; }
   .lang-label { font-size: 11px; }
   .brand-sub { display: none; }
