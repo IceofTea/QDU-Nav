@@ -117,7 +117,7 @@ onMounted(() => {
             <span class="lang-label">{{ lang === 'zh' ? 'EN' : '中' }}</span>
           </button>
           <button class="ghost-btn" :title="theme === 'dark' ? 'Switch to light' : 'Switch to dark'" @click="toggleTheme">{{ theme === 'dark' ? '☀️' : '🌙' }}</button>
-          <button class="ghost-btn" @click="goHome">🏠 {{ t('nav.home') }}</button>
+          <button class="ghost-btn home-btn" @click="goHome">🏠 <span class="home-text">{{ t('nav.home') }}</span></button>
         </div>
       </div>
     </header>
