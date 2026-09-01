@@ -8,6 +8,11 @@ const { t, lang } = useI18n()
 
 const emit = defineEmits(['back'])
 
+const CAMPUS_EN = { '浮山校区': 'Fushan', '金家岭校区': 'Jinjialing', '松山校区': 'Songshan' }
+const AREA_EN = { '西院': 'West', '东院': 'East', '北院（师范学院）': 'North', '浮山苑': 'Fushan Garden', '浮山公寓': 'Fushan Dorm' }
+const campusLabel = (c) => lang.value === 'en' ? (CAMPUS_EN[c] || c) : c
+const areaLabel = (a) => lang.value === 'en' ? (AREA_EN[a] || a) : a
+
 const picks = ref([])
 const pickedCount = ref(0)
 const filter = ref('全部')
@@ -93,7 +98,7 @@ onMounted(() => {
         <div style="font-size:26px;">🍽️</div>
         <div style="font-weight:700;margin:6px 0;">{{ lang === 'en' ? f.nameEn : f.name }}</div>
         <div class="tag">{{ lang === 'en' ? f.tagEn : f.tag }}</div>
-        <div class="muted" style="font-size:12px;margin-top:6px;">{{ f.hall }} · {{ f.campus }} {{ f.zone }}</div>
+        <div class="muted" style="font-size:12px;margin-top:6px;">{{ f.hallEn || f.hall }} · {{ campusLabel(f.campus) }} {{ areaLabel(f.zone) }}</div>
       </div>
     </div>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
@@ -108,7 +113,7 @@ onMounted(() => {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;">
       <div v-for="h in halls" :key="h.name" style="background:var(--soft-fg);border-radius:12px;padding:12px;">
         <b>{{ lang === 'en' ? h.nameEn : h.name }}</b>
-        <div class="muted" style="font-size:12px;margin-top:4px;">{{ h.campus }} · {{ h.zone }}</div>
+        <div class="muted" style="font-size:12px;margin-top:4px;">{{ campusLabel(h.campus) }} · {{ areaLabel(h.zone) }}</div>
       </div>
     </div>
   </div>
@@ -134,7 +139,7 @@ onMounted(() => {
           <tr v-for="f in filtered" :key="f.hall + f.name">
             <td><b>{{ lang === 'en' ? f.nameEn : f.name }}</b></td>
             <td>{{ lang === 'en' ? f.hallEn : f.hall }}</td>
-            <td>{{ f.campus }} {{ f.zone }}</td>
+            <td>{{ campusLabel(f.campus) }} {{ areaLabel(f.zone) }}</td>
             <td>{{ lang === 'en' ? f.tagEn : f.tag }}</td>
           </tr>
         </tbody>

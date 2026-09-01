@@ -129,7 +129,7 @@ function toggleFood(name) {
           <span style="font-weight: 800; font-size: 14px; white-space: nowrap">{{ lang === 'en' ? c.nameEn : c.name }}</span>
           <span class="type-tag" :class="c.type">{{ c.type === 'basic' ? t('canteen.basicWindow') : t('canteen.flavorStall') }}</span>
           <span v-if="c.note" class="tag" style="background:var(--soft-yellow); color: #e65100">{{ lang === 'en' ? (c.noteEn || c.note) : c.note }}</span>
-          <span class="canteen-area">{{ lang === 'en' ? areaEn(c.area) : c.area }} · {{ c.dept }}</span>
+          <span class="canteen-area">{{ lang === 'en' ? areaEn(c.area) : c.area }} · {{ lang === 'en' ? (c.deptEn || c.dept) : c.dept }}</span>
           <span class="canteen-toggle">{{ openFood === c.name ? t('canteen.collapseFood') : t('canteen.expandFood') }}</span>
         </button>
         <div class="canteen-metric">
