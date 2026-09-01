@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { officialGroups, colleges, emergency } from '../data/official'
+import { officialGroups, colleges, emergency, CAT_MAP } from '../data/official'
 import { useI18n } from '../i18n'
 
 const { t, lang } = useI18n()
@@ -14,7 +14,7 @@ const collegeList = colleges
 /** 学院按学科分类聚合（保持学科大类顺序稳定） */
 const CAT_ORDER = ['人文社科', '理工', '医学', '艺术与体育', '合作办学']
 const collegeGroups = CAT_ORDER
-  .map((cat) => ({ cat, list: collegeList.filter((c) => c.category === cat) }))
+  .map((cat) => ({ cat, catEn: CAT_MAP[cat], list: collegeList.filter((c) => c.category === cat) }))
   .filter((g) => g.list.length)
 
 /** 邮箱助手：输入学号 → 一键生成并复制校园邮箱 */
@@ -72,10 +72,10 @@ async function copyMail() {
       </div>
 
       <div v-for="g in groups" :key="g.name" class="official-group">
-        <h4 class="group-name">{{ g.icon }} {{ g.name }}</h4>
+        <h4 class="group-name">{{ g.icon }} {{ lang === 'en' ? g.nameEn : g.name }}</h4>
         <a v-for="s in g.sites" :key="s.url" class="site-link" :class="{ featured: s.featured }" :href="s.url" target="_blank" rel="noopener">
-          <span class="site-name">{{ s.name }}</span>
-          <span class="site-desc">{{ s.desc }}</span>
+          <span class="site-name">{{ lang === 'en' ? s.nameEn : s.name }}</span>
+          <span class="site-desc">{{ lang === 'en' ? s.descEn : s.desc }}</span>
           <span class="site-go">↗</span>
         </a>
       </div>
@@ -83,10 +83,10 @@ async function copyMail() {
 
     <template v-else-if="tab === 'college'">
       <div v-for="g in collegeGroups" :key="g.cat" class="official-group">
-        <h4 class="group-name">{{ g.cat }}</h4>
+        <h4 class="group-name">{{ lang === 'en' ? g.catEn : g.cat }}</h4>
         <div class="college-grid">
           <a v-for="c in g.list" :key="c.name" class="college-card" :href="c.url" target="_blank" rel="noopener">
-            <span class="college-name">{{ c.name }}</span>
+            <span class="college-name">{{ lang === 'en' ? c.nameEn : c.name }}</span>
             <span class="college-go">↗</span>
           </a>
         </div>

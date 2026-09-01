@@ -67,31 +67,31 @@ function hueOf(i) {
       />
       <span v-else class="cloud-emoji">{{ c.emoji }}</span>
       <span class="cloud-name">{{ c.name }}</span>
-      <span class="cloud-role">{{ c.role }}</span>
+      <span class="cloud-role">{{ lang === 'en' && c.roleEn ? c.roleEn : c.role }}</span>
     </a>
   </div>
 
   <div class="panel" style="margin-top:16px;">
     <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('contributors.community') }}</div>
     <ul class="changelog">
-      <li><b>v1.1.0</b> — 数据链路附带列、贴吧舆情、官网分类等多项功能迭代。</li>
-      <li><b>v1.1.1</b> — 社区 PR #1（huanuyn）：修复课程接口解析路径、美食轮盘指针偏差。</li>
-      <li><b>v1.2.0</b> — 课程表分页、数据洞察分布科学化、奖学金金额校准、贡献者墙上线。</li>
-      <li><b>v1.2.1–v1.2.10</b> — 系列维护迭代：数据洞察与课表性能、贴吧舆情图表化、校园邮箱、官网改造等。</li>
-      <li><b>v1.3.0</b> — 本站舆情：多维访问统计可视化。</li>
-      <li><b>v1.3.1</b> — 校领导测试：35 题多维比对。</li>
-      <li><b>v1.3.2</b> — 深色模式全面修复 + 系列 Bug 修复。</li>
-      <li><b>v1.3.3</b> — 代码质量加固：真实 Bug 修复、公共组件抽取、tieba 对齐手机版。</li>
-      <li><b>v1.3.4</b> — 独立访客统计修正：UV 去重改访客 ID。</li>
-      <li><b>v1.3.5–v1.3.7</b> — 生活费全面升级：微信/支付宝/建行账单导入、模拟三合一、批量记账、成就墙与彩蛋、默哀模式、专业版。</li>
-      <li><b>v1.3.8–v1.3.11</b> — 专业版图表、数据/舆情统计页、工具与分类、饼图与折线展示体系优化。</li>
-      <li><b>v1.3.12</b> — 收支分析增强：结余负半轴、收入构成/收入商户、明细大分类、Excel 分析导出、建行导入增强。</li>
-      <li><b>v1.3.13</b> — 点赞系统：首页/各应用点赞与计数，同本站舆情计数服务。</li>
-      <li><b>v1.3.14</b> — 首页公告（部署与安全说明）、顶部栏移动端适配、点赞交互调整。</li>
-      <li><b>v1.3.15</b> — 计数服务降耗（轻量接口/数据瘦身/会话节流）与点赞跨浏览器同步修复。</li>
-      <li><b>v1.3.16</b> — 全局搜索索引：首页/分类页搜索升级为「应用名 + 别名关键词 + 功能点」三层匹配，支持多词组合与命中标签展示。</li>
-      <li><b>v1.3.17</b> — 校历原图预览：每学年校历本地预览（按钮/下拉/拖动滑动切换 + 丝滑滑动动画），全屏查看器支持缩放平移与键盘翻页，附 PDF 原件直链。</li>
-      <li><b>v1.3.18</b> — 中英文切换：顶部栏一键切换，首页/校历/分类等核心页面全英文，底部导航同步，模块化 i18n 架构（src/i18n/）。</li>
+      <li><b>v1.1.0</b> — {{ lang === 'en' ? 'Data pipeline, Tieba sentiment, college portal grouping, and more.' : '数据链路附带列、贴吧舆情、官网分类等多项功能迭代。' }}</li>
+      <li><b>v1.1.1</b> — {{ lang === 'en' ? 'Community PR #1 (huanuyn): fix course API path & food wheel pointer.' : '社区 PR #1（huanuyn）：修复课程接口解析路径、美食轮盘指针偏差。' }}</li>
+      <li><b>v1.2.0</b> — {{ lang === 'en' ? 'Timetable pagination, data insights, scholarship calibration, contributors wall.' : '课程表分页、数据洞察分布科学化、奖学金金额校准、贡献者墙上线。' }}</li>
+      <li><b>v1.2.1–v1.2.10</b> — {{ lang === 'en' ? 'Maintenance: insights, timetable perf, Tieba charts, campus email, portal revamp, etc.' : '系列维护迭代：数据洞察与课表性能、贴吧舆情图表化、校园邮箱、官网改造等。' }}</li>
+      <li><b>v1.3.0</b> — {{ lang === 'en' ? 'Site analytics: multi-dimensional visit statistics.' : '本站舆情：多维访问统计可视化。' }}</li>
+      <li><b>v1.3.1</b> — {{ lang === 'en' ? 'Leader test: 35-question multi-dimensional matching.' : '校领导测试：35 题多维比对。' }}</li>
+      <li><b>v1.3.2</b> — {{ lang === 'en' ? 'Dark mode fixes + series bug fixes.' : '深色模式全面修复 + 系列 Bug 修复。' }}</li>
+      <li><b>v1.3.3</b> — {{ lang === 'en' ? 'Code quality: real bug fixes, shared components, Tieba mobile alignment.' : '代码质量加固：真实 Bug 修复、公共组件抽取、tieba 对齐手机版。' }}</li>
+      <li><b>v1.3.4</b> — {{ lang === 'en' ? 'Visitor stats fix: UV dedup via visitor ID.' : '独立访客统计修正：UV 去重改访客 ID。' }}</li>
+      <li><b>v1.3.5–v1.3.7</b> — {{ lang === 'en' ? 'Budget upgrade: WeChat/Alipay/CCB import, simulator, achievements, pro version.' : '生活费全面升级：微信/支付宝/建行账单导入、模拟三合一、批量记账、成就墙与彩蛋、默哀模式、专业版。' }}</li>
+      <li><b>v1.3.8–v1.3.11</b> — {{ lang === 'en' ? 'Pro charts, analytics pages, pie/line display system, tool & category optimization.' : '专业版图表、数据/舆情统计页、工具与分类、饼图与折线展示体系优化。' }}</li>
+      <li><b>v1.3.12</b> — {{ lang === 'en' ? 'Enhanced analytics: negative balance axis, income breakdown, Excel export, CCB import.' : '收支分析增强：结余负半轴、收入构成/收入商户、明细大分类、Excel 分析导出、建行导入增强。' }}</li>
+      <li><b>v1.3.13</b> — {{ lang === 'en' ? 'Like system: per-app likes with counter service.' : '点赞系统：首页/各应用点赞与计数，同本站舆情计数服务。' }}</li>
+      <li><b>v1.3.14</b> — {{ lang === 'en' ? 'Homepage announcements, mobile header fixes, like interaction tweaks.' : '首页公告（部署与安全说明）、顶部栏移动端适配、点赞交互调整。' }}</li>
+      <li><b>v1.3.15</b> — {{ lang === 'en' ? 'Counter optimization (lightweight API, throttling) + cross-browser like sync fix.' : '计数服务降耗（轻量接口/数据瘦身/会话节流）与点赞跨浏览器同步修复。' }}</li>
+      <li><b>v1.3.16</b> — {{ lang === 'en' ? 'Global search index: app name + alias keywords + feature points, multi-word matching.' : '全局搜索索引：首页/分类页搜索升级为「应用名 + 别名关键词 + 功能点」三层匹配，支持多词组合与命中标签展示。' }}</li>
+      <li><b>v1.3.17</b> — {{ lang === 'en' ? 'Calendar preview: local image preview per year, fullscreen viewer with zoom/drag/swipe, PDF link.' : '校历原图预览：每学年校历本地预览（按钮/下拉/拖动滑动切换 + 丝滑滑动动画），全屏查看器支持缩放平移与键盘翻页，附 PDF 原件直链。' }}</li>
+      <li><b>v1.3.18</b> — {{ lang === 'en' ? 'Bilingual toggle: one-click EN/CN switch, core pages fully translated, modular i18n.' : '中英文切换：顶部栏一键切换，首页/校历/分类等核心页面全英文，底部导航同步，模块化 i18n 架构（src/i18n/）。' }}</li>
     </ul>
     <p class="muted" style="font-size:12px;margin-top:10px;">
       {{ t('contributors.fullHistory') }} <a href="https://github.com/IceofTea/QDU-Nav/blob/main/README.md" target="_blank" rel="noopener">{{ t('contributors.fullHistoryEnd') }}</a>。

@@ -40,12 +40,12 @@ function yearResult(y) {
   const endurSecs = y.endurMin != null && y.endurSec != null ? y.endurMin * 60 + y.endurSec : null
   const items = [
     { key: 'bmi', label: 'BMI', score: bmiScore(g, bmi), raw: bmi ? bmi.toFixed(1) : null, unit: '' },
-    { key: 'vitalCapacity', label: itemLabels.vitalCapacity, score: itemScore(g, 'vitalCapacity', y.vital), raw: y.vital, unit: 'ml' },
-    { key: 'sprint50', label: itemLabels.sprint50, score: itemScore(g, 'sprint50', y.sprint), raw: y.sprint, unit: '秒' },
-    { key: 'sitReach', label: itemLabels.sitReach, score: itemScore(g, 'sitReach', y.sitReach), raw: y.sitReach, unit: 'cm' },
-    { key: 'longJump', label: itemLabels.longJump, score: itemScore(g, 'longJump', y.longJump), raw: y.longJump, unit: 'cm' },
-    { key: 'strength', label: standards[g].strength.label, score: itemScore(g, 'strength', y.strength), raw: y.strength, unit: '个' },
-    { key: 'endurance', label: standards[g].endurance.label, score: itemScore(g, 'endurance', endurSecs), raw: endurSecs, unit: '分:秒' }
+    { key: 'vitalCapacity', label: lang.value === 'en' ? itemLabels.vitalCapacityEn : itemLabels.vitalCapacity, score: itemScore(g, 'vitalCapacity', y.vital), raw: y.vital, unit: 'ml' },
+    { key: 'sprint50', label: lang.value === 'en' ? itemLabels.sprint50En : itemLabels.sprint50, score: itemScore(g, 'sprint50', y.sprint), raw: y.sprint, unit: lang.value === 'en' ? 's' : '秒' },
+    { key: 'sitReach', label: lang.value === 'en' ? itemLabels.sitReachEn : itemLabels.sitReach, score: itemScore(g, 'sitReach', y.sitReach), raw: y.sitReach, unit: 'cm' },
+    { key: 'longJump', label: lang.value === 'en' ? itemLabels.longJumpEn : itemLabels.longJump, score: itemScore(g, 'longJump', y.longJump), raw: y.longJump, unit: 'cm' },
+    { key: 'strength', label: lang.value === 'en' ? standards[g].strength.labelEn : standards[g].strength.label, score: itemScore(g, 'strength', y.strength), raw: y.strength, unit: lang.value === 'en' ? 'reps' : '个' },
+    { key: 'endurance', label: lang.value === 'en' ? standards[g].endurance.labelEn : standards[g].endurance.label, score: itemScore(g, 'endurance', endurSecs), raw: endurSecs, unit: lang.value === 'en' ? 'min:sec' : '分:秒' }
   ]
   let total = 0
   let filled = 0
@@ -53,7 +53,7 @@ function yearResult(y) {
     if (it.score != null) { total += it.score * itemWeights[it.key]; filled++ }
   }
   total = Math.round(total)
-  return { items, total, filled, grade: gradeOf(total) }
+  return { items, total, filled, grade: gradeOf(total, lang.value) }
 }
 
 const active = computed(() => yearResult(years[activeYear.value]))
@@ -82,12 +82,12 @@ function fmtVal(key, v) {
 
 const tableChips = computed(() => [
   { key: 'bmi', label: 'BMI' },
-  { key: 'vitalCapacity', label: t('physicalTest.vitalCapacity') },
-  { key: 'sprint50', label: '50m' },
-  { key: 'sitReach', label: t('physicalTest.sitReach') },
-  { key: 'longJump', label: t('physicalTest.longJump') },
-  { key: 'strength', label: standards[gender.value].strength.label },
-  { key: 'endurance', label: standards[gender.value].endurance.label }
+  { key: 'vitalCapacity', label: lang.value === 'en' ? itemLabels.vitalCapacityEn : t('physicalTest.vitalCapacity') },
+  { key: 'sprint50', label: lang.value === 'en' ? itemLabels.sprint50En : '50m' },
+  { key: 'sitReach', label: lang.value === 'en' ? itemLabels.sitReachEn : t('physicalTest.sitReach') },
+  { key: 'longJump', label: lang.value === 'en' ? itemLabels.longJumpEn : t('physicalTest.longJump') },
+  { key: 'strength', label: lang.value === 'en' ? standards[gender.value].strength.labelEn : standards[gender.value].strength.label },
+  { key: 'endurance', label: lang.value === 'en' ? standards[gender.value].endurance.labelEn : standards[gender.value].endurance.label }
 ])
 
 const activeTableData = computed(() => {

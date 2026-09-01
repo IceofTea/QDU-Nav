@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { canteens, canteenStats } from '../data/canteens'
+import { canteens, canteenStats, campusMap, areaMap } from '../data/canteens'
 import { apiFetch } from '../api/index'
 import { useI18n } from '../i18n'
 
@@ -30,6 +30,9 @@ const list = computed(() => {
   if (campus.value === 'all') return canteens
   return canteens.filter((c) => c.campus === campus.value)
 })
+
+function campusEn(c) { return campusMap[c] || c }
+function areaEn(c) { return areaMap[c] || c }
 
 function seatsOf(c) {
   return c.seats ? String(c.seats) : '—'
@@ -109,9 +112,9 @@ function toggleFood(name) {
 
     <div class="seg" style="margin: 12px 0">
       <button class="seg-btn" :class="{ active: campus === 'all' }" @click="campus = 'all'">{{ t('canteen.all') }}</button>
-      <button class="seg-btn" :class="{ active: campus === '浮山校区' }" @click="campus = '浮山校区'">{{ t('canteen.fushan') }}</button>
-      <button class="seg-btn" :class="{ active: campus === '金家岭校区' }" @click="campus = '金家岭校区'">{{ t('canteen.jinjialing') }}</button>
-      <button class="seg-btn" :class="{ active: campus === '松山校区' }" @click="campus = '松山校区'">{{ t('canteen.songshan') }}</button>
+      <button class="seg-btn" :class="{ active: campus === '浮山校区' }" @click="campus = '浮山校区'">{{ lang === 'en' ? 'Fushan' : t('canteen.fushan') }}</button>
+      <button class="seg-btn" :class="{ active: campus === '金家岭校区' }" @click="campus = '金家岭校区'">{{ lang === 'en' ? 'Jinjialing' : t('canteen.jinjialing') }}</button>
+      <button class="seg-btn" :class="{ active: campus === '松山校区' }" @click="campus = '松山校区'">{{ lang === 'en' ? 'Songshan' : t('canteen.songshan') }}</button>
     </div>
 
     <div v-if="loading" class="skeleton-list">
@@ -123,10 +126,10 @@ function toggleFood(name) {
       </div>
       <div v-for="c in list" :key="c.name" class="canteen-row">
         <button class="canteen-main" @click="toggleFood(c.name)">
-          <span style="font-weight: 800; font-size: 14px; white-space: nowrap">{{ c.name }}</span>
+          <span style="font-weight: 800; font-size: 14px; white-space: nowrap">{{ lang === 'en' ? c.nameEn : c.name }}</span>
           <span class="type-tag" :class="c.type">{{ c.type === 'basic' ? t('canteen.basicWindow') : t('canteen.flavorStall') }}</span>
-          <span v-if="c.note" class="tag" style="background:var(--soft-yellow); color: #e65100">{{ c.note }}</span>
-          <span class="canteen-area">{{ c.area }} · {{ c.dept }}</span>
+          <span v-if="c.note" class="tag" style="background:var(--soft-yellow); color: #e65100">{{ lang === 'en' ? (c.noteEn || c.note) : c.note }}</span>
+          <span class="canteen-area">{{ lang === 'en' ? areaEn(c.area) : c.area }} · {{ c.dept }}</span>
           <span class="canteen-toggle">{{ openFood === c.name ? t('canteen.collapseFood') : t('canteen.expandFood') }}</span>
         </button>
         <div class="canteen-metric">
@@ -136,7 +139,7 @@ function toggleFood(name) {
           <span class="metric-count">（*--）</span>
         </div>
         <div v-if="openFood === c.name" class="food-list">
-          <span v-for="f in c.foods" :key="f" class="food-chip">{{ f }}</span>
+          <span v-for="(f, i) in c.foods" :key="f" class="food-chip">{{ lang === 'en' && c.foodsEn ? c.foodsEn[i] : f }}</span>
         </div>
       </div>
       <div v-if="live && live.updatedAt" class="muted" style="font-size: 11px; margin-top: 8px">{{ t('canteen.lastUpdate') }}{{ live.updatedAt }}</div>

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { buildings, campusFilters, searchRooms } from '../data/classrooms'
+import { buildings, campusFilters, campusFiltersEn, searchRooms } from '../data/classrooms'
 import { apiFetch } from '../api/index'
 import { useI18n } from '../i18n'
 
@@ -11,6 +11,8 @@ const view = ref('main')
 const keyword = ref('')
 const campus = ref('全部')
 const expanded = ref(null)
+
+const currentCampusFilters = computed(() => lang.value === 'en' ? campusFiltersEn : campusFilters)
 
 const dayNames = computed(() => [t('common.mon'), t('common.tue'), t('common.wed'), t('common.thu'), t('common.fri'), t('common.sat'), t('common.sun')])
 const emptyDay = ref(1)
@@ -148,7 +150,7 @@ function fallbackRoute(b) {
       </div>
 
       <div class="chips">
-        <button v-for="c in campusFilters" :key="c" class="chip" :class="{ active: campus === c }" @click="campus = c">
+        <button v-for="(c, i) in currentCampusFilters" :key="c" class="chip" :class="{ active: campus === (lang === 'en' ? campusFiltersEn[i] : campusFilters[i]) }" @click="campus = lang === 'en' ? campusFiltersEn[i] : campusFilters[i]">
           {{ c }}
         </button>
       </div>
@@ -158,7 +160,7 @@ function fallbackRoute(b) {
           <button class="bldg-head" @click="toggle(b)">
             <span class="bldg-icon">🏫</span>
             <span class="bldg-main">
-              <span class="bldg-name">{{ b.name }}</span>
+              <span class="bldg-name">{{ lang === 'en' && b.nameEn ? b.nameEn : b.name }}</span>
               <span class="bldg-meta">{{ b.campus }} · {{ b.zone || t('classroomNav.mainZone') }} · {{ b.floors.reduce((n, f) => n + f.rooms.length, 0) }} {{ t('classroomNav.roomCount2') }}</span>
               <span class="bldg-desc">{{ b.desc }}</span>
             </span>

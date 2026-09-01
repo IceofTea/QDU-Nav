@@ -78,10 +78,10 @@ const insights = computed(() => {
   const d = data.value
   if (!d) return list
   const top = d.topThreads?.[0]
-  if (top) list.push(`吧内最热帖《${top.title}》已有 ${top.replies} 回复，是当前社区关注度最高的讨论`)
-  if (topTopic.value) list.push(`讨论最集中的话题是「${topTopic.value.name}」（${topTopic.value.count} 条），学生最关心这类议题`)
-  if (topKw.value) list.push(`高频关键词「${topKw.value.word}」在标题中出现 ${topKw.value.count} 次`)
-  if (d.weekTrend?.length) list.push(`近 14 天共发帖 ${weekSum.value} 条，日均约 ${Math.round(weekSum.value / 14)} 条`)
+  if (top) list.push(lang.value === 'en' ? `Hottest post "${top.title}" has ${top.replies} replies — most discussed in the community` : `吧内最热帖《${top.title}》已有 ${top.replies} 回复，是当前社区关注度最高的讨论`)
+  if (topTopic.value) list.push(lang.value === 'en' ? `Top topic: "${topTopic.value.name}" (${topTopic.value.count} posts) — students care most about this` : `讨论最集中的话题是「${topTopic.value.name}」（${topTopic.value.count} 条），学生最关心这类议题`)
+  if (topKw.value) list.push(lang.value === 'en' ? `Keyword "${topKw.value.word}" appears ${topKw.value.count} times in titles` : `高频关键词「${topKw.value.word}」在标题中出现 ${topKw.value.count} 次`)
+  if (d.weekTrend?.length) list.push(lang.value === 'en' ? `${weekSum.value} posts in 14 days, avg ~${Math.round(weekSum.value / 14)}/day` : `近 14 天共发帖 ${weekSum.value} 条，日均约 ${Math.round(weekSum.value / 14)} 条`)
   return list
 })
 </script>
@@ -139,7 +139,7 @@ const insights = computed(() => {
         <span class="hot-rank" :class="{ top: i < 3 }">{{ i + 1 }}</span>
         <span class="hot-main">
           <span class="hot-title">{{ thr.title }}</span>
-          <span class="hot-sub muted">{{ thr.author || '匿名' }} · {{ thr.date }}</span>
+          <span class="hot-sub muted">{{ thr.author || t('tiebaSentiment.anonymous') }} · {{ thr.date }}</span>
         </span>
         <span class="hot-replybar"><i :style="{ width: hotBar(thr.replies) + '%' }"></i></span>
         <span class="hot-meta">{{ t('tiebaSentiment.replies') }}</span>
@@ -180,7 +180,7 @@ const insights = computed(() => {
       <template v-if="data.weekTrend && data.weekTrend.length">
         <div v-if="trendChartType === 'bar'" class="mini-bar-chart">
           <div v-for="(p, i) in data.weekTrend" :key="p.label" class="mb-col" @mouseenter="trendHover = i" @mouseleave="trendHover = -1">
-            <div class="mb-tip" :class="{ show: trendHover === i }">{{ p.count }} 帖</div>
+            <div class="mb-tip" :class="{ show: trendHover === i }">{{ p.count }} {{ t('tiebaSentiment.postsUnit') }}</div>
             <div class="mb-bar" :class="{ hi: trendHover === i }"><i :style="{ height: Math.max(3, Math.round(p.count / maxTrend * 100)) + '%' }"></i></div>
             <span class="mb-label">{{ p.label }}</span>
           </div>

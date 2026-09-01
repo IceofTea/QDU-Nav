@@ -3,6 +3,7 @@
 export const buildings = [
   {
     "name": "1号教学楼",
+    "nameEn": "Teaching Building No.1",
     "campus": "金家岭校区",
     "zone": "西院",
     "desc": "金家岭西院主教学楼（官方名称：1号教学楼）",
@@ -48,6 +49,7 @@ export const buildings = [
   },
   {
     "name": "实验楼",
+    "nameEn": "Laboratory Building",
     "campus": "金家岭校区",
     "zone": "西院",
     "desc": "金家岭实验教学集中区（官方名称：实验楼），多为机房与实训教室",
@@ -93,6 +95,7 @@ export const buildings = [
   },
   {
     "name": "品正楼",
+    "nameEn": "Pinzheng Building",
     "campus": "金家岭校区",
     "zone": "东院",
     "desc": "金家岭东院教学楼（官方名称：品正楼），紧邻图书馆",
@@ -136,6 +139,7 @@ export const buildings = [
   },
   {
     "name": "敏正楼",
+    "nameEn": "Minzheng Building",
     "campus": "金家岭校区",
     "zone": "东院",
     "desc": "金家岭东院办公与教学楼，出国留学培训基地在 107 室",
@@ -159,6 +163,7 @@ export const buildings = [
   },
   {
     "name": "行正楼",
+    "nameEn": "Xingzheng Building",
     "campus": "金家岭校区",
     "zone": "东院",
     "desc": "金家岭东院教学楼，招生办公在 202 室",
@@ -176,6 +181,7 @@ export const buildings = [
   },
   {
     "name": "办公楼",
+    "nameEn": "Administration Building",
     "campus": "金家岭校区",
     "zone": "东院",
     "desc": "金家岭校区学生事务大厅与保卫处在一楼",
@@ -194,6 +200,7 @@ export const buildings = [
   },
   {
     "name": "德音楼",
+    "nameEn": "Deyin Building",
     "campus": "浮山校区",
     "zone": "北院（师范学院）",
     "desc": "浮山校区北院（师范学院）排课教学楼，覆盖 52 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期） · 北院教学楼",
@@ -292,6 +299,7 @@ export const buildings = [
   },
   {
     "name": "德晖楼",
+    "nameEn": "Dehui Building",
     "campus": "浮山校区",
     "zone": "北院（师范学院）",
     "desc": "浮山校区北院（师范学院）排课教学楼，覆盖 25 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期） · 北院实验楼",
@@ -348,6 +356,7 @@ export const buildings = [
   },
   {
     "name": "德雅楼",
+    "nameEn": "Deya Building",
     "campus": "浮山校区",
     "zone": "北院（师范学院）",
     "desc": "浮山校区北院（师范学院）排课教学楼，覆盖 89 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期）",
@@ -477,6 +486,7 @@ export const buildings = [
   },
   {
     "name": "东12教",
+    "nameEn": "East Teaching Building 12",
     "campus": "浮山校区",
     "zone": "东院",
     "desc": "浮山校区东院排课教学楼，覆盖 33 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期）",
@@ -546,6 +556,7 @@ export const buildings = [
   },
   {
     "name": "纺织实验楼",
+    "nameEn": "Textile Laboratory Building",
     "campus": "浮山校区",
     "zone": "东院",
     "desc": "浮山校区东院排课教学楼，覆盖 5 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期）",
@@ -567,6 +578,7 @@ export const buildings = [
   },
   {
     "name": "文化艺术楼C座",
+    "nameEn": "Culture & Arts Building C",
     "campus": "浮山校区",
     "zone": "东院",
     "desc": "浮山校区东院排课教学楼，覆盖 3 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期）",
@@ -586,6 +598,7 @@ export const buildings = [
   },
   {
     "name": "行思楼",
+    "nameEn": "Xingsi Building",
     "campus": "浮山校区",
     "zone": "东院",
     "desc": "浮山校区东院排课教学楼，覆盖 4 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期） · 原东4教",
@@ -611,6 +624,7 @@ export const buildings = [
   },
   {
     "name": "东院实验楼",
+    "nameEn": "East Campus Lab Building",
     "campus": "浮山校区",
     "zone": "东院",
     "desc": "浮山校区东院排课教学楼，覆盖 14 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期）",
@@ -646,6 +660,7 @@ export const buildings = [
   },
   {
     "name": "东院图书馆",
+    "nameEn": "East Campus Library",
     "campus": "浮山校区",
     "zone": "东院",
     "desc": "浮山校区东院排课教学楼，覆盖 5 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期）",
@@ -677,6 +692,7 @@ export const buildings = [
   },
   {
     "name": "图文中心",
+    "nameEn": "Library & Media Center",
     "campus": "浮山校区",
     "zone": "东院",
     "desc": "浮山校区东院排课教学楼，覆盖 11 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期）",
@@ -709,6 +725,7 @@ export const buildings = [
   },
   {
     "name": "浩园1教",
+    "nameEn": "Haoyuan Teaching Building 1",
     "campus": "浮山校区",
     "zone": "浮山苑",
     "desc": "浮山校区浮山苑排课教学楼，覆盖 34 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期） · 浩园1号",
@@ -784,6 +801,7 @@ export const buildings = [
   },
   {
     "name": "博学楼",
+    "nameEn": "Boxue Building",
     "campus": "浮山校区",
     "zone": "西院",
     "desc": "浮山校区西院排课教学楼，覆盖 72 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期） · 原西1教",
@@ -892,6 +910,7 @@ export const buildings = [
   },
   {
     "name": "博知楼",
+    "nameEn": "Bozhi Building",
     "campus": "浮山校区",
     "zone": "西院",
     "desc": "浮山校区西院排课教学楼，覆盖 48 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期） · 原西4教",
@@ -976,6 +995,7 @@ export const buildings = [
   },
   {
     "name": "博远楼",
+    "nameEn": "Boyuan Building",
     "campus": "浮山校区",
     "zone": "西院",
     "desc": "浮山校区西院排课教学楼，覆盖 40 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期） · 原西5教",
@@ -1052,6 +1072,7 @@ export const buildings = [
   },
   {
     "name": "博文楼",
+    "nameEn": "Bowen Building",
     "campus": "浮山校区",
     "zone": "西院",
     "desc": "浮山校区西院排课教学楼，覆盖 54 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期） · 原西2教",
@@ -1142,6 +1163,7 @@ export const buildings = [
   },
   {
     "name": "博观楼",
+    "nameEn": "Boguan Building",
     "campus": "浮山校区",
     "zone": "西院",
     "desc": "浮山校区西院排课教学楼，覆盖 2 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期） · 原西3教",
@@ -1165,6 +1187,7 @@ export const buildings = [
   },
   {
     "name": "博逸楼",
+    "nameEn": "Boyì Building",
     "campus": "浮山校区",
     "zone": "西院",
     "desc": "浮山校区西院排课教学楼，覆盖 13 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期） · 原西6教",
@@ -1209,6 +1232,7 @@ export const buildings = [
   },
   {
     "name": "慎行楼",
+    "nameEn": "Shenxing Building",
     "campus": "浮山校区",
     "zone": "西院",
     "desc": "浮山校区西院排课教学楼，覆盖 4 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期）",
@@ -1229,6 +1253,7 @@ export const buildings = [
   },
   {
     "name": "博雅楼",
+    "nameEn": "Boya Building",
     "campus": "浮山校区",
     "zone": "西院",
     "desc": "浮山校区西院排课教学楼，覆盖 10 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期） · 原基础医学楼",
@@ -1260,6 +1285,7 @@ export const buildings = [
   },
   {
     "name": "西院2教",
+    "nameEn": "West Campus Teaching Bldg 2",
     "campus": "浮山校区",
     "zone": "西院",
     "desc": "浮山校区西院排课教学楼，覆盖 29 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期） · 即博文楼",
@@ -1320,6 +1346,7 @@ export const buildings = [
   },
   {
     "name": "西院1教",
+    "nameEn": "West Campus Teaching Bldg 1",
     "campus": "浮山校区",
     "zone": "西院",
     "desc": "浮山校区西院排课教学楼，覆盖 33 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期） · 即博学楼",
@@ -1384,6 +1411,7 @@ export const buildings = [
   },
   {
     "name": "西院2号实验楼",
+    "nameEn": "West Campus Lab Building 2",
     "campus": "浮山校区",
     "zone": "西院",
     "desc": "浮山校区西院排课教学楼，覆盖 24 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期）",
@@ -1434,6 +1462,7 @@ export const buildings = [
   },
   {
     "name": "西院3号实验楼",
+    "nameEn": "West Campus Lab Building 3",
     "campus": "浮山校区",
     "zone": "西院",
     "desc": "浮山校区西院排课教学楼，覆盖 15 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期）",
@@ -1475,6 +1504,7 @@ export const buildings = [
   },
   {
     "name": "科技研发中心A",
+    "nameEn": "R&D Center A",
     "campus": "金家岭校区",
     "zone": "东院",
     "desc": "金家岭校区东院排课教学楼，覆盖 8 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期）",
@@ -1499,6 +1529,7 @@ export const buildings = [
   },
   {
     "name": "教学楼",
+    "nameEn": "Teaching Building",
     "campus": "金家岭校区",
     "zone": "西院",
     "desc": "金家岭校区西院排课教学楼，覆盖 8 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期）",
@@ -1533,6 +1564,7 @@ export const buildings = [
   },
   {
     "name": "松山校区营养楼",
+    "nameEn": "Songshan Nutrition Building",
     "campus": "松山校区",
     "zone": "",
     "desc": "松山校区排课教学楼，覆盖 5 间教室（据教务处课程总表 7 个学期并集，含 2026年春季学期）",
@@ -1565,6 +1597,7 @@ export const buildings = [
 ]
 
 export const campusFilters = ['全部', '浮山校区', '金家岭校区', '松山校区']
+export const campusFiltersEn = ['All', 'Fushan Campus', 'Jinjialing Campus', 'Songshan Campus']
 
 export function searchRooms(keyword) {
   const k = keyword.trim()

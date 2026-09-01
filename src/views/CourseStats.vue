@@ -65,19 +65,28 @@ const topCampus = computed(() => stats.value.campusDist[0] || null)
 const topDay = computed(() => stats.value.dayDist[0] || null)
 const colCount = computed(() => labeledDist(stats.value.colDist).length)
 const maxPeriod = computed(() => stats.value.periodDist.reduce((m, r) => Math.max(m, r.count), 1))
-const periodLabel = (start) => `第 ${start}–${start + 1} 节`
+const periodLabel = (start) => lang.value === 'en' ? `Period ${start}–${start + 1}` : `第 ${start}–${start + 1} 节`
 
 /** 自动生成的文字洞察（数据驱动，无统计时自动降级为空） */
 const insights = computed(() => {
   const list = []
-  if (topCampus.value) list.push(`开课最集中在 ${topCampus.value.name}，占已标注排课的 ${distShare(stats.value.campusDist)(topCampus.value.count)}%`)
-  if (topDay.value) list.push(`${topDay.value}是全校排课最满的一天（${topDay.value.count} 节），图书馆/自习室会更紧张`)
+  if (topCampus.value) {
+    const pct = distShare(stats.value.campusDist)(topCampus.value.count)
+    list.push(lang.value === 'en' ? `Most courses at ${topCampus.value.name}, ${pct}% of labeled schedule` : `开课最集中在 ${topCampus.value.name}，占已标注排课的 ${pct}%`)
+  }
+  if (topDay.value) {
+    list.push(lang.value === 'en' ? `${topDay.value.day} is the busiest day (${topDay.value.count} periods) — library/study rooms will be tighter` : `${topDay.value.day}是全校排课最满的一天（${topDay.value.count} 节），图书馆/自习室会更紧张`)
+  }
   const busy = stats.value.periodDist.reduce((a, b) => (b.count > a.count ? b : a), stats.value.periodDist[0] || null)
-  if (busy) list.push(`每天 ${periodLabel(busy.start)} 是排课高峰（${busy.count} 节次），想要抢空教室可以避开这些时段`)
+  if (busy) {
+    list.push(lang.value === 'en' ? `${periodLabel(busy.start)} is the daily peak (${busy.count} periods) — avoid these slots for empty room searches` : `每天 ${periodLabel(busy.start)} 是排课高峰（${busy.count} 节次），想要抢空教室可以避开这些时段`)
+  }
   if (stats.value.terms.length >= 2) {
     const [latest, prev] = stats.value.terms
     const d = latest.count - prev.count
-    list.push(d >= 0 ? `本学期开课规模比上学期增加 ${d} 段，选课竞争略升` : `本学期开课规模比上学期减少 ${-d} 段`)
+    list.push(lang.value === 'en'
+      ? (d >= 0 ? `Enrollment scale up ${d} sections vs last semester — slightly more competition` : `Enrollment scale down ${-d} sections vs last semester`)
+      : (d >= 0 ? `本学期开课规模比上学期增加 ${d} 段，选课竞争略升` : `本学期开课规模比上学期减少 ${-d} 段`))
   }
   return list
 })
@@ -101,9 +110,9 @@ const insights = computed(() => {
 
     <div class="kpi-grid">
       <KpiCard :value="stats.campusDist.length" :label="t('courseStats.kpiCampus')" :sub="t('courseStats.kpiCampusSub')" />
-      <KpiCard :value="topCampus ? topCampus.name : '—'" :label="t('courseStats.kpiBusiest')" :sub="topCampus ? topCampus.count + ' 条 · ' + share(topCampus.count) + '%' : '—'" />
-      <KpiCard :value="topDay ? topDay.day : '—'" :label="t('courseStats.kpiBusiestDay')" :sub="topDay ? topDay.count + ' 节' : '—'" />
-      <KpiCard :value="colCount" :label="t('courseStats.kpiCollege')" :sub="'开课最忙的是「' + ((labeledDist(stats.colDist)[0] || {}).name || '—') + '」'" />
+      <KpiCard :value="topCampus ? topCampus.name : '—'" :label="t('courseStats.kpiBusiest')" :sub="topCampus ? topCampus.count + (lang === 'en' ? ' entries · ' : ' 条 · ') + share(topCampus.count) + '%' : '—'" />
+      <KpiCard :value="topDay ? topDay.day : '—'" :label="t('courseStats.kpiBusiestDay')" :sub="topDay ? topDay.count + (lang === 'en' ? ' periods' : ' 节') : '—'" />
+      <KpiCard :value="colCount" :label="t('courseStats.kpiCollege')" :sub="(lang === 'en' ? 'Busiest: ' : '开课最忙的是「') + ((labeledDist(stats.colDist)[0] || {}).name || '—') + (lang === 'en' ? '' : '」')" />
     </div>
 
     <InsightPanel :items="insights" />
@@ -117,13 +126,13 @@ const insights = computed(() => {
     <div class="panel-grid">
       <div class="panel">
         <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('courseStats.hotRoomTitle') }}</div>
-        <BarRow v-for="r in stats.hotRooms" :key="r.name" :label="r.name" :value="r.periods" :max="maxRoom" :text="r.periods + ' 节次 · ' + share(r.periods) + '%'" color="linear-gradient(90deg,#0f766e,#14b8a6)" />
+        <BarRow v-for="r in stats.hotRooms" :key="r.name" :label="r.name" :value="r.periods" :max="maxRoom" :text="r.periods + (lang === 'en' ? ' periods · ' : ' 节次 · ') + share(r.periods) + '%'" color="linear-gradient(90deg,#0f766e,#14b8a6)" />
         <p class="muted" style="font-size:12px;margin-top:8px;">{{ t('courseStats.hotRoomNote') }}</p>
       </div>
 
       <div class="panel">
         <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('courseStats.hotTeacherTitle') }}</div>
-        <BarRow v-for="r in stats.hotTeachers" :key="r.name" :label="r.name" :value="r.periods" :max="maxTeacher" :text="r.periods + ' 节次'" color="linear-gradient(90deg,#b63a46,#e76f51)" />
+        <BarRow v-for="r in stats.hotTeachers" :key="r.name" :label="r.name" :value="r.periods" :max="maxTeacher" :text="r.periods + (lang === 'en' ? ' periods' : ' 节次')" color="linear-gradient(90deg,#b63a46,#e76f51)" />
         <p class="muted" style="font-size:12px;margin-top:8px;">{{ t('courseStats.hotTeacherNote') }}</p>
       </div>
     </div>
@@ -131,19 +140,19 @@ const insights = computed(() => {
     <div class="panel-grid">
       <div class="panel">
         <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('courseStats.hotCourseTitle') }}</div>
-        <BarRow v-for="r in stats.topCourses" :key="r.name" :label="r.name" :value="r.sections" :max="maxCourse" :text="r.sections + ' 段'" color="linear-gradient(90deg,#7c3aed,#a78bfa)" />
+        <BarRow v-for="r in stats.topCourses" :key="r.name" :label="r.name" :value="r.sections" :max="maxCourse" :text="r.sections + (lang === 'en' ? ' sections' : ' 段')" color="linear-gradient(90deg,#7c3aed,#a78bfa)" />
         <p class="muted" style="font-size:12px;margin-top:8px;">{{ t('courseStats.hotCourseNote') }}</p>
       </div>
 
       <div class="panel">
         <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('courseStats.weekDistTitle') }}</div>
-        <BarRow v-for="r in stats.dayDist" :key="r.day" :label="r.day" :value="r.count" :max="maxDay" :text="r.count + ' 节'" color="linear-gradient(90deg,#d97706,#f59e0b)" />
+        <BarRow v-for="r in stats.dayDist" :key="r.day" :label="r.day" :value="r.count" :max="maxDay" :text="r.count + (lang === 'en' ? ' periods' : ' 节')" color="linear-gradient(90deg,#d97706,#f59e0b)" />
         <p class="muted" style="font-size:12px;margin-top:8px;">{{ t('courseStats.weekDistNote') }}</p>
       </div>
 
       <div v-if="stats.periodDist.length" class="panel">
         <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('courseStats.periodDistTitle') }}</div>
-        <BarRow v-for="r in stats.periodDist" :key="r.start" :label="periodLabel(r.start)" :value="r.count" :max="maxPeriod" :text="r.count + ' 节 · ' + share(r.count) + '%'" color="linear-gradient(90deg,#4d7c0f,#84cc16)" />
+        <BarRow v-for="r in stats.periodDist" :key="r.start" :label="periodLabel(r.start)" :value="r.count" :max="maxPeriod" :text="r.count + (lang === 'en' ? ' periods · ' : ' 节 · ') + share(r.count) + '%'" color="linear-gradient(90deg,#4d7c0f,#84cc16)" />
         <p class="muted" style="font-size:12px;margin-top:8px;">{{ t('courseStats.periodDistNote') }}</p>
       </div>
     </div>
@@ -151,20 +160,20 @@ const insights = computed(() => {
     <div class="panel-grid">
       <div v-if="labeledDist(stats.kindDist).length" class="panel">
         <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('courseStats.kindDistTitle') }}</div>
-        <BarRow v-for="k in labeledDist(stats.kindDist)" :key="k.name" :label="k.name" :value="k.count" :max="maxKind" :text="k.count + ' 条 · ' + distShare(stats.kindDist)(k.count) + '%'" color="linear-gradient(90deg,#0d9488,#2dd4bf)" />
+        <BarRow v-for="k in labeledDist(stats.kindDist)" :key="k.name" :label="k.name" :value="k.count" :max="maxKind" :text="k.count + (lang === 'en' ? ' entries · ' : ' 条 · ') + distShare(stats.kindDist)(k.count) + '%'" color="linear-gradient(90deg,#0d9488,#2dd4bf)" />
         <p class="muted" style="font-size:12px;margin-top:8px;">{{ t('courseStats.kindDistNote') }}</p>
       </div>
 
       <div v-if="labeledDist(stats.campusDist).length" class="panel">
         <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('courseStats.campusDistTitle') }}</div>
-        <BarRow v-for="k in labeledDist(stats.campusDist)" :key="k.name" :label="k.name" :value="k.count" :max="maxCampus" :text="k.count + ' 条 · ' + distShare(stats.campusDist)(k.count) + '%'" color="linear-gradient(90deg,#2563eb,#60a5fa)" />
+        <BarRow v-for="k in labeledDist(stats.campusDist)" :key="k.name" :label="k.name" :value="k.count" :max="maxCampus" :text="k.count + (lang === 'en' ? ' entries · ' : ' 条 · ') + distShare(stats.campusDist)(k.count) + '%'" color="linear-gradient(90deg,#2563eb,#60a5fa)" />
         <p class="muted" style="font-size:12px;margin-top:8px;">{{ t('courseStats.campusDistNote') }}</p>
       </div>
     </div>
 
     <div v-if="labeledDist(stats.colDist).length" class="panel" style="margin-bottom:16px;">
       <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('courseStats.colDistTitle') }}</div>
-      <BarRow v-for="k in labeledDist(stats.colDist)" :key="k.name" :label="k.name" :value="k.count" :max="maxCol" :text="k.count + ' 条 · ' + distShare(stats.colDist)(k.count) + '%'" color="linear-gradient(90deg,#be185d,#ec4899)" />
+      <BarRow v-for="k in labeledDist(stats.colDist)" :key="k.name" :label="k.name" :value="k.count" :max="maxCol" :text="k.count + (lang === 'en' ? ' entries · ' : ' 条 · ') + distShare(stats.colDist)(k.count) + '%'" color="linear-gradient(90deg,#be185d,#ec4899)" />
       <p class="muted" style="font-size:12px;margin-top:8px;">{{ t('courseStats.colDistNote') }}</p>
     </div>
 

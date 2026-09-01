@@ -12,11 +12,17 @@ export const itemWeights = {
 export const itemLabels = {
   bmi: 'BMI',
   vitalCapacity: '肺活量',
+  vitalCapacityEn: 'Vital Capacity',
   sprint50: '50 米跑',
+  sprint50En: '50m Sprint',
   sitReach: '坐位体前屈',
+  sitReachEn: 'Sit-and-Reach',
   longJump: '立定跳远',
+  longJumpEn: 'Standing Long Jump',
   strength: '力量项目',
-  endurance: '耐力跑'
+  strengthEn: 'Strength Test',
+  endurance: '耐力跑',
+  enduranceEn: 'Endurance Run'
 }
 
 export const standards = {
@@ -26,8 +32,8 @@ export const standards = {
     sprint50: { unit: '秒', higher: false, table: [[6.9, 100], [7.0, 95], [7.1, 90], [7.3, 85], [7.5, 80], [7.7, 75], [7.9, 70], [8.1, 65], [8.3, 60], [8.5, 50], [8.7, 40], [8.9, 30], [9.1, 20], [9.3, 10]] },
     sitReach: { unit: 'cm', higher: true, table: [[24.9, 100], [23.1, 95], [21.3, 90], [19.5, 85], [17.7, 80], [15.8, 75], [13.9, 70], [12.0, 65], [10.1, 60], [8.3, 50], [6.5, 40], [4.7, 30], [2.9, 20], [1.1, 10]] },
     longJump: { unit: 'cm', higher: true, table: [[273, 100], [268, 95], [263, 90], [256, 85], [248, 80], [241, 75], [234, 70], [227, 65], [220, 60], [208, 50], [196, 40], [184, 30], [172, 20], [160, 10]] },
-    strength: { label: '引体向上', unit: '个', higher: true, table: [[19, 100], [18, 95], [17, 90], [16, 85], [15, 80], [14, 75], [13, 70], [12, 65], [11, 60], [9, 50], [7, 40], [5, 30], [3, 20], [1, 10]] },
-    endurance: { label: '1000 米', unit: '分:秒', higher: false, seconds: true, table: [[197, 100], [203, 95], [209, 90], [217, 85], [225, 80], [233, 75], [241, 70], [249, 65], [257, 60], [267, 50], [277, 40], [287, 30], [297, 20], [307, 10]] }
+    strength: { label: '引体向上', labelEn: 'Pull-ups', unit: '个', higher: true, table: [[19, 100], [18, 95], [17, 90], [16, 85], [15, 80], [14, 75], [13, 70], [12, 65], [11, 60], [9, 50], [7, 40], [5, 30], [3, 20], [1, 10]] },
+    endurance: { label: '1000 米', labelEn: '1000m Run', unit: '分:秒', higher: false, seconds: true, table: [[197, 100], [203, 95], [209, 90], [217, 85], [225, 80], [233, 75], [241, 70], [249, 65], [257, 60], [267, 50], [277, 40], [287, 30], [297, 20], [307, 10]] }
   },
   female: {
     bmi: { normal: [17.2, 23.9], overweight: 24, obese: 28, low: 17.2 },
@@ -35,8 +41,8 @@ export const standards = {
     sprint50: { unit: '秒', higher: false, table: [[7.7, 100], [7.8, 95], [7.9, 90], [8.1, 85], [8.3, 80], [8.5, 75], [8.7, 70], [8.9, 65], [9.1, 60], [9.3, 50], [9.5, 40], [9.7, 30], [9.9, 20], [10.1, 10]] },
     sitReach: { unit: 'cm', higher: true, table: [[26.3, 100], [24.4, 95], [22.5, 90], [21.0, 85], [19.4, 80], [17.2, 75], [15.0, 70], [12.8, 65], [10.6, 60], [8.2, 50], [5.8, 40], [3.4, 30], [1.0, 20], [-5, 10]] },
     longJump: { unit: 'cm', higher: true, table: [[207, 100], [201, 95], [195, 90], [188, 85], [181, 80], [175, 75], [169, 70], [163, 65], [157, 60], [149, 50], [141, 40], [133, 30], [125, 20], [117, 10]] },
-    strength: { label: '仰卧起坐', unit: '个/分', higher: true, table: [[56, 100], [54, 95], [52, 90], [50, 85], [48, 80], [46, 75], [44, 70], [42, 65], [40, 60], [37, 50], [34, 40], [31, 30], [28, 20], [25, 10]] },
-    endurance: { label: '800 米', unit: '分:秒', higher: false, seconds: true, table: [[198, 100], [204, 95], [210, 90], [219, 85], [228, 80], [237, 75], [246, 70], [255, 65], [264, 60], [275, 50], [286, 40], [297, 30], [308, 20], [319, 10]] }
+    strength: { label: '仰卧起坐', labelEn: 'Sit-ups', unit: '个/分', higher: true, table: [[56, 100], [54, 95], [52, 90], [50, 85], [48, 80], [46, 75], [44, 70], [42, 65], [40, 60], [37, 50], [34, 40], [31, 30], [28, 20], [25, 10]] },
+    endurance: { label: '800 米', labelEn: '800m Run', unit: '分:秒', higher: false, seconds: true, table: [[198, 100], [204, 95], [210, 90], [219, 85], [228, 80], [237, 75], [246, 70], [255, 65], [264, 60], [275, 50], [286, 40], [297, 30], [308, 20], [319, 10]] }
   }
 }
 
@@ -62,10 +68,10 @@ export function itemScore(gender, item, value) {
   }
 }
 
-export function gradeOf(total) {
+export function gradeOf(total, lang = 'zh') {
   if (total == null) return { label: '—', cls: '' }
-  if (total >= 90) return { label: '优秀', cls: 'grade-excellent' }
-  if (total >= 80) return { label: '良好', cls: 'grade-good' }
-  if (total >= 60) return { label: '及格', cls: 'grade-pass' }
-  return { label: '不及格', cls: 'grade-fail' }
+  if (total >= 90) return { label: lang === 'en' ? 'Excellent' : '优秀', cls: 'grade-excellent' }
+  if (total >= 80) return { label: lang === 'en' ? 'Good' : '良好', cls: 'grade-good' }
+  if (total >= 60) return { label: lang === 'en' ? 'Pass' : '及格', cls: 'grade-pass' }
+  return { label: lang === 'en' ? 'Fail' : '不及格', cls: 'grade-fail' }
 }

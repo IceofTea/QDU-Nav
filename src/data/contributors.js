@@ -10,6 +10,7 @@ export const contributors = [
     login: 'IceofTea',
     url: 'https://github.com/IceofTea',
     role: '项目创建与整体维护',
+    roleEn: 'Project Creator & Maintainer',
     weight: 2,
     emoji: '🧑‍💻'
   },
@@ -18,6 +19,7 @@ export const contributors = [
     login: 'Huanuyn1',
     url: 'https://github.com/Huanuyn1',
     role: '社区贡献 · 修复课程接口与美食轮盘',
+    roleEn: 'Community · Fixed Course API & Food Wheel',
     weight: 1.2,
     emoji: '🚀'
   },
@@ -26,6 +28,7 @@ export const contributors = [
     login: 'qdu-nav-bot',
     url: 'https://github.com/IceofTea/QDU-Nav/actions',
     role: '定时数据抓取与快照提交机器人',
+    roleEn: 'Scheduled Data Crawler & Snapshot Bot',
     weight: 0.8,
     emoji: '🤖'
   }

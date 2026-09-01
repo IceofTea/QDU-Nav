@@ -53,17 +53,17 @@ const hourLine = computed(() => ({
 const insights = computed(() => {
   const arr = []
   const peakHour = maxItem(stats.value.hours, 'label')
-  if (peakHour) arr.push(t('siteStats.peakHour', `访问高峰集中在 ${peakHour.label}，占全天 ${pctOf(stats.value.hours, peakHour.v)}%`).replace('{n}', peakHour.label).replace('{pct}', pctOf(stats.value.hours, peakHour.v)))
+  if (peakHour) arr.push(t('siteStats.peakHour').replace('{n}', peakHour.label).replace('{pct}', pctOf(stats.value.hours, peakHour.v)))
   const topDay = maxItem(stats.value.weekdays, 'label')
-  if (topDay) arr.push(t('siteStats.topDay', `一周中 ${topDay.label} 访问最多（${topDay.v} 次）`).replace('{n}', topDay.label).replace('{v}', topDay.v))
+  if (topDay) arr.push(t('siteStats.topDay').replace('{n}', topDay.label).replace('{v}', topDay.v))
   const topDev = maxItem(stats.value.devices, 'name')
-  if (topDev) arr.push(t('siteStats.topDevice', `主力设备是「${topDev.name}」，占 ${pctOf(stats.value.devices, topDev.v)}%`).replace('{n}', topDev.name).replace('{pct}', pctOf(stats.value.devices, topDev.v)))
+  if (topDev) arr.push(t('siteStats.topDevice').replace('{n}', topDev.name).replace('{pct}', pctOf(stats.value.devices, topDev.v)))
   const topOs = maxItem(stats.value.os, 'name')
-  if (topOs) arr.push(t('siteStats.topOs', `最常见系统：${topOs.name}（${pctOf(stats.value.os, topOs.v)}%）`).replace('{n}', topOs.name).replace('{pct}', pctOf(stats.value.os, topOs.v)))
+  if (topOs) arr.push(t('siteStats.topOs').replace('{n}', topOs.name).replace('{pct}', pctOf(stats.value.os, topOs.v)))
   const topRef = maxItem(stats.value.refs, 'name')
-  if (topRef) arr.push(t('siteStats.topRef', `主要来源：${topRef.name}`).replace('{n}', topRef.name))
+  if (topRef) arr.push(t('siteStats.topRef').replace('{n}', topRef.name))
   const topApp = stats.value.apps[0]
-  if (topApp) arr.push(t('siteStats.topApp', `最常用应用：${appName(topApp.name)}（${topApp.v} 次）`).replace('{n}', appName(topApp.name)).replace('{v}', topApp.v))
+  if (topApp) arr.push(t('siteStats.topApp').replace('{n}', appName(topApp.name)).replace('{v}', topApp.v))
   return arr
 })
 
@@ -86,7 +86,7 @@ onMounted(async () => {
 
   <template v-else>
     <div v-if="staticMode" class="snapshot-tip">
-      {{ t('siteStats.snapshotTip', '📌 计数服务免费额度超限暂停中，当前展示 ' + (stats.generatedAt || '最近一次') + ' 的快照数据；服务恢复后将自动回到实时统计').replace('{time}', stats.generatedAt || '最近一次') }}
+      {{ t('siteStats.snapshotTip').replace('{time}', stats.generatedAt || (lang === 'en' ? 'latest' : '最近一次')) }}
     </div>
     <div class="kpi-grid">
       <KpiCard icon="👀" :value="stats.uv" :label="t('siteStats.uv')" />
@@ -132,7 +132,7 @@ onMounted(async () => {
         </div>
         <div v-if="stats.hours.length">
           <div v-if="chartTypes.hour === 'bar'" class="mini-bars">
-            <div v-for="h in stats.hours" :key="h.label" class="mini-col" :title="h.label + '：' + h.v">
+            <div v-for="h in stats.hours" :key="h.label" class="mini-col" :title="h.label + (lang === 'en' ? ': ' : '：') + h.v">
               <div class="mini-bar"><i :style="{ height: Math.max(3, pct(h.v, maxHour)) + '%' }"></i></div>
               <span class="mini-label">{{ (h.label + '').replace('点', '') }}</span>
             </div>
