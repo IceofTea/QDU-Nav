@@ -2,7 +2,7 @@
 /** 生活费 · 专业版：多维图表（条形/圆饼可切换）+ 商户聚合 + 明细筛选 + 导出分析
  *  全部计算在本机浏览器完成；图表带索引，点击即筛选下方明细；
  *  日期范围自由选择（默认当前月份往前 12 个月），不受进入前所在月份限制。 */
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import BarRow from '../components/BarRow.vue'
 import PieChart from '../components/PieChart.vue'
 import LineChart from '../components/LineChart.vue'
@@ -288,19 +288,26 @@ function switchProSort(k) {
   proSort.value = k
   proPage.value = 1
 }
+function scrollToDetail() {
+  nextTick(() => {
+    const el = document.querySelector('.pro-detail')
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+}
 function selectExpCat(label) {
   const found = catAgg.value.find((c) => c.name === label)
-  if (found) { catFilterP.value = found.key; merchantFilterP.value = ''; incFilter.value = ''; proPage.value = 1 }
+  if (found) { catFilterP.value = found.key; merchantFilterP.value = ''; incFilter.value = ''; proPage.value = 1; scrollToDetail() }
 }
 function selectIncCat(label) {
   const found = incAgg.value.find((c) => c.name === label)
-  if (found) { incFilter.value = found.key; catFilterP.value = 'all'; merchantFilterP.value = ''; proPage.value = 1 }
+  if (found) { incFilter.value = found.key; catFilterP.value = 'all'; merchantFilterP.value = ''; proPage.value = 1; scrollToDetail() }
 }
 function selectMerchant(name) {
   merchantFilterP.value = merchantFilterP.value === name ? '' : name
   catFilterP.value = 'all'
   incFilter.value = ''
   proPage.value = 1
+  scrollToDetail()
 }
 
 /* ---- 导出分析文件（CSV，Excel 可直接打开）---- */
@@ -523,7 +530,7 @@ function exportCsv() {
   </div>
   </div>
 
-  <div class="panel">
+  <div class="panel pro-detail">
     <div class="section-head" style="align-items:center;margin:0 0 8px;">
       <h3 class="section-title" style="margin:0;">{{ t('budgetPro.detailTitle') }}</h3>
       <button class="btn ghost small" @click="exportCsv">{{ t('budgetPro.exportBtn') }}</button>
