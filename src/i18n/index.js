@@ -19,13 +19,18 @@ export function toggleLang() {
 }
 
 export function useI18n() {
-  const t = (key, fallback) => {
+  const t = (key, params) => {
     const pack = messages[lang.value] || messages.zh
-    const val = key.split('.').reduce((o, k) => (o && o[k] !== undefined ? o[k] : null), pack)
-    if (val !== null && val !== undefined) return val
-    const fb = messages.zh
-    const fbVal = key.split('.').reduce((o, k) => (o && o[k] !== undefined ? o[k] : null), fb)
-    return fbVal !== null && fbVal !== undefined ? fbVal : (fallback || key)
+    let val = key.split('.').reduce((o, k) => (o && o[k] !== undefined ? o[k] : null), pack)
+    if (val === null || val === undefined) {
+      const fb = messages.zh
+      val = key.split('.').reduce((o, k) => (o && o[k] !== undefined ? o[k] : null), fb)
+    }
+    if (val === null || val === undefined) return key
+    if (params && typeof val === 'string') {
+      return Object.keys(params).reduce((s, k) => s.replace(new RegExp('\\{' + k + '\\}', 'g'), params[k]), val)
+    }
+    return val
   }
   return { t, lang: computed(() => lang.value), setLang, toggleLang }
 }
