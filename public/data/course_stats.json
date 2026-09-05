@@ -1,8 +1,12 @@
 {
-  "generatedAt": "2026-09-05T04:37:56.106Z",
+  "generatedAt": "2026-09-05T10:42:53.257Z",
   "source": "https://jwc.qdu.edu.cn",
-  "periods": 50628,
+  "periods": 57750,
   "terms": [
+    {
+      "semester": "2026年秋季学期",
+      "count": 7122
+    },
     {
       "semester": "2026年春季学期",
       "count": 5932
@@ -34,44 +38,44 @@
   ],
   "hotRooms": [
     {
+      "name": "浮山校区-线上（不排教室）",
+      "periods": 292
+    },
+    {
       "name": "北院田径场",
-      "periods": 259
+      "periods": 282
     },
     {
       "name": "博远楼303",
-      "periods": 237
-    },
-    {
-      "name": "浮山校区-线上（不排教室）",
-      "periods": 229
+      "periods": 260
     },
     {
       "name": "博远楼105",
-      "periods": 217
-    },
-    {
-      "name": "教学楼401",
-      "periods": 214
-    },
-    {
-      "name": "【开课单位自行安排】",
-      "periods": 210
-    },
-    {
-      "name": "博远楼313",
-      "periods": 208
+      "periods": 244
     },
     {
       "name": "博远楼302",
-      "periods": 208
-    },
-    {
-      "name": "教学楼305",
-      "periods": 204
+      "periods": 230
     },
     {
       "name": "博远楼211",
-      "periods": 202
+      "periods": 228
+    },
+    {
+      "name": "博远楼204",
+      "periods": 227
+    },
+    {
+      "name": "西院1教101",
+      "periods": 227
+    },
+    {
+      "name": "博远楼313",
+      "periods": 226
+    },
+    {
+      "name": "德雅楼排练",
+      "periods": 221
     }
   ],
   "hotTeachers": [
@@ -88,24 +92,24 @@
       "periods": 140
     },
     {
+      "name": "王超",
+      "periods": 117
+    },
+    {
       "name": "于小玲",
       "periods": 100
     },
     {
-      "name": "王超",
-      "periods": 98
+      "name": "张勇",
+      "periods": 97
     },
     {
       "name": "李凡凡",
       "periods": 96
     },
     {
-      "name": "张勇",
-      "periods": 89
-    },
-    {
       "name": "盖绍婷",
-      "periods": 81
+      "periods": 89
     }
   ],
   "topCourses": [
@@ -115,15 +119,19 @@
     },
     {
       "name": "应用文写作",
-      "sections": 744
+      "sections": 796
     },
     {
       "name": "基础医学综合PBL课程",
-      "sections": 710
+      "sections": 782
+    },
+    {
+      "name": "体育Ⅲ",
+      "sections": 649
     },
     {
       "name": "军事理论",
-      "sections": 564
+      "sections": 623
     },
     {
       "name": "大学英语视听说IV",
@@ -134,86 +142,82 @@
       "sections": 545
     },
     {
+      "name": "马克思主义基本原理",
+      "sections": 536
+    },
+    {
+      "name": "大学生职业发展与就业指导",
+      "sections": 531
+    },
+    {
       "name": "体育Ⅳ",
       "sections": 509
-    },
-    {
-      "name": "体育Ⅲ",
-      "sections": 507
-    },
-    {
-      "name": "马克思主义基本原理",
-      "sections": 497
-    },
-    {
-      "name": "体育Ⅱ",
-      "sections": 483
     }
   ],
   "dayDist": [
     {
       "day": "周一",
-      "count": 10153
+      "count": 11655
     },
     {
       "day": "周二",
-      "count": 10888
+      "count": 12422
     },
     {
       "day": "周三",
-      "count": 10681
+      "count": 12201
     },
     {
       "day": "周四",
-      "count": 7920
+      "count": 9025
     },
     {
       "day": "周五",
-      "count": 9312
+      "count": 10651
     },
     {
       "day": "周六",
-      "count": 1261
+      "count": 1342
     },
     {
       "day": "周日",
-      "count": 413
+      "count": 454
     }
   ],
   "periodDist": [
     {
       "start": 1,
-      "count": 12568
+      "count": 14274
     },
     {
       "start": 3,
-      "count": 14879
+      "count": 16966
     },
     {
       "start": 5,
-      "count": 11323
+      "count": 12863
     },
     {
       "start": 7,
-      "count": 6950
+      "count": 8086
     },
     {
       "start": 9,
-      "count": 4908
+      "count": 5561
     }
   ],
   "kindDist": [
     {
       "name": "课程",
-      "count": 50014
+      "count": 56983
     },
     {
       "name": "实践环节",
-      "count": 407
+      "count": 525
     },
     {
       "name": "美育课",
-      "count": 194
+      "count": 229
     },
     {
       "name": "毕业论文",
@@ -227,65 +231,65 @@
   "campusDist": [
     {
       "name": "浮山校区",
-      "count": 33604
+      "count": 39070
     },
     {
       "name": "金家岭校区",
-      "count": 16234
+      "count": 17849
     },
     {
       "name": "松山校区",
-      "count": 790
+      "count": 831
     }
   ],
   "colDist": [
     {
       "name": "计算机科学技术学院",
-      "count": 4140
+      "count": 4667
     },
     {
       "name": "外语学院",
-      "count": 3613
+      "count": 3965
     },
     {
       "name": "公共外语教育学院",
-      "count": 2926
+      "count": 3423
     },
     {
       "name": "体育学院",
-      "count": 2860
+      "count": 3233
     },
     {
       "name": "数学与统计学院",
-      "count": 2729
+      "count": 3181
     },
     {
       "name": "商学院",
-      "count": 2573
+      "count": 3048
     },
     {
       "name": "马克思主义学院",
-      "count": 2550
+      "count": 2886
     },
     {
       "name": "基础医学院",
-      "count": 1952
+      "count": 2284
     },
     {
       "name": "文学与新闻传播学院",
-      "count": 1732
+      "count": 1916
     },
     {
       "name": "机电工程学院",
-      "count": 1601
+      "count": 1871
     },
     {
       "name": "学生处",
-      "count": 1543
+      "count": 1798
     },
     {
       "name": "材料科学与工程学院",
-      "count": 1508
+      "count": 1715
     }
   ]
 }
