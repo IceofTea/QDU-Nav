@@ -3,10 +3,11 @@ import { ref, computed, onMounted } from 'vue'
 import { foods, halls } from '../data/foods'
 import CountUp from '../components/CountUp.vue'
 import { useI18n } from '../i18n'
+import { setNavContext } from '../stores/navContext'
 
 const { t, lang } = useI18n()
 
-const emit = defineEmits(['back'])
+const emit = defineEmits(['back', 'open'])
 
 const CAMPUS_EN = { '浮山校区': 'Fushan', '金家岭校区': 'Jinjialing', '松山校区': 'Songshan' }
 const AREA_EN = { '西院': 'West', '东院': 'East', '北院（师范学院）': 'North', '浮山苑': 'Fushan Garden', '浮山公寓': 'Fushan Dorm' }
@@ -104,6 +105,7 @@ onMounted(() => {
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
       <button class="btn" @click="roll">{{ t('whatToEat.reRecommend') }}</button>
       <button class="btn accent" @click="pickOne">{{ t('whatToEat.decideThis') }}</button>
+      <button class="btn" @click="emit('open', 'canteen')">{{ t('whatToEat.checkCanteen') || '📍 查看食堂空座' }}</button>
     </div>
     <div class="muted" style="margin-top:12px;font-size:12px;">{{ t('whatToEat.dishNote') }}</div>
   </div>

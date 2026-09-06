@@ -3,10 +3,11 @@ import { ref, computed, onMounted } from 'vue'
 import { foods, halls } from '../data/foods'
 import CountUp from '../components/CountUp.vue'
 import { useI18n } from '../i18n'
+import { setNavContext } from '../stores/navContext'
 
 const { t, lang } = useI18n()
 
-const emit = defineEmits(['back'])
+const emit = defineEmits(['back', 'open'])
 
 const HUNGRY = { nameKey: 'foodWheel.hungryName', campus: '', zone: '', hall: '' }
 /** 轮盘旋转动画时长（ms），与 .wheel 的 transition 时长保持一致 */
@@ -173,6 +174,7 @@ const groupedFoods = computed(() => halls.map((h) => ({ ...h, foods: foods.filte
       <div class="muted" style="font-size:13px;">{{ result.hungry ? t('foodWheel.hungryResult') : stage === 'dish' ? t('foodWheel.hallResult') : t('foodWheel.dishResult') }}</div>
       <div style="font-size:22px;font-weight:800;margin:4px 0;">{{ result.hungry ? '😭 ' + result.name : '🍽️ ' + result.name }}</div>
       <div v-if="!result.hungry" class="muted" style="font-size:13px;">{{ result.campus }} · {{ result.zone }}</div>
+      <button v-if="!result.hungry" class="btn" style="margin-top:8px;" @click="emit('open', 'canteen')">{{ t('foodWheel.checkCanteen') || '📍 查看食堂空座' }}</button>
     </div>
     <div v-else class="muted" style="margin:10px 0;">
       {{ stage === 'hall' ? t('foodWheel.hallHint') : t('foodWheel.dishHint2') }}

@@ -11,10 +11,11 @@ import KpiCard from '../components/KpiCard.vue'
 import BarRow from '../components/BarRow.vue'
 import InsightPanel from '../components/InsightPanel.vue'
 import { useI18n } from '../i18n'
+import { setNavContext } from '../stores/navContext'
 
 const { t, lang } = useI18n()
 
-const emit = defineEmits(['back'])
+const emit = defineEmits(['back', 'open'])
 
 const stats = ref(EMPTY_STATS)
 const loading = ref(true)
@@ -132,7 +133,7 @@ const insights = computed(() => {
     <div class="panel-grid">
       <div class="panel">
         <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('courseStats.hotRoomTitle') }}</div>
-        <BarRow v-for="r in stats.hotRooms" :key="r.name" :label="r.name" :value="r.periods" :max="maxRoom" :text="r.periods + (lang === 'en' ? ' periods · ' : ' 节次 · ') + share(r.periods) + '%'" color="linear-gradient(90deg,#0f766e,#14b8a6)" />
+        <BarRow v-for="r in stats.hotRooms" :key="r.name" :label="r.name" :value="r.periods" :max="maxRoom" :text="r.periods + (lang === 'en' ? ' periods · ' : ' 节次 · ') + share(r.periods) + '%'" color="linear-gradient(90deg,#0f766e,#14b8a6)" @click="setNavContext({ room: r.name }); emit('open', 'classroomNav')" style="cursor:pointer;" />
         <p class="muted" style="font-size:12px;margin-top:8px;">{{ t('courseStats.hotRoomNote') }}</p>
       </div>
 

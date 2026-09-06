@@ -5,10 +5,11 @@ import InsightPanel from '../components/InsightPanel.vue'
 import BarRow from '../components/BarRow.vue'
 import LineChart from '../components/LineChart.vue'
 import { useI18n } from '../i18n'
+import { setNavContext } from '../stores/navContext'
 
 const { t, lang } = useI18n()
 
-const emit = defineEmits(['back'])
+const emit = defineEmits(['back', 'open'])
 
 const loading = ref(true)
 const status = ref('loading')
@@ -22,6 +23,13 @@ const TOPIC_ICONS = {
   校园事务: '🗂️',
   就业实习: '💼',
   吐槽求助: '💬'
+}
+const TOPIC_APP_MAP = {
+  '考研升学': 'officialSites', '学习考试': 'timetable', '校园生活': 'canteen',
+  '就业实习': 'officialSites', '校园事务': 'campusNews', '吐槽求助': 'home'
+}
+function goTopicApp(topic) {
+  emit('open', TOPIC_APP_MAP[topic] || 'home')
 }
 
 async function load() {
@@ -163,7 +171,13 @@ const insights = computed(() => {
       <div class="panel">
         <div class="section-title" style="margin:0 0 12px;"><span class="bar"></span>{{ t('tiebaSentiment.topicTitle') }}</div>
         <div v-if="data.topics.length">
-          <BarRow v-for="t in data.topics" :key="t.name" :label="(TOPIC_ICONS[t.name] || '·') + ' ' + t.name" :value="t.count" :max="maxTopic" :text="Math.round((t.count / topicTotal) * 100) + '%'" color="linear-gradient(90deg,#0d9488,#2dd4bf)" />
+          <div v-for="tp in data.topics" :key="tp.name" class="topic-row" @click="goTopicApp(tp.name)" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+            <span>{{ TOPIC_ICONS[tp.name] || '·' }}</span>
+            <span style="flex:1;font-weight:600;font-size:13px;">{{ tp.name }}</span>
+            <span style="font-size:12px;color:var(--text-sub);">{{ tp.count }} {{ lang === 'en' ? 'posts' : '条' }}</span>
+            <span style="font-size:11px;font-weight:700;color:var(--primary);">{{ Math.round((tp.count / topicTotal) * 100) }}%</span>
+            <span style="font-size:14px;color:var(--text-sub);">›</span>
+          </div>
         </div>
         <p v-if="!data.topics.length" class="muted" style="font-size:13px;">{{ t('tiebaSentiment.noTopic') }}</p>
       </div>

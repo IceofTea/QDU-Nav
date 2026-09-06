@@ -8,10 +8,11 @@ import { loadTimetableMeta, loadTermRows } from '../api/termTimetable'
 import { normRoom, clsSplit, profOf, parseWeeks } from '../utils/course'
 import { fmtTime } from '../utils/format'
 import { useI18n } from '../i18n'
+import { setNavContext } from '../stores/navContext'
 
 const { t, lang } = useI18n()
 
-const emit = defineEmits(['back'])
+const emit = defineEmits(['back', 'open'])
 
 const tab = ref('class')
 const kw = ref('')
@@ -346,8 +347,12 @@ onMounted(loadCourses)
         <div class="course-detail-row"><span>{{ t('timetable.detailWeek') }}</span><b>{{ t('timetable.weekLabel', { n: detail.w }) }}</b></div>
         <div v-if="detail.campus && detail.campus !== (lang === 'en' ? 'Unlabeled' : '未标注')" class="course-detail-row"><span>{{ t('timetable.detailCampus') }}</span><b>{{ detail.campus }}</b></div>
         <div v-if="detail.cat" class="course-detail-row"><span>{{ t('timetable.detailCategory') }}</span><b>{{ detail.cat }}</b></div>
-        <div v-if="detail.credit" class="course-detail-row"><span>{{ t('timetable.detailCredit') }}</span><b>{{ detail.credit }}</b></div>
-        <button class="btn accent" style="width:100%;margin-top:14px;" @click="detail = null">{{ t('timetable.detailOk') }}</button>
+    <div v-if="detail.credit" class="course-detail-row"><span>{{ t('timetable.detailCredit') }}</span><b>{{ detail.credit }}</b></div>
+    <div v-if="detail.r" class="course-detail-actions">
+      <button class="btn" style="flex:1;" @click="setNavContext({ room: detail.r }); emit('open', 'classroomNav')">{{ t('timetable.detailNav') || '🧭 教室导航' }}</button>
+      <button class="btn" style="flex:1;" @click="emit('open', 'canteen')">{{ t('timetable.detailEat') || '🍜 下课去哪吃' }}</button>
+    </div>
+    <button class="btn accent" style="width:100%;margin-top:14px;" @click="detail = null">{{ t('timetable.detailOk') }}</button>
       </div>
     </div>
   </template>
@@ -561,6 +566,7 @@ onMounted(loadCourses)
 .course-detail-row { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
 .course-detail-row span { flex: 0 0 52px; color: var(--text-sub); }
 .course-detail-row b { flex: 1; color: var(--text); font-weight: 600; word-break: break-all; }
+.course-detail-actions { display: flex; gap: 8px; margin-top: 12px; }
 @media (max-width: 640px) {
   /* 手机端：隐藏节次时间列，7 天均分一屏，无需左右拖拽；每卡只显示课程名，点卡片看详情 */
   .week-grid { --row: 30px; --tc: 0px; }

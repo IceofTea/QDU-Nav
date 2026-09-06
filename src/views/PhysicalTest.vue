@@ -2,10 +2,11 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { standards, itemWeights, itemLabels, bmiScore, itemScore, gradeOf } from '../data/physical'
 import { useI18n } from '../i18n'
+import { setNavContext } from '../stores/navContext'
 
 const { t, lang } = useI18n()
 
-const emit = defineEmits(['back'])
+const emit = defineEmits(['back', 'open'])
 
 const yearKeys = ['year1', 'year2', 'year3', 'year4']
 const yearLabels = computed(() => yearKeys.map(k => t('physicalTest.' + k)))
@@ -147,6 +148,7 @@ const activeTableData = computed(() => {
       </div>
       <div class="result-grade" :class="active.grade.cls">{{ active.grade.label }}</div>
       <div class="result-hint">{{ t('physicalTest.filledHint', { n: filledNow }) }}</div>
+      <button v-if="years[activeYear].height && years[activeYear].weight" class="btn" style="margin-top:10px;width:100%;" @click="emit('open', 'whatToEat')">{{ t('physicalTest.healthTip') || '🍽️ 根据BMI获取健康饮食推荐' }}</button>
     </div>
 
     <div class="field-grid">

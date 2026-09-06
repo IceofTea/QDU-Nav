@@ -3,10 +3,11 @@ import { ref, computed, onMounted } from 'vue'
 import { canteens, canteenStats, campusMap, areaMap } from '../data/canteens'
 import { apiFetch } from '../api/index'
 import { useI18n } from '../i18n'
+import { setNavContext } from '../stores/navContext'
 
 const { t, lang } = useI18n()
 
-const emit = defineEmits(['back'])
+const emit = defineEmits(['back', 'open'])
 const campus = ref('all')
 const live = ref(null)
 const loading = ref(true)

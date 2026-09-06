@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { buildings, campusFilters, campusFiltersEn, searchRooms } from '../data/classrooms'
 import { apiFetch } from '../api/index'
 import { useI18n } from '../i18n'
+import { navCtx } from '../stores/navContext'
 
 const { t, lang } = useI18n()
 
@@ -28,6 +29,8 @@ const roomSchedLoading = ref(false)
 
 onMounted(async () => {
   courseTable.value = await apiFetch('/courseTable')
+  const ctx = navCtx()
+  if (ctx?.room) keyword.value = ctx.room
 })
 
 async function goEmpty() {

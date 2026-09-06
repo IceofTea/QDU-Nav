@@ -2,10 +2,11 @@
 import { ref, computed, onMounted } from 'vue'
 import CountUp from '../components/CountUp.vue'
 import { useI18n } from '../i18n'
+import { setNavContext } from '../stores/navContext'
 
 const { t, lang } = useI18n()
 
-const emit = defineEmits(['back'])
+const emit = defineEmits(['back', 'open'])
 
 const PAIRS = [
   ['博学楼', '西 1 教'],
@@ -213,6 +214,7 @@ function restart() {
       <div style="font-size:26px;">🎉</div>
       <div style="font-weight:800;font-size:18px;">{{ t('buildingMatch.allMatched') }}</div>
       <div style="margin-top:4px;">{{ DIFFS[diff].label }}{{ t('buildingMatch.difficulty') }} · {{ moves }} {{ t('buildingMatch.matchSteps') }} · {{ stars }} {{ t('buildingMatch.matchStars') }}</div>
+      <button class="btn" style="margin-top:12px;" @click="setNavContext({ room: activePairs[0]?.[0] || '' }); emit('open', 'classroomNav')">{{ t('buildingMatch.goNav') || '🧭 去教室导航看看这些楼' }}</button>
     </div>
 
     <div
