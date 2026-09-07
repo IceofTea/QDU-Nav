@@ -1,13 +1,17 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import Welcome from './views/Welcome.vue'
+import TourOverlay from './components/TourOverlay.vue'
 import { SITE } from './config/site'
 import { NAV_APPS, useViewState } from './router'
 import { apps } from './data/apps'
 import { fetchLikes, toggleLike, likedByMe } from './utils/like'
 import { useI18n } from './i18n'
+import { useTour } from './utils/useTour'
+import { getTourSteps } from './data/tourSteps'
 
 const { t, lang, toggleLang } = useI18n()
+const { startTour, isTourCompleted, isActive } = useTour()
 
 const stage = ref(sessionStorage.getItem('qdu_welcome_seen') ? 'main' : 'welcome')
 function enter() {
@@ -34,6 +38,25 @@ onMounted(() => {
 })
 
 const { current, currentComp, openApp, goHome } = useViewState()
+
+/** 新手引导 */
+function triggerTour() {
+  const steps = getTourSteps(current.value)
+  if (steps) startTour(current.value, steps)
+}
+
+function checkAndTriggerTour() {
+  setTimeout(() => {
+    if (current.value === 'home' && !isTourCompleted('home')) triggerTour()
+  }, 600)
+}
+
+watch(stage, (val) => { if (val === 'main') checkAndTriggerTour() })
+watch(current, (val) => {
+  if (!isActive.value && !isTourCompleted(val)) {
+    nextTick(() => { setTimeout(triggerTour, 400) })
+  }
+})
 
 const appTitle = (id) => {
   const a = apps.find((x) => x.id === id)
@@ -113,6 +136,7 @@ onMounted(() => {
           <button class="ghost-btn notice-bell" :class="{ 'has-unread': unreadCount > 0 }" title="查看公告" @click="openNotices">
             📢<span v-if="unreadCount > 0" class="notice-dot">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
           </button>
+          <button class="ghost-btn tour-btn-header" data-tour="tour-btn" title="查看新手引导" @click="triggerTour">❓</button>
           <button class="ghost-btn lang-btn" :title="lang === 'zh' ? 'Switch to English' : '切换到中文'" @click="toggleLang">
             <span class="lang-label">{{ lang === 'zh' ? 'EN' : '中' }}</span>
           </button>
@@ -146,7 +170,7 @@ onMounted(() => {
       <div class="footer-dev">{{ t('site.devLine') }}</div>
     </footer>
 
-    <nav class="bottom-nav">
+    <nav class="bottom-nav" data-tour="bottom-nav">
       <button class="bottom-nav__item" :class="{ 'is-active': current === 'home' }" @click="goHome">
         <span class="bn-icon">🏠</span><span>{{ t('nav.home') }}</span>
       </button>
@@ -178,4 +202,7 @@ onMounted(() => {
       </div>
     </div>
   </div>
+
+  <!-- 新手引导覆盖层 -->
+  <TourOverlay />
 </template>

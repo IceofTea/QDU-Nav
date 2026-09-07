@@ -79,7 +79,7 @@ function toggleCampus(name) { expanded.value = expanded.value === name ? null : 
     <section class="hero">
       <h2 class="hero-title">{{ greeting() }}</h2>
       <p class="hero-sub">{{ lang === 'en' ? 'Welcome to' : '欢迎回到' }} {{ t('site.name') }}，{{ t('site.heroSub') }}</p>
-      <div class="search-bar">
+      <div class="search-bar" data-tour="search">
         <span class="search-icon">🔍</span>
         <input v-model="keyword" class="search-input" :placeholder="lang === 'en' ? 'Search apps or features...' : '搜索应用或功能：空教室、记账、体测…'" />
       </div>
@@ -111,7 +111,7 @@ function toggleCampus(name) { expanded.value = expanded.value === name ? null : 
           <button class="section-link" @click="emit('open', 'categories')">{{ t('home.viewAllCats') }}</button>
         </div>
       </div>
-      <div v-if="filtered.length" class="tile-grid">
+      <div v-if="filtered.length" class="tile-grid" data-tour="app-grid">
         <button v-for="r in filtered" :key="r.app.id" class="service-tile" @click="emit('open', r.app.id)">
           <span class="tile-icon" :style="{ background: r.app.color + '1a', color: r.app.color }">{{ r.app.icon }}</span>
           <span class="tile-body">
