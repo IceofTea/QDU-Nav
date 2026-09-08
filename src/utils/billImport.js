@@ -1,14 +1,16 @@
 /**
- * 账单导入解析器：兼容真实微信 / 支付宝 / 建设银行账单文件
- *   - 自动识别 xlsx（zip）、xls（OLE2/BIFF8）与文本（CSV/竖线/制表符分隔）
+ * 账单导入解析器：兼容真实微信 / 支付宝 / 建设银行 / 中国银行账单文件
+ *   - 自动识别 xlsx（zip）、xls（OLE2/BIFF8）、PDF 与文本（CSV/竖线/制表符分隔）
  *   - 文本自动探测编码（UTF-8 BOM / UTF-8 / GBK）与分隔符
  *   - 按「收/支」区分收支，忽略「不计收支 / 中性交易 / 关闭 / 失败 / 提现充值」等无效记录
- *   - 优先用支付宝「交易分类」归类，微信 / 建行退化为关键词猜测
+ *   - 优先用支付宝「交易分类」归类，微信 / 建行 / 中行退化为关键词猜测
  *   - 每条记录附带 merchant（商户名）供「同商户聚合」分析
  *   - 退款自动冲抵同商户同金额的原支出，避免虚增收支
  *   纯前端本地解析：不发起任何网络请求，数据仅存本机浏览器。
  */
 import { parseXls } from './xlsReader.js'
+import * as pdfjsLib from 'pdfjs-dist'
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
 const ALIPAY_CAT_MAP = {
   '餐饮美食': 'food',
   '日用百货': 'daily',
@@ -558,12 +560,103 @@ async function parseXlsx(u8) {
   return { ok: true, source: 'xlsx', brand, added, skipped }
 }
 
+/** 中行（pdf）账单解析 */
+async function parseBocBill(bytes) {
+  let pdf
+  try {
+    pdf = await pdfjsLib.getDocument({ data: bytes }).promise
+  } catch (e) {
+    return { ok: false, msg: 'PDF 文件解析失败：' + (e.message || '无法读取 PDF 内容') }
+  }
+  let fullText = ''
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i)
+    const content = await page.getTextContent()
+    const strings = content.items.map((item) => item.str)
+    fullText += strings.join(' ') + '\n'
+  }
+  if (!fullText.includes('中国银行') && !fullText.includes('记账日期')) {
+    return { ok: false, msg: '未识别到中国银行账单格式，请确认是中国银行导出的交易流水明细清单。' }
+  }
+  const lines = fullText.split('\n').map((l) => l.trim()).filter(Boolean)
+  const added = []
+  const skipped = { neutral: 0, closed: 0 }
+  const dateRegex = /(\d{4}-\d{2}-\d{2})/
+  const timeRegex = /(\d{2}:\d{2}:\d{2})/
+  const amountRegex = /[-]?[\d,]+\.\d{2}/
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    const dateMatch = line.match(dateRegex)
+    if (!dateMatch) continue
+    const dateStr = dateMatch[1]
+    let timeStr = '00:00:00'
+    const timeMatch = line.match(timeRegex)
+    if (timeMatch) timeStr = timeMatch[1]
+    let amountStr = ''
+    for (let j = i; j < Math.min(i + 3, lines.length); j++) {
+      const m = lines[j].match(amountRegex)
+      if (m) { amountStr = m[0]; break }
+    }
+    if (!amountStr) continue
+    const amtNum = parseFloat(amountStr.replace(/,/g, ''))
+    if (!Number.isFinite(amtNum) || amtNum === 0) continue
+    const kind = amtNum > 0 ? 'income' : 'expense'
+    const amt = Math.abs(Math.round(amtNum * 100) / 100)
+    let summary = ''
+    let party = ''
+    for (let j = i; j < Math.min(i + 5, lines.length); j++) {
+      if (lines[j].includes('网上快捷支付') || lines[j].includes('跨行转账') || lines[j].includes('银联入账') || lines[j].includes('网上支付') || lines[j].includes('无卡支付') || lines[j].includes('结息') || lines[j].includes('网上快捷提现')) {
+        summary = lines[j]
+        break
+      }
+    }
+    for (let j = i; j < Math.min(i + 8, lines.length); j++) {
+      if (lines[j].includes('支付宝') || lines[j].includes('财付通') || lines[j].includes('京东') || lines[j].includes('美团') || lines[j].includes('拼多多')) {
+        party = lines[j].replace(/^-+/, '').trim()
+        break
+      }
+    }
+    if (/余额宝提现|微信零钱提现/.test(summary + party)) { skipped.neutral++; continue }
+    if (/跨行转账|跨行转出/.test(summary) && kind === 'expense') {
+      const nextLines = lines.slice(i, i + 10).join(' ')
+      if (/用户/.test(nextLines)) { skipped.neutral++; continue }
+    }
+    let cat = 'other'
+    if (kind === 'income') {
+      if (/结息/.test(summary)) cat = 'invest'
+      else if (/银联入账|跨行转账/.test(summary)) cat = 'transfer'
+      else cat = guessIncomeCat(`${party} ${summary}`)
+    } else {
+      if (/转账|转出/.test(summary)) cat = 'transfer'
+      else cat = guessCat(`${party} ${summary}`, '')
+    }
+    const noteText = party || summary
+    added.push({
+      type: kind,
+      cat,
+      amount: amt,
+      note: noteText.slice(0, 60),
+      date: dateStr,
+      time: timeStr,
+      merchant: cleanMerchant(party) || cleanMerchant(summary)
+    })
+  }
+  if (!added.length) {
+    return { ok: false, msg: '中行 PDF 账单中未找到可导入的收支记录。' }
+  }
+  const refunded = applyRefundOffset(added)
+  if (refunded) skipped.refunded = refunded
+  return { ok: true, source: 'pdf', brand: 'boc', added, skipped }
+}
+
 async function parseBillFile(file) {
   const bytes = new Uint8Array(await file.arrayBuffer())
   const isXlsx = bytes[0] === 0x50 && bytes[1] === 0x4b
   if (isXlsx) return parseXlsx(bytes)
   const isXls = bytes[0] === 0xd0 && bytes[1] === 0xcf && bytes[2] === 0x11 && bytes[3] === 0xe0
   if (isXls) return parseCcbBill(bytes)
+  const isPdf = bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46
+  if (isPdf) return parseBocBill(bytes)
   return parseTextBill(bytes)
 }
 

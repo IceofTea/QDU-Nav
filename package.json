@@ -11,6 +11,7 @@
     "start": "npm run build && node server/index.mjs"
   },
   "dependencies": {
+    "pdfjs-dist": "^6.3.289",
     "vue": "^3.5.13"
   },
   "devDependencies": {

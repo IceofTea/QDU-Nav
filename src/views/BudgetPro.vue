@@ -249,8 +249,37 @@ const catFilterP = ref('all')
 const merchantFilterP = ref('')
 const incFilter = ref('')
 const typeFilterP = ref('all')
+const proSearch = ref('')
 const proPage = ref(1)
 const PAGE = 10
+const timelineModeP = ref(false)
+const timelineSearchP = ref('')
+
+const totalRecords = computed(() => props.records.length)
+
+const timelineRecordsP = computed(() => {
+  let list = [...props.records]
+  if (timelineSearchP.value.trim()) {
+    const kw = timelineSearchP.value.trim().toLowerCase()
+    list = list.filter((r) => {
+      const catLabel = isExp(r) ? expLabel(r.cat) : incLabel(r.cat)
+      const merchant = r.merchant || ''
+      const note = r.note || ''
+      return catLabel.toLowerCase().includes(kw) || merchant.toLowerCase().includes(kw) || note.toLowerCase().includes(kw) || String(r.amount).includes(kw)
+    })
+  }
+  list.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id))
+  return list
+})
+const timelineGroupsP = computed(() => {
+  const map = {}
+  for (const r of timelineRecordsP.value) {
+    const d = r.date || '未知日期'
+    if (!map[d]) map[d] = []
+    map[d].push(r)
+  }
+  return Object.entries(map).map(([date, recs]) => ({ date, recs, total: sum(recs, 'income') - sum(recs, 'expense') }))
+})
 const filtered = computed(() => {
   let list = props.records
   if (rangeStart.value && rangeEnd.value) {
@@ -271,6 +300,15 @@ const filtered = computed(() => {
     } else if (calFilter.value.startsWith('month:')) list = list.filter((r) => r.date.startsWith(calFilter.value.slice(6)))
     else if (calFilter.value.startsWith('year:')) list = list.filter((r) => r.date.startsWith(calFilter.value.slice(5)))
   }
+  if (proSearch.value.trim()) {
+    const kw = proSearch.value.trim().toLowerCase()
+    list = list.filter((r) => {
+      const catLabel = isExp(r) ? expLabel(r.cat) : incLabel(r.cat)
+      const merchant = r.merchant || ''
+      const note = r.note || ''
+      return catLabel.toLowerCase().includes(kw) || merchant.toLowerCase().includes(kw) || note.toLowerCase().includes(kw) || String(r.amount).includes(kw)
+    })
+  }
   const arr = [...list]
   if (proSort.value === 'amount') arr.sort((a, b) => (proDir.value === 'asc' ? a.amount - b.amount : b.amount - a.amount) || (a.date < b.date ? 1 : -1))
   else if (proSort.value === 'cat') arr.sort((a, b) => expLabel(a.cat).localeCompare(expLabel(b.cat)) || (a.date < b.date ? 1 : -1))
@@ -282,7 +320,7 @@ const filteredPage = computed(() => {
   return filtered.value.slice(s, s + PAGE)
 })
 const filteredCount = computed(() => Math.max(1, Math.ceil(filtered.value.length / PAGE)))
-watch([rangeStart, rangeEnd, typeFilterP, catFilterP, incFilter, merchantFilterP, proSort], () => { proPage.value = 1 })
+watch([rangeStart, rangeEnd, typeFilterP, catFilterP, incFilter, merchantFilterP, proSort, proSearch], () => { proPage.value = 1 })
 function switchProSort(k) {
   if (k === 'amount' && proSort.value === 'amount') proDir.value = proDir.value === 'desc' ? 'asc' : 'desc'
   proSort.value = k
@@ -343,10 +381,10 @@ function exportCsv() {
 
   <div class="panel">
     <div class="kpi-row">
+      <div class="kpi"><span>{{ t('budgetPro.totalRecords') }}</span><b>{{ totalRecords }} {{ lang === 'en' ? 'entries' : '笔' }}</b></div>
       <div class="kpi"><span>{{ t('budgetPro.totalIncome') }}</span><b class="in">+¥{{ fmt(totalInc) }}</b></div>
       <div class="kpi"><span>{{ t('budgetPro.totalExpense') }}</span><b class="out">-¥{{ fmt(totalExp) }}</b></div>
       <div class="kpi"><span>{{ t('budgetPro.balanceLabel') }}</span><b :class="totalBal >= 0 ? 'in' : 'out'">{{ totalBal >= 0 ? '+' : '' }}¥{{ fmt(totalBal) }}</b></div>
-      <div class="kpi"><span>{{ t('budgetPro.refundOffset') }}</span><b>{{ refundCount }} {{ t('budgetPro.refundUnit') }} ¥{{ fmt(refundTotal) }}</b></div>
     </div>
   </div>
 
@@ -532,51 +570,88 @@ function exportCsv() {
 
   <div class="panel pro-detail">
     <div class="section-head" style="align-items:center;margin:0 0 8px;">
-      <h3 class="section-title" style="margin:0;">{{ t('budgetPro.detailTitle') }}</h3>
-      <button class="btn ghost small" @click="exportCsv">{{ t('budgetPro.exportBtn') }}</button>
-    </div>
-    <div class="sort-row">
-      <button class="tab" :class="{ active: typeFilterP === 'all' }" @click="typeFilterP = 'all'; catFilterP = 'all'; incFilter = ''">{{ t('budgetPro.typeAll') }}</button>
-      <button class="tab" :class="{ active: typeFilterP === 'expense' }" @click="typeFilterP = 'expense'; catFilterP = 'all'; incFilter = ''">{{ t('budgetPro.typeExpense') }}</button>
-      <button class="tab" :class="{ active: typeFilterP === 'income' }" @click="typeFilterP = 'income'; incFilter = ''">{{ t('budgetPro.typeIncome') }}</button>
-      <span class="sep">|</span>
-      <button class="tab" :class="{ active: proSort === 'date' }" @click="switchProSort('date')">{{ t('budgetPro.sortByDate') }}</button>
-      <button class="tab" :class="{ active: proSort === 'amount' }" @click="switchProSort('amount')">{{ t('budgetPro.sortByAmount') }}{{ proSort === 'amount' ? (proDir === 'asc' ? ' ↑' : ' ↓') : '' }}</button>
-      <button class="tab" :class="{ active: proSort === 'cat' }" @click="switchProSort('cat')">{{ t('budgetPro.sortByCat') }}</button>
-      <span class="muted" style="font-size:10px;margin-left:auto;">{{ filtered.length }} {{ lang === 'en' ? 'entries' : '笔' }}</span>
-    </div>
-    <div v-if="proSort === 'cat'" class="cat-chips">
-      <button v-if="typeFilterP !== 'income'" class="chip" :class="{ active: catFilterP === 'all' }" @click="catFilterP = 'all'">{{ lang === 'en' ? 'All Expenses' : '全部支出' }}</button>
-      <button v-for="c in catAgg" :key="c.key" class="chip" :class="{ active: catFilterP === c.key }" @click="catFilterP = c.key">{{ c.icon }}{{ c.name }}</button>
-      <template v-if="typeFilterP === 'income'">
-        <button class="chip" :class="{ active: incFilter === '' }" @click="incFilter = ''">{{ lang === 'en' ? 'All Income' : '全部收入' }}</button>
-        <button v-for="c in incAgg" :key="c.key" class="chip" :class="{ active: incFilter === c.key }" @click="incFilter = c.key">{{ c.icon }}{{ c.name }}</button>
-      </template>
-    </div>
-    <div v-if="catFilterP !== 'all' || merchantFilterP || incFilter" class="pro-filter-tip">
-      {{ t('budgetPro.filteredBy') }}<b>{{ incFilter ? incLabel(incFilter) : catFilterP !== 'all' ? expLabel(catFilterP) : merchantFilterP }}</b>
-      <button class="btn ghost small" @click="catFilterP = 'all'; merchantFilterP = ''; incFilter = ''">✕ {{ t('budgetPro.clearFilter') }}</button>
-    </div>
-    <div v-if="!filtered.length" class="muted" style="text-align:center;padding:16px;">{{ t('budgetPro.noRecord') }}</div>
-    <div v-else class="rec-list">
-      <div v-for="r in filteredPage" :key="r.id" class="rec-row">
-        <span class="rec-icon">{{ isExp(r) ? (EXP_ICON[r.cat] || '📦') : (INC_ICON[r.cat] || '💵') }}</span>
-        <span class="rec-main">
-          <span class="rec-name">{{ (isExp(r) ? expLabel(r.cat) : incLabel(r.cat)) || r.cat }}<em v-if="r.merchant"> · {{ r.merchant }}</em><em v-if="r.refunded"> ↩︎{{ lang === 'en' ? 'Refunded' : '已退款' }}</em><em v-if="r.note && r.note !== r.merchant"> · {{ r.note }}</em></span>
-          <span class="muted" style="font-size:11px;">{{ r.date }}</span>
-        </span>
-        <span class="rec-amt" :class="isExp(r) ? 'out' : 'in'">{{ isExp(r) ? '-' : '+' }}¥{{ fmt(r.amount) }}</span>
-        <button class="rec-del" @click="emit('remove', r.id)" :title="t('budget.delete')">✕</button>
+      <h3 class="section-title" style="margin:0;">{{ timelineModeP ? t('budgetPro.timelineTitle') : t('budgetPro.detailTitle') }}</h3>
+      <div style="display:flex;gap:6px;">
+        <button class="btn ghost small" :class="{ 'active-btn': timelineModeP }" @click="timelineModeP = !timelineModeP">{{ timelineModeP ? t('budgetPro.backToCharts') : t('budgetPro.allDetail') }}</button>
+        <button v-if="!timelineModeP" class="btn ghost small" @click="exportCsv">{{ t('budgetPro.exportBtn') }}</button>
       </div>
     </div>
-    <div v-if="filteredCount > 1" class="pager">
-      <button class="btn ghost small" :disabled="proPage <= 1" @click="proPage--">‹ {{ lang === 'en' ? 'Prev' : '上页' }}</button>
-      <div class="pager-jump">
-        <input v-model.number="proPage" type="number" class="input page-input" min="1" :max="filteredCount" />
-        <span>/ {{ filteredCount }}</span>
+    <template v-if="!timelineModeP">
+      <div class="search-row-p">
+        <input v-model="proSearch" class="input" type="text" :placeholder="t('budgetPro.searchPlaceholder')" style="flex:1;font-size:13px;" />
+        <button v-if="proSearch" class="btn ghost small" @click="proSearch = ''">✕</button>
       </div>
-      <button class="btn ghost small" :disabled="proPage >= filteredCount" @click="proPage++">{{ lang === 'en' ? 'Next' : '下页' }} ›</button>
-    </div>
+      <div class="sort-row">
+        <button class="tab" :class="{ active: typeFilterP === 'all' }" @click="typeFilterP = 'all'; catFilterP = 'all'; incFilter = ''">{{ t('budgetPro.typeAll') }}</button>
+        <button class="tab" :class="{ active: typeFilterP === 'expense' }" @click="typeFilterP = 'expense'; catFilterP = 'all'; incFilter = ''">{{ t('budgetPro.typeExpense') }}</button>
+        <button class="tab" :class="{ active: typeFilterP === 'income' }" @click="typeFilterP = 'income'; incFilter = ''">{{ t('budgetPro.typeIncome') }}</button>
+        <span class="sep">|</span>
+        <button class="tab" :class="{ active: proSort === 'date' }" @click="switchProSort('date')">{{ t('budgetPro.sortByDate') }}</button>
+        <button class="tab" :class="{ active: proSort === 'amount' }" @click="switchProSort('amount')">{{ t('budgetPro.sortByAmount') }}{{ proSort === 'amount' ? (proDir === 'asc' ? ' ↑' : ' ↓') : '' }}</button>
+        <button class="tab" :class="{ active: proSort === 'cat' }" @click="switchProSort('cat')">{{ t('budgetPro.sortByCat') }}</button>
+        <span class="muted" style="font-size:10px;margin-left:auto;">{{ filtered.length }} {{ lang === 'en' ? 'entries' : '笔' }}</span>
+      </div>
+      <div v-if="proSort === 'cat'" class="cat-chips">
+        <button v-if="typeFilterP !== 'income'" class="chip" :class="{ active: catFilterP === 'all' }" @click="catFilterP = 'all'">{{ lang === 'en' ? 'All Expenses' : '全部支出' }}</button>
+        <button v-for="c in catAgg" :key="c.key" class="chip" :class="{ active: catFilterP === c.key }" @click="catFilterP = c.key">{{ c.icon }}{{ c.name }}</button>
+        <template v-if="typeFilterP === 'income'">
+          <button class="chip" :class="{ active: incFilter === '' }" @click="incFilter = ''">{{ lang === 'en' ? 'All Income' : '全部收入' }}</button>
+          <button v-for="c in incAgg" :key="c.key" class="chip" :class="{ active: incFilter === c.key }" @click="incFilter = c.key">{{ c.icon }}{{ c.name }}</button>
+        </template>
+      </div>
+      <div v-if="catFilterP !== 'all' || merchantFilterP || incFilter" class="pro-filter-tip">
+        {{ t('budgetPro.filteredBy') }}<b>{{ incFilter ? incLabel(incFilter) : catFilterP !== 'all' ? expLabel(catFilterP) : merchantFilterP }}</b>
+        <button class="btn ghost small" @click="catFilterP = 'all'; merchantFilterP = ''; incFilter = ''">✕ {{ t('budgetPro.clearFilter') }}</button>
+      </div>
+      <div v-if="!filtered.length" class="muted" style="text-align:center;padding:16px;">{{ t('budgetPro.noRecord') }}</div>
+      <div v-else class="rec-list">
+        <div v-for="r in filteredPage" :key="r.id" class="rec-row">
+          <span class="rec-icon">{{ isExp(r) ? (EXP_ICON[r.cat] || '📦') : (INC_ICON[r.cat] || '💵') }}</span>
+          <span class="rec-main">
+            <span class="rec-name">{{ (isExp(r) ? expLabel(r.cat) : incLabel(r.cat)) || r.cat }}<em v-if="r.merchant"> · {{ r.merchant }}</em><em v-if="r.refunded"> ↩︎{{ lang === 'en' ? 'Refunded' : '已退款' }}</em><em v-if="r.note && r.note !== r.merchant"> · {{ r.note }}</em></span>
+            <span class="muted" style="font-size:11px;">{{ r.date }}{{ r.time ? ' ' + r.time : '' }}</span>
+          </span>
+          <span class="rec-amt" :class="isExp(r) ? 'out' : 'in'">{{ isExp(r) ? '-' : '+' }}¥{{ fmt(r.amount) }}</span>
+          <button class="rec-del" @click="emit('remove', r.id)" :title="t('budget.delete')">✕</button>
+        </div>
+      </div>
+      <div v-if="filteredCount > 1" class="pager">
+        <button class="btn ghost small" :disabled="proPage <= 1" @click="proPage--">‹ {{ lang === 'en' ? 'Prev' : '上页' }}</button>
+        <div class="pager-jump">
+          <input v-model.number="proPage" type="number" class="input page-input" min="1" :max="filteredCount" />
+          <span>/ {{ filteredCount }}</span>
+        </div>
+        <button class="btn ghost small" :disabled="proPage >= filteredCount" @click="proPage++">{{ lang === 'en' ? 'Next' : '下页' }} ›</button>
+      </div>
+    </template>
+    <template v-else>
+      <div class="search-row-p">
+        <input v-model="timelineSearchP" class="input" type="text" :placeholder="t('budgetPro.timelineSearchPlaceholder')" style="flex:1;font-size:13px;" />
+        <button v-if="timelineSearchP" class="btn ghost small" @click="timelineSearchP = ''">✕</button>
+      </div>
+      <div class="muted" style="font-size:11px;margin-bottom:10px;">{{ t('budgetPro.timelineDesc', { n: timelineRecordsP.length }) }}</div>
+      <div v-if="!timelineGroupsP.length" class="muted" style="text-align:center;padding:16px;">{{ t('budgetPro.noRecord') }}</div>
+      <div v-else class="timeline">
+        <div v-for="g in timelineGroupsP" :key="g.date" class="timeline-day">
+          <div class="timeline-date">
+            <span class="timeline-date-text">{{ g.date }}</span>
+            <span class="timeline-date-count">{{ g.recs.length }} {{ lang === 'en' ? 'entries' : '笔' }}</span>
+            <span class="timeline-date-bal" :class="g.total >= 0 ? 'in' : 'out'">{{ g.total >= 0 ? '+' : '' }}¥{{ fmt(Math.abs(g.total)) }}</span>
+          </div>
+          <div class="timeline-items">
+            <div v-for="r in g.recs" :key="r.id" class="rec-row">
+              <span class="rec-icon">{{ isExp(r) ? (EXP_ICON[r.cat] || '📦') : (INC_ICON[r.cat] || '💵') }}</span>
+              <span class="rec-main">
+                <span class="rec-name">{{ (isExp(r) ? expLabel(r.cat) : incLabel(r.cat)) || r.cat }}<em v-if="r.merchant"> · {{ r.merchant }}</em><em v-if="r.note && r.note !== r.merchant"> · {{ r.note }}</em></span>
+                <span class="muted" style="font-size:11px;">{{ r.time || '' }}</span>
+              </span>
+              <span class="rec-amt" :class="isExp(r) ? 'out' : 'in'">{{ isExp(r) ? '-' : '+' }}¥{{ fmt(r.amount) }}</span>
+              <button class="rec-del" @click="emit('remove', r.id)" :title="t('budget.delete')">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
   </div>
 
   <p class="muted" style="font-size:12px;text-align:center;padding:4px 0 10px;">
@@ -764,6 +839,19 @@ function exportCsv() {
 .cal-tile.neg { border-color: rgba(182, 58, 70, 0.5); background: rgba(182, 58, 70, 0.12); color: #b63a46; }
 .pager-jump { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-sub); }
 .page-input { width: 48px; text-align: center; font-size: 13px; }
+.active-btn { border-color: var(--primary) !important; color: var(--primary) !important; background: var(--primary-soft) !important; }
+.search-row-p { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+
+/* 全部明细时间线 */
+.timeline { display: flex; flex-direction: column; gap: 16px; }
+.timeline-day { border-left: 3px solid var(--primary); padding-left: 12px; }
+.timeline-date { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+.timeline-date-text { font-size: 14px; font-weight: 800; color: var(--text); }
+.timeline-date-count { font-size: 11px; color: var(--text-sub); background: var(--primary-soft); border-radius: 8px; padding: 1px 8px; }
+.timeline-date-bal { font-size: 12px; font-weight: 700; margin-left: auto; }
+.timeline-date-bal.in { color: #0f766e; }
+.timeline-date-bal.out { color: #b63a46; }
+.timeline-items { display: flex; flex-direction: column; }
 
 @media (max-width: 480px) {
   .kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }

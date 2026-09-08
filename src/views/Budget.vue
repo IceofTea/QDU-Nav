@@ -490,7 +490,7 @@ async function billImport(file) {
 
   /* 导入去重：与现有记录及本批次内按 (日期|金额|收支|类别|备注) 比对，
    * 重复导入同一账单时不再产生多条相同记录。 */
-  const keyOf = (r) => `${r.date}|${r.amount}|${r.type}|${r.cat}|${r.note}`
+  const keyOf = (r) => `${r.date}|${r.time || ''}|${r.amount}|${r.type}|${r.cat}|${r.note}`
   const existing = new Set(records.value.map(keyOf))
   const seen = new Set()
   const fresh = []
@@ -512,8 +512,10 @@ async function billImport(file) {
   for (const r of fresh) if (r.date > latest) latest = r.date.slice(0, 7)
   if (latest) month.value = latest
 
-  const brandName = brand === 'alipay' ? (lang.value === 'en' ? 'Alipay' : '支付宝') : (lang.value === 'en' ? 'WeChat' : '微信')
-  const typeName = source === 'xlsx' ? 'Excel(xlsx)' : (lang.value === 'en' ? 'Spreadsheet' : '表格')
+  const brandNames = { alipay: lang.value === 'en' ? 'Alipay' : '支付宝', wechat: lang.value === 'en' ? 'WeChat' : '微信', ccb: lang.value === 'en' ? 'CCB' : '建设银行', boc: lang.value === 'en' ? 'BOC' : '中国银行' }
+  const sourceNames = { xlsx: 'Excel(xlsx)', xls: 'Excel(xls)', pdf: 'PDF', text: lang.value === 'en' ? 'CSV/Spreadsheet' : 'CSV/表格' }
+  const brandName = brandNames[brand] || brand
+  const typeName = sourceNames[source] || source
   const byMonth = {}
   for (const r of fresh) {
     const mk = r.date.slice(0, 7)
@@ -590,6 +592,7 @@ const sortDir = ref('desc')
 const typeFilter = ref('all')
 const catFilter = ref('all')
 const incCatFilter = ref('all')
+const searchText = ref('')
 const PAGE_SIZE = 10
 const page = ref(1)
 function switchSort(k) {
@@ -597,12 +600,21 @@ function switchSort(k) {
   sortMode.value = k
   page.value = 1
 }
-watch([catFilter, incCatFilter, typeFilter, sortMode], () => { page.value = 1 })
+watch([catFilter, incCatFilter, typeFilter, sortMode, searchText], () => { page.value = 1 })
 const sorted = computed(() => {
   let list = monthRecords.value
   if (typeFilter.value !== 'all') list = list.filter((r) => r.type === typeFilter.value)
   if (catFilter.value !== 'all') list = list.filter((r) => r.type === 'expense' && r.cat === catFilter.value)
   if (incCatFilter.value !== 'all') list = list.filter((r) => r.type === 'income' && r.cat === incCatFilter.value)
+  if (searchText.value.trim()) {
+    const kw = searchText.value.trim().toLowerCase()
+    list = list.filter((r) => {
+      const catLabel = catLabelOf(r.type, r.cat) || ''
+      const merchant = r.merchant || ''
+      const note = r.note || ''
+      return catLabel.toLowerCase().includes(kw) || merchant.toLowerCase().includes(kw) || note.toLowerCase().includes(kw) || String(r.amount).includes(kw)
+    })
+  }
   const arr = [...list]
   if (sortMode.value === 'amount') arr.sort((a, b) => (sortDir.value === 'asc' ? a.amount - b.amount : b.amount - a.amount) || (a.date < b.date ? 1 : -1))
   else if (sortMode.value === 'cat') arr.sort((a, b) => (catInfo('expense', a.cat) || {}).key?.localeCompare((catInfo('expense', b.cat) || {}).key || '') || (a.date < b.date ? 1 : -1))
@@ -645,6 +657,128 @@ function clearAll() {
     records.value = []
   }
 }
+
+/** 检测左右手倒钱：同一天或相近日期内，金额相同、类型相反的交易对 */
+const transferPairs = ref([])
+const showTransferClean = ref(false)
+function detectTransferPairs() {
+  const pairs = []
+  const allRecs = [...records.value]
+  const used = new Set()
+  for (let i = 0; i < allRecs.length; i++) {
+    if (used.has(i)) continue
+    const r1 = allRecs[i]
+    for (let j = i + 1; j < allRecs.length; j++) {
+      if (used.has(j)) continue
+      const r2 = allRecs[j]
+      if (Math.abs(r1.amount - r2.amount) < 0.01 && r1.type !== r2.type) {
+        const d1 = new Date(r1.date)
+        const d2 = new Date(r2.date)
+        const dayDiff = Math.abs(d1 - d2) / 86400000
+        if (dayDiff <= 1) {
+          pairs.push({ r1, r2, id: `${r1.id}-${r2.id}` })
+          used.add(i)
+          used.add(j)
+          break
+        }
+      }
+    }
+  }
+  transferPairs.value = pairs
+  showTransferClean.value = true
+}
+function removeTransferPairs() {
+  const idsToRemove = new Set()
+  for (const p of transferPairs.value) {
+    idsToRemove.add(p.r1.id)
+    idsToRemove.add(p.r2.id)
+  }
+  records.value = records.value.filter((r) => !idsToRemove.has(r.id))
+  const count = transferPairs.value.length
+  transferPairs.value = []
+  showTransferClean.value = false
+}
+function closeTransferClean() { showTransferClean.value = false }
+
+/** 检测跨平台重复支出：微信/支付宝支付 vs 银行卡同一笔支出 */
+const crossDups = ref([])
+const showCrossClean = ref(false)
+function detectCrossDups() {
+  const pairs = []
+  const allRecs = [...records.value]
+  const used = new Set()
+  for (let i = 0; i < allRecs.length; i++) {
+    if (used.has(i)) continue
+    const r1 = allRecs[i]
+    if (r1.type !== 'expense') continue
+    for (let j = i + 1; j < allRecs.length; j++) {
+      if (used.has(j)) continue
+      const r2 = allRecs[j]
+      if (r2.type !== 'expense') continue
+      if (Math.abs(r1.amount - r2.amount) < 0.01) {
+        const d1 = new Date(r1.date)
+        const d2 = new Date(r2.date)
+        const dayDiff = Math.abs(d1 - d2) / 86400000
+        if (dayDiff === 0) {
+          const n1 = (r1.note || '').toLowerCase()
+          const n2 = (r2.note || '').toLowerCase()
+          const m1 = (r1.merchant || '').toLowerCase()
+          const m2 = (r2.merchant || '').toLowerCase()
+          const isWxOrAlipay = (s) => /微信|财付通|weixin|wechat|支付宝|alipay|花呗|余额宝/.test(s)
+          const isBank = (s) => /建行|工行|农行|中行|招行|银行卡|快捷支付|网上支付|银联|card|bank/.test(s)
+          const r1IsWx = isWxOrAlipay(n1 + m1)
+          const r2IsWx = isWxOrAlipay(n2 + m2)
+          const r1IsBank = isBank(n1 + m1)
+          const r2IsBank = isBank(n2 + m2)
+          if ((r1IsWx && r2IsBank) || (r1IsBank && r2IsWx)) {
+            pairs.push({ r1, r2, id: `${r1.id}-${r2.id}` })
+            used.add(i)
+            used.add(j)
+            break
+          }
+        }
+      }
+    }
+  }
+  crossDups.value = pairs
+  showCrossClean.value = true
+}
+function removeCrossDups() {
+  const idsToRemove = new Set()
+  for (const p of crossDups.value) idsToRemove.add(p.r2.id)
+  records.value = records.value.filter((r) => !idsToRemove.has(r.id))
+  const count = crossDups.value.length
+  crossDups.value = []
+  showCrossClean.value = false
+}
+function closeCrossClean() { showCrossClean.value = false }
+
+/** 全部明细时间线：跨所有年份，按日期分组 */
+const timelineMode = ref(false)
+const timelineSearch = ref('')
+const timelineRecords = computed(() => {
+  let list = [...records.value]
+  if (timelineSearch.value.trim()) {
+    const kw = timelineSearch.value.trim().toLowerCase()
+    list = list.filter((r) => {
+      const catLabel = catLabelOf(r.type, r.cat) || ''
+      const merchant = r.merchant || ''
+      const note = r.note || ''
+      return catLabel.toLowerCase().includes(kw) || merchant.toLowerCase().includes(kw) || note.toLowerCase().includes(kw) || String(r.amount).includes(kw)
+    })
+  }
+  list.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id))
+  return list
+})
+const timelineGroups = computed(() => {
+  const map = {}
+  for (const r of timelineRecords.value) {
+    const d = r.date || '未知日期'
+    if (!map[d]) map[d] = []
+    map[d].push(r)
+  }
+  return Object.entries(map).map(([date, recs]) => ({ date, recs, total: sum(recs, 'income') - sum(recs, 'expense') }))
+})
 
 const monthLabel = computed(() => {
   const [y, m] = month.value.split('-').map(Number)
@@ -772,7 +906,7 @@ const monthLabel = computed(() => {
     <p class="muted" style="font-size:12px;margin-bottom:10px;">
       {{ t('budget.importDesc') }}
     </p>
-    <input id="csv-file" type="file" accept=".csv,.xlsx,text/csv" style="display:none;" @change="billImport($event.target.files[0])" />
+    <input id="csv-file" type="file" accept=".csv,.xlsx,.xls,.pdf,text/csv" style="display:none;" @change="billImport($event.target.files[0])" />
     <label for="csv-file" class="btn ghost" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;">{{ t('budget.selectFile') }}</label>
     <div class="clean-toggle">
       <input id="clean-switch" type="checkbox" v-model="cleanMode" />
@@ -781,6 +915,71 @@ const monthLabel = computed(() => {
     <div v-if="importMsg" class="import-msg">{{ importMsg }}</div>
     <div class="privacy-note">
       {{ t('budget.privacyNote') }}<b>{{ t('budget.privacyBold') }}</b>{{ t('budget.privacyRest') }}
+    </div>
+  </div>
+
+  <div class="panel" v-if="records.length > 0">
+    <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>🧹 {{ t('budget.dataCleaning') }}</div>
+    <p class="muted" style="font-size:12px;margin-bottom:10px;">
+      {{ t('budget.cleaningDesc') }}
+    </p>
+    <div class="clean-btns">
+      <button class="btn ghost" @click="detectTransferPairs" style="display:inline-flex;align-items:center;gap:6px;">🔄 {{ t('budget.detectTransfer') }}</button>
+      <button class="btn ghost" @click="detectCrossDups" style="display:inline-flex;align-items:center;gap:6px;">🔁 {{ t('budget.detectCrossDup') }}</button>
+    </div>
+    <div v-if="showTransferClean" class="transfer-clean-panel">
+      <div v-if="transferPairs.length === 0" class="transfer-empty">✅ {{ t('budget.noTransferFound') }}</div>
+      <div v-else>
+        <div class="transfer-summary" v-html="t('budget.transferSummary', { n: transferPairs.length, total: transferPairs.length * 2, amt: fmt(transferPairs.reduce((s, p) => s + p.r1.amount, 0)) })"></div>
+        <div class="transfer-list">
+          <div v-for="p in transferPairs" :key="p.id" class="transfer-pair">
+            <div class="transfer-item expense">
+              <span class="transfer-type">{{ t('budget.expense') }}</span>
+              <span class="transfer-amt">-¥{{ fmt(p.r1.amount) }}</span>
+              <span class="transfer-note">{{ p.r1.note || p.r1.merchant || '' }}</span>
+              <span class="transfer-date">{{ p.r1.date }}{{ p.r1.time ? ' ' + p.r1.time : '' }}</span>
+            </div>
+            <div class="transfer-arrow">↔</div>
+            <div class="transfer-item income">
+              <span class="transfer-type">{{ t('budget.income') }}</span>
+              <span class="transfer-amt">+¥{{ fmt(p.r2.amount) }}</span>
+              <span class="transfer-note">{{ p.r2.note || p.r2.merchant || '' }}</span>
+              <span class="transfer-date">{{ p.r2.date }}{{ p.r2.time ? ' ' + p.r2.time : '' }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="transfer-actions">
+          <button class="btn accent" @click="removeTransferPairs">🗑️ {{ t('budget.deleteTransferPairs', { n: transferPairs.length }) }}</button>
+          <button class="btn ghost" @click="closeTransferClean">{{ t('budget.cancel') }}</button>
+        </div>
+      </div>
+    </div>
+    <div v-if="showCrossClean" class="transfer-clean-panel">
+      <div v-if="crossDups.length === 0" class="transfer-empty">✅ {{ t('budget.noCrossDupFound') }}</div>
+      <div v-else>
+        <div class="transfer-summary" v-html="t('budget.crossDupSummary', { n: crossDups.length, amt: fmt(crossDups.reduce((s, p) => s + p.r1.amount, 0)) })"></div>
+        <div class="transfer-list">
+          <div v-for="p in crossDups" :key="p.id" class="transfer-pair">
+            <div class="transfer-item expense">
+              <span class="transfer-type">{{ t('budget.keep') }}</span>
+              <span class="transfer-amt">-¥{{ fmt(p.r1.amount) }}</span>
+              <span class="transfer-note">{{ p.r1.note || p.r1.merchant || '' }}</span>
+              <span class="transfer-date">{{ p.r1.date }}{{ p.r1.time ? ' ' + p.r1.time : '' }}</span>
+            </div>
+            <div class="transfer-arrow">≈</div>
+            <div class="transfer-item expense" style="opacity:0.5;">
+              <span class="transfer-type">{{ t('budget.delete') }}</span>
+              <span class="transfer-amt">-¥{{ fmt(p.r2.amount) }}</span>
+              <span class="transfer-note">{{ p.r2.note || p.r2.merchant || '' }}</span>
+              <span class="transfer-date">{{ p.r2.date }}{{ p.r2.time ? ' ' + p.r2.time : '' }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="transfer-actions">
+          <button class="btn accent" @click="removeCrossDups">🗑️ {{ t('budget.deleteCrossDups', { n: crossDups.length }) }}</button>
+          <button class="btn ghost" @click="closeCrossClean">{{ t('budget.cancel') }}</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -830,50 +1029,88 @@ const monthLabel = computed(() => {
 
   <div class="panel">
     <div class="section-head" style="align-items:center;margin:0 0 8px;">
-      <h3 class="section-title" style="margin:0;">{{ t('budget.detailTitle') }}{{ sorted.length }}）</h3>
-      <button v-if="records.length" class="btn ghost small" @click="clearAll">{{ t('budget.clearAll') }}</button>
-    </div>
-    <div class="sort-row">
-      <button class="tab" :class="{ active: typeFilter === 'all' }" @click="typeFilter = 'all'; catFilter = 'all'; incCatFilter = 'all'">{{ t('budget.typeAll') }}</button>
-      <button class="tab" :class="{ active: typeFilter === 'expense' }" @click="typeFilter = 'expense'; catFilter = 'all'">{{ t('budget.typeExpense') }}</button>
-      <button class="tab" :class="{ active: typeFilter === 'income' }" @click="typeFilter = 'income'; incCatFilter = 'all'">{{ t('budget.typeIncome') }}</button>
-      <span class="sep">|</span>
-      <button class="tab" :class="{ active: sortMode === 'date' }" @click="switchSort('date')">{{ t('budget.sortByDate') }}</button>
-      <button class="tab" :class="{ active: sortMode === 'amount' }" @click="switchSort('amount')">{{ t('budget.sortByAmount') }}{{ sortMode === 'amount' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : '' }}</button>
-      <button class="tab" :class="{ active: sortMode === 'cat' }" @click="switchSort('cat')">{{ t('budget.sortByCat') }}</button>
-      <span class="muted" style="font-size:10px;margin-left:auto;">{{ t('budget.totalRecords', { n: monthRecords.length }) }}</span>
-    </div>
-    <div v-if="sortMode === 'cat'" class="cat-chips">
-      <template v-if="typeFilter !== 'income'">
-        <button class="chip" :class="{ active: catFilter === 'all' }" @click="catFilter = 'all'">{{ t('budget.allExpense') }}</button>
-        <button v-for="c in CATS.expense" :key="c.key" class="chip" :class="{ active: catFilter === c.key }" @click="catFilter = c.key">{{ c.icon }}{{ lang === 'en' ? c.labelEn : c.label }}</button>
-      </template>
-      <template v-else>
-        <button class="chip" :class="{ active: incCatFilter === 'all' }" @click="incCatFilter = 'all'">{{ t('budget.allIncome') }}</button>
-        <button v-for="c in CATS.income" :key="c.key" class="chip" :class="{ active: incCatFilter === c.key }" @click="incCatFilter = c.key">{{ c.icon }}{{ lang === 'en' ? c.labelEn : c.label }}</button>
-      </template>
-    </div>
-    <div v-if="!sorted.length" class="muted" style="text-align:center;padding:16px;">{{ t('budget.noRecordMonth') }}</div>
-    <div v-else class="rec-list">
-      <div v-for="r in paged" :key="r.id" class="rec-row">
-        <span class="rec-icon">{{ (catInfo(r.type, r.cat) || {}).icon || '📌' }}</span>
-        <span class="rec-main">
-          <span class="rec-name">{{ catLabelOf(r.type, r.cat) || r.cat }}<em v-if="r.merchant"> · {{ r.merchant }}</em><em v-if="r.refunded"> ↩︎{{ t('budget.refunded') }}</em><em v-if="r.note && r.note !== r.merchant"> · {{ r.note }}</em></span>
-          <span class="muted" style="font-size:11px;">{{ r.date }}</span>
-        </span>
-        <span class="rec-amt" :class="r.type === 'income' ? 'in' : 'out'">{{ r.type === 'income' ? '+' : '-' }}¥{{ fmt(r.amount) }}</span>
-        <button class="rec-del" @click="editStart(r)" :title="t('budget.edit')">✎</button>
-        <button class="rec-del" @click="remove(r.id)" :title="t('budget.delete')">✕</button>
+      <h3 class="section-title" style="margin:0;">{{ timelineMode ? t('budget.timelineTitle') : t('budget.detailTitle') + sorted.length + '）' }}</h3>
+      <div style="display:flex;gap:6px;">
+        <button class="btn ghost small" :class="{ 'active-btn': timelineMode }" @click="timelineMode = !timelineMode">{{ timelineMode ? t('budget.backToMonthly') : t('budget.allDetail') }}</button>
+        <button v-if="records.length && !timelineMode" class="btn ghost small" @click="clearAll">{{ t('budget.clearAll') }}</button>
       </div>
     </div>
-    <div v-if="pageCount > 1" class="pager">
-      <button class="btn ghost small" :disabled="page <= 1" @click="page--">{{ t('budget.paginationPrev') }}</button>
-      <div class="pager-jump">
-        <input v-model.number="page" type="number" class="input page-input" min="1" :max="pageCount" />
-        <span>/ {{ pageCount }}</span>
+    <template v-if="!timelineMode">
+      <div class="search-row">
+        <input v-model="searchText" class="input search-input" type="text" :placeholder="t('budget.searchPlaceholder')" />
+        <button v-if="searchText" class="btn ghost small" @click="searchText = ''">✕</button>
       </div>
-      <button class="btn ghost small" :disabled="page >= pageCount" @click="page++">{{ t('budget.paginationNext') }}</button>
-    </div>
+      <div class="sort-row">
+        <button class="tab" :class="{ active: typeFilter === 'all' }" @click="typeFilter = 'all'; catFilter = 'all'; incCatFilter = 'all'">{{ t('budget.typeAll') }}</button>
+        <button class="tab" :class="{ active: typeFilter === 'expense' }" @click="typeFilter = 'expense'; catFilter = 'all'">{{ t('budget.typeExpense') }}</button>
+        <button class="tab" :class="{ active: typeFilter === 'income' }" @click="typeFilter = 'income'; incCatFilter = 'all'">{{ t('budget.typeIncome') }}</button>
+        <span class="sep">|</span>
+        <button class="tab" :class="{ active: sortMode === 'date' }" @click="switchSort('date')">{{ t('budget.sortByDate') }}</button>
+        <button class="tab" :class="{ active: sortMode === 'amount' }" @click="switchSort('amount')">{{ t('budget.sortByAmount') }}{{ sortMode === 'amount' ? (sortDir === 'asc' ? ' ↑' : ' ↓') : '' }}</button>
+        <button class="tab" :class="{ active: sortMode === 'cat' }" @click="switchSort('cat')">{{ t('budget.sortByCat') }}</button>
+        <span class="muted" style="font-size:10px;margin-left:auto;">{{ t('budget.totalRecords', { n: monthRecords.length }) }}</span>
+      </div>
+      <div v-if="sortMode === 'cat'" class="cat-chips">
+        <template v-if="typeFilter !== 'income'">
+          <button class="chip" :class="{ active: catFilter === 'all' }" @click="catFilter = 'all'">{{ t('budget.allExpense') }}</button>
+          <button v-for="c in CATS.expense" :key="c.key" class="chip" :class="{ active: catFilter === c.key }" @click="catFilter = c.key">{{ c.icon }}{{ lang === 'en' ? c.labelEn : c.label }}</button>
+        </template>
+        <template v-else>
+          <button class="chip" :class="{ active: incCatFilter === 'all' }" @click="incCatFilter = 'all'">{{ t('budget.allIncome') }}</button>
+          <button v-for="c in CATS.income" :key="c.key" class="chip" :class="{ active: incCatFilter === c.key }" @click="incCatFilter = c.key">{{ c.icon }}{{ lang === 'en' ? c.labelEn : c.label }}</button>
+        </template>
+      </div>
+      <div v-if="!sorted.length" class="muted" style="text-align:center;padding:16px;">{{ t('budget.noRecordMonth') }}</div>
+      <div v-else class="rec-list">
+        <div v-for="r in paged" :key="r.id" class="rec-row">
+          <span class="rec-icon">{{ (catInfo(r.type, r.cat) || {}).icon || '📌' }}</span>
+          <span class="rec-main">
+            <span class="rec-name">{{ catLabelOf(r.type, r.cat) || r.cat }}<em v-if="r.merchant"> · {{ r.merchant }}</em><em v-if="r.refunded"> ↩︎{{ t('budget.refunded') }}</em><em v-if="r.note && r.note !== r.merchant"> · {{ r.note }}</em></span>
+            <span class="muted" style="font-size:11px;">{{ r.date }}{{ r.time ? ' ' + r.time : '' }}</span>
+          </span>
+          <span class="rec-amt" :class="r.type === 'income' ? 'in' : 'out'">{{ r.type === 'income' ? '+' : '-' }}¥{{ fmt(r.amount) }}</span>
+          <button class="rec-del" @click="editStart(r)" :title="t('budget.edit')">✎</button>
+          <button class="rec-del" @click="remove(r.id)" :title="t('budget.delete')">✕</button>
+        </div>
+      </div>
+      <div v-if="pageCount > 1" class="pager">
+        <button class="btn ghost small" :disabled="page <= 1" @click="page--">{{ t('budget.paginationPrev') }}</button>
+        <div class="pager-jump">
+          <input v-model.number="page" type="number" class="input page-input" min="1" :max="pageCount" />
+          <span>/ {{ pageCount }}</span>
+        </div>
+        <button class="btn ghost small" :disabled="page >= pageCount" @click="page++">{{ t('budget.paginationNext') }}</button>
+      </div>
+    </template>
+    <template v-else>
+      <div class="search-row">
+        <input v-model="timelineSearch" class="input search-input" type="text" :placeholder="t('budget.timelineSearchPlaceholder')" />
+        <button v-if="timelineSearch" class="btn ghost small" @click="timelineSearch = ''">✕</button>
+      </div>
+      <div class="muted" style="font-size:11px;margin-bottom:10px;">{{ t('budget.timelineDesc', { n: timelineRecords.length }) }}</div>
+      <div v-if="!timelineGroups.length" class="muted" style="text-align:center;padding:16px;">{{ t('budget.noRecordMonth') }}</div>
+      <div v-else class="timeline">
+        <div v-for="g in timelineGroups" :key="g.date" class="timeline-day">
+          <div class="timeline-date">
+            <span class="timeline-date-text">{{ g.date }}</span>
+            <span class="timeline-date-count">{{ g.recs.length }} {{ t('budget.totalRecords') }}</span>
+            <span class="timeline-date-bal" :class="g.total >= 0 ? 'in' : 'out'">{{ g.total >= 0 ? '+' : '' }}¥{{ fmt(Math.abs(g.total)) }}</span>
+          </div>
+          <div class="timeline-items">
+            <div v-for="r in g.recs" :key="r.id" class="rec-row">
+              <span class="rec-icon">{{ (catInfo(r.type, r.cat) || {}).icon || '📌' }}</span>
+              <span class="rec-main">
+                <span class="rec-name">{{ catLabelOf(r.type, r.cat) || r.cat }}<em v-if="r.merchant"> · {{ r.merchant }}</em><em v-if="r.note && r.note !== r.merchant"> · {{ r.note }}</em></span>
+                <span class="muted" style="font-size:11px;">{{ r.time || '' }}</span>
+              </span>
+              <span class="rec-amt" :class="r.type === 'income' ? 'in' : 'out'">{{ r.type === 'income' ? '+' : '-' }}¥{{ fmt(r.amount) }}</span>
+              <button class="rec-del" @click="editStart(r); timelineMode = false" :title="t('budget.edit')">✎</button>
+              <button class="rec-del" @click="remove(r.id)" :title="t('budget.delete')">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
     <p class="muted" style="font-size:11px;margin-top:10px;">{{ t('budget.savedLocal') }}</p>
 
     <div class="ach-panel">
@@ -1258,4 +1495,46 @@ const monthLabel = computed(() => {
 }
 @keyframes fest-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
 @keyframes fest-rainbow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+/* 明细搜索 */
+.search-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.search-input { flex: 1; font-size: 13px; padding: 8px 12px; }
+.active-btn { border-color: var(--primary) !important; color: var(--primary) !important; background: var(--primary-soft) !important; }
+.clean-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* 倒钱检测面板 */
+.transfer-clean-panel {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--soft-orange, #fff7ed);
+  border: 1px solid var(--soft-orange-border, #fed7aa);
+  border-radius: 12px;
+}
+.transfer-empty { font-size: 13px; color: #16a34a; padding: 8px 0; }
+.transfer-summary { font-size: 13px; margin-bottom: 10px; color: #92400e; }
+.transfer-summary b { color: #dc2626; }
+.transfer-list { display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto; margin-bottom: 12px; }
+.transfer-pair { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--card); border-radius: 10px; border: 1px solid var(--border); }
+.transfer-item { flex: 1; display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+.transfer-type { font-weight: 700; font-size: 11px; }
+.transfer-item.expense .transfer-type { color: #dc2626; }
+.transfer-item.income .transfer-type { color: #16a34a; }
+.transfer-amt { font-weight: 800; font-size: 14px; }
+.transfer-item.expense .transfer-amt { color: #dc2626; }
+.transfer-item.income .transfer-amt { color: #16a34a; }
+.transfer-note { color: var(--text-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.transfer-date { color: var(--text-light); font-size: 11px; }
+.transfer-arrow { font-size: 16px; color: var(--text-light); flex: none; }
+.transfer-actions { display: flex; gap: 8px; }
+
+/* 全部明细时间线 */
+.timeline { display: flex; flex-direction: column; gap: 16px; }
+.timeline-day { border-left: 3px solid var(--primary); padding-left: 12px; }
+.timeline-date { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+.timeline-date-text { font-size: 14px; font-weight: 800; color: var(--text); }
+.timeline-date-count { font-size: 11px; color: var(--text-sub); background: var(--primary-soft); border-radius: 8px; padding: 1px 8px; }
+.timeline-date-bal { font-size: 12px; font-weight: 700; margin-left: auto; }
+.timeline-date-bal.in { color: #0f766e; }
+.timeline-date-bal.out { color: #b63a46; }
+.timeline-items { display: flex; flex-direction: column; }
 </style>
