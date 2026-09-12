@@ -69,8 +69,11 @@ function completeTour() {
   tourSteps.value = []
 }
 
-/** 跳过引导（不标记为已完成，下次还会自动弹出） */
+/** 跳过引导（标记为已完成，下次不再自动弹出） */
 function skipTour() {
+  if (activeTour.value) {
+    markTourCompleted(activeTour.value)
+  }
   activeTour.value = null
   currentStep.value = 0
   tourSteps.value = []
