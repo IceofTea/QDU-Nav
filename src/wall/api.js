@@ -16,7 +16,8 @@
  */
 import {
   WALLET_KEY, SIGN_KEY, FAV_KEY, POINTS, hotScore
-} from './config'
+} from './config.js'
+import { apiUrl } from './apiBase.js'
 
 const LS_POSTS = 'wall_posts_v1'
 const LS_VOTED = 'wall_voted_v1'
@@ -24,7 +25,7 @@ const LS_VOTED = 'wall_voted_v1'
 /* ──────────────────────── 工具 ──────────────────────── */
 
 async function http(path, opts = {}) {
-  const r = await fetch(path, {
+  const r = await fetch(apiUrl(path), {
     method: opts.method || 'GET',
     headers: { 'Content-Type': 'application/json' },
     body: opts.body ? JSON.stringify(opts.body) : undefined

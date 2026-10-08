@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Console</title>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--blue:#2f81f7;--green:#3fb950;--red:#f85149;--orange:#d29922;--purple:#a371f7}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;min-height:100vh}
+.header{display:flex;align-items:center;justify-content:space-between;padding:13px 22px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0;z-index:10}
+.header h1{font-size:15px;display:flex;align-items:center;gap:8px}
+.header h1 span{font-size:11.5px;color:var(--muted);font-weight:400}
+.btn{border:1px solid var(--border);background:var(--card);color:var(--text);padding:7px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;transition:all .15s}
+.btn:hover{border-color:var(--blue);color:var(--blue)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.danger{color:var(--red);border-color:#f8514955}
+.btn.danger:hover{background:var(--red);color:#fff;border-color:var(--red)}
+.btn.sm{padding:4px 10px;font-size:12px;border-radius:6px}
+.wrap{max-width:1120px;margin:0 auto;padding:18px 22px 60px}
+.login{max-width:380px;margin:12vh auto;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:30px;box-shadow:0 20px 60px #0006}
+.login .logo{font-size:30px;margin-bottom:10px}
+.login h2{font-size:17px;margin-bottom:6px}
+.login p{color:var(--muted);font-size:12.5px;margin-bottom:18px;line-height:1.7}
+.login input{width:100%;padding:11px 13px;border-radius:9px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;outline:none}
+.login input:focus{border-color:var(--blue)}
+.login .btn{width:100%;margin-top:14px;padding:11px}
+.login .err{color:var(--red);font-size:12.5px;margin-top:10px;display:none}
+.login .try{margin-top:14px;font-size:11.5px;color:var(--muted);border-top:1px dashed var(--border);padding-top:12px;line-height:1.7}
+
+/* ── 仪表盘 ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:11px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:13px 15px;position:relative;overflow:hidden}
+.stat .v{font-size:25px;font-weight:800;color:var(--blue);font-variant-numeric:tabular-nums}
+.stat .v.warn{color:var(--orange)}.stat .v.bad{color:var(--red)}.stat .v.good{color:var(--green)}.stat .v.pp{color:var(--purple)}
+.stat .l{font-size:11.5px;color:var(--muted);margin-top:3px}
+.stat .bar{position:absolute;left:0;bottom:0;height:3px;background:var(--blue);opacity:.5}
+.stat .bar.g{background:var(--green)}.stat .bar.o{background:var(--orange)}.stat .bar.p{background:var(--purple)}
+
+/* ── 健康度条 ── */
+.health{display:flex;gap:14px;background:var(--card);border:1px solid var(--border);border-radius:13px;padding:14px 16px;margin-bottom:14px;flex-wrap:wrap}
+.hblock{flex:1;min-width:200px}
+.hblock .ht{font-size:12px;color:var(--muted);margin-bottom:7px;display:flex;justify-content:space-between}
+.hbar{height:8px;border-radius:999px;background:#21262d;overflow:hidden}
+.hbar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--blue),var(--green))}
+.hbar i.o{background:linear-gradient(90deg,var(--orange),var(--red))}
+
+.tabs{display:flex;gap:7px;margin-bottom:13px;flex-wrap:wrap}
+.tab{padding:7px 15px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:12.5px;font-family:inherit}
+.tab.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+.tab .n{background:#ffffff22;padding:1px 7px;border-radius:999px;font-size:10.5px;margin-left:5px}
+.tab .n.hot{background:#d29922;color:#222}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:13px;overflow:hidden}
+.toolbar{display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);align-items:center;flex-wrap:wrap}
+.toolbar select,.toolbar input{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:7px;font-size:12.5px;font-family:inherit;outline:none}
+.item{padding:11px 15px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start}
+.item:last-child{border-bottom:none}
+.item .body{flex:1;min-width:0}
+.item .meta{font-size:11.5px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+.item .meta b{color:var(--text);font-size:12.5px}
+.badge{font-size:10.5px;padding:1px 8px;border-radius:999px;font-weight:600}
+.badge.ok{background:#3fb95022;color:var(--green)}
+.badge.reported{background:#d2992222;color:var(--orange)}
+.badge.hidden{background:#8b949e22;color:var(--muted)}
+.badge.new{background:#a371f722;color:var(--purple)}
+.badge.tag{background:#2f81f722;color:var(--blue)}
+.badge.path{background:#ffffff10;color:var(--muted)}
+.badge.vote{background:#3fb95022;color:var(--green)}
+.item .text{line-height:1.65;word-break:break-word;white-space:pre-wrap;font-size:13px}
+.item .quote{font-size:12px;color:var(--muted);border-left:2px solid var(--blue);padding-left:8px;margin-bottom:4px}
+.item .ops{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.empty{padding:32px;text-align:center;color:var(--muted)}
+.sub{font-size:12px;color:var(--muted);padding:8px 15px;border-bottom:1px solid var(--border);background:#ffffff05}
+
+/* ── 敏感词 ── */
+.wordbox{padding:15px}
+.wordbox .words{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.wchip{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);padding:5px 11px;border-radius:999px;font-size:13px}
+.wchip button{border:none;background:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1}
+.wchip button:hover{color:var(--red)}
+.addrow{display:flex;gap:8px;margin-top:14px}
+.addrow input{flex:1;padding:9px 12px;border-radius:9px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13.5px;outline:none}
+
+/* ── 云脑配置 ── */
+.llm{padding:17px;display:flex;flex-direction:column;gap:11px;max-width:640px}
+.llm label{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:5px}
+.llm input{padding:9px 12px;border-radius:9px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13.5px;outline:none;font-family:ui-monospace,monospace}
+.llm input:focus{border-color:var(--blue)}
+.llm .row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.llm .st{font-size:12.5px;padding:6px 12px;border-radius:8px;background:#21262d;color:var(--muted)}
+.llm .st.ok{background:#3fb95018;color:var(--green)}
+.llm .st.err{background:#f8514918;color:var(--red)}
+.llm .tip{font-size:11.5px;color:var(--muted);line-height:1.7;background:#ffffff06;padding:10px 12px;border-radius:9px}
+
+/* ── 审计日志 ── */
+.audit{max-height:480px;overflow-y:auto}
+.arow{display:flex;gap:12px;padding:8px 15px;border-bottom:1px solid var(--border);font-size:12.5px;font-family:ui-monospace,monospace}
+.arow .at{color:var(--muted);flex-shrink:0}
+.arow .aa{color:var(--purple);flex-shrink:0;width:130px}
+.arow .ad{color:var(--text);word-break:break-all}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1f6feb;color:#fff;padding:10px 22px;border-radius:999px;font-size:13.5px;box-shadow:0 8px 30px #0008;opacity:0;pointer-events:none;transition:opacity .25s;z-index:99}
+.toast.show{opacity:1}
+.toast.err{background:var(--red)}
+.hintline{font-size:12px;color:var(--muted);margin-bottom:10px}
+@media(max-width:640px){.item{flex-direction:column}.item .ops{flex-direction:row}}
+</style>
+</head>
+<body>
+
+<div id="loginView" class="login">
+  <div class="logo">🛰️</div>
+  <h2>社区控制台</h2>
+  <p>评论 · 校园墙 · 投票 · 反馈 · 敏感词 · 云脑。<br>输入管理口令进入（默认 <code>qdu-agent-2026</code>，可用环境变量 <code>ADMIN_TOKEN</code> 修改）。</p>
+  <input id="tokenInput" type="password" placeholder="管理口令" autocomplete="off">
+  <button class="btn primary" onclick="login()">进入</button>
+  <div id="loginErr" class="err"></div>
+  <div class="try">💡 隐秘入口：本站亦可通过 <code>/console</code> 或 <code>/.g/9f3a</code> 打开；导航站首页连点 Logo 3 次、百科连点评论标题 5 次亦可跳转至此。口令连续错 5 次将锁定 1 分钟。</div>
+</div>
+
+<div id="mainView" style="display:none">
+  <div class="header">
+    <h1>🛰️ 社区控制台 <span>Community Console · 评论/墙/投票/反馈/云脑</span></h1>
+    <div style="display:flex;gap:8px">
+      <button class="btn sm" onclick="refreshAll()">⟳ 刷新</button>
+      <button class="btn sm" onclick="logout()">退出</button>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="stats" id="stats"></div>
+    <div class="health" id="health"></div>
+
+    <div class="tabs">
+      <button class="tab on" data-tab="reports" onclick="switchTab('reports')">🚩 举报<span class="n" id="nReports">0</span></button>
+      <button class="tab" data-tab="feedback" onclick="switchTab('feedback')">👎 反馈<span class="n" id="nFeedback">0</span></button>
+      <button class="tab" data-tab="comments" onclick="switchTab('comments')">💬 评论<span class="n" id="nComments">0</span></button>
+      <button class="tab" data-tab="posts" onclick="switchTab('posts')">🧱 帖子<span class="n" id="nPosts">0</span></button>
+      <button class="tab" data-tab="words" onclick="switchTab('words')">🛡 敏感词<span class="n" id="nWords">0</span></button>
+      <button class="tab" data-tab="llm" onclick="switchTab('llm')">🧠 云脑</button>
+      <button class="tab" data-tab="audit" onclick="switchTab('audit')">📒 审计</button>
+      <button class="tab" data-tab="intents" onclick="switchTab('intents')">🎯 意图测试台</button>
+      <button class="tab" data-tab="kb" onclick="switchTab('kb')">📚 知识库<span class="n" id="nKb">-</span></button>
+      <button class="tab" data-tab="announce" onclick="switchTab('announce')">📢 公告</button>
+      <button class="tab" data-tab="backup" onclick="switchTab('backup')">💾 备份</button>
+    </div>
+
+    <div id="tab-reports" class="panel">
+      <div class="toolbar"><span class="hintline">被举报内容置顶 · 可放行 / 隐藏 / 删除（删除评论将级联删除其楼中楼）。</span></div>
+      <div id="reportsList"><div class="empty">加载中…</div></div>
+    </div>
+
+    <div id="tab-feedback" class="panel" style="display:none">
+      <div class="toolbar">
+        <select id="fStatus" onchange="loadItems('feedback')">
+          <option value="">全部</option><option value="new">未处理</option><option value="handled">已处理</option>
+        </select>
+        <span class="hintline">来自智能体的 👎 / 报错回流——这里是"Agent 越用越聪明"的需求源头。</span>
+        <button class="btn sm" onclick="exportCsv('feedback')">⇩ 导出 CSV</button>
+      </div>
+      <div id="feedbackList"><div class="empty">加载中…</div></div>
+    </div>
+
+    <div id="tab-comments" class="panel" style="display:none">
+      <div class="toolbar">
+        <select id="cStatus" onchange="loadItems('comments')">
+          <option value="">全部状态</option><option value="reported">被举报</option><option value="hidden">已隐藏</option><option value="ok">正常</option>
+        </select>
+        <input id="cSearch" placeholder="搜索内容…" oninput="renderItems()">
+        <button class="btn sm" onclick="exportCsv('comments')">⇩ 导出 CSV</button>
+      </div>
+      <div id="commentsList"><div class="empty">加载中…</div></div>
+    </div>
+
+    <div id="tab-posts" class="panel" style="display:none">
+      <div class="toolbar">
+        <select id="pStatus" onchange="loadItems('posts')">
+          <option value="">全部状态</option><option value="reported">被举报</option><option value="hidden">已隐藏</option><option value="ok">正常</option>
+        </select>
+        <input id="pSearch" placeholder="搜索标题/内容…" oninput="renderItems()">
+        <button class="btn sm" onclick="exportCsv('posts')">⇩ 导出 CSV</button>
+      </div>
+      <div id="postsList"><div class="empty">加载中…</div></div>
+    </div>
+
+    <div id="tab-words" class="panel" style="display:none">
+      <div class="wordbox">
+        <span class="hintline">命中敏感词的评论 / 帖子 / 回复将在发送时被<strong>直接拦截</strong>（400 拒绝）。词库实时生效，无需重启。</span>
+        <div class="addrow">
+          <input id="newWord" placeholder="输入新敏感词，回车添加" onkeydown="if(event.key==='Enter')addWord()">
+          <button class="btn primary" onclick="addWord()">添加</button>
+        </div>
+        <div class="words" id="wordsList"></div>
+      </div>
+    </div>
+
+    <div id="tab-llm" class="panel" style="display:none">
+      <div class="llm">
+        <div class="st" id="llmStatus">状态检测中…</div>
+        <label>接口地址（OpenAI 兼容 /v1/chat/completions）
+          <input id="llmUrl" placeholder="https://api.deepseek.com/v1/chat/completions">
+        </label>
+        <label>API Key（仅存本机 server，前端永不接触）
+          <input id="llmKey" type="password" placeholder="sk-…">
+        </label>
+        <label>模型名
+          <input id="llmModel" placeholder="deepseek-chat">
+        </label>
+        <div class="row">
+          <button class="btn primary" onclick="saveLlm(false)">保存配置</button>
+          <button class="btn" onclick="saveLlm(true)">⚡ 保存并测试连接</button>
+          <button class="btn danger" onclick="clearLlm()">清除</button>
+          <span id="llmMsg" class="hintline"></span>
+        </div>
+        <div class="tip">
+          <b>云脑链路</b>：智能体（AgentChat）→ <code>POST /api/chat</code>（本机 server 持密钥代理）→ 上游大模型 → 回流对话。<br>
+          未配置时智能体自动降级为本地三层识别（意图表 / 知识库 / 应用检索），永不干等；配置后复杂问题自动升级云端并保留兜底。<br>
+          支持任意 OpenAI 兼容接口（DeepSeek / 通义 / Kimi / Ollama 本地模型 <code>http://127.0.0.1:11434/v1/chat/completions</code> 均可）。
+        </div>
+      </div>
+    </div>
+
+
+    <div id="tab-intents" class="panel" style="display:none">
+      <div class="toolbar">
+        <input id="intentQuery" placeholder="输入一句话测试识别：如 明天上什么课" onkeydown="if(event.key==='Enter')testIntent()" style="flex:1;min-width:240px">
+        <button class="btn primary" onclick="testIntent()">🎯 测试识别</button>
+        <span class="hintline">打分：全等100 · 包含60+len×2 · 被包含40+len×3 · 阈值40（与线上 engine 一致）</span>
+      </div>
+      <div id="intentResult" class="sub">测试结果将显示命中意图、目标工作流/应用与得分。</div>
+      <div class="toolbar"><span class="hintline">意图全集（来自 src/agent/intents.js 实时内省）</span><input id="intentFilter" placeholder="过滤…" oninput="renderIntents()" style="max-width:200px">
+        <button class="btn sm" onclick="toggleIntentEditor()">＋ 新增意图</button></div>
+      <div id="intentEditor" class="llm" style="display:none;max-width:760px;padding:12px">
+        <label>意图 id（如 wf.newThing）<input id="niId" placeholder="wf.newThing"></label>
+        <label>类型 kind（workflow / app / meta）<input id="niKind" value="workflow"></label>
+        <label>目标（workflow 的 wf id 或 app 的应用 id）<input id="niTarget" placeholder="dailyBriefing"></label>
+        <label>触发语 patterns（逗号分隔）<input id="niPats" placeholder="新功能,说这话触发"></label>
+        <div class="row">
+          <button class="btn primary" onclick="genIntentPatch()">生成补丁 JSON 并下载</button>
+          <span class="hintline">补丁文件随源码合并进 intents.js 后生效（人在回路）</span>
+        </div>
+      </div>
+      <div id="intentList" style="max-height:420px;overflow-y:auto"><div class="empty">加载中…</div></div>
+    </div>
+
+    <div id="tab-kb" class="panel" style="display:none">
+      <div class="toolbar">
+        <input id="kbQuery" placeholder="知识库检索测试：如 绩点怎么算" onkeydown="if(event.key==='Enter')testKb()" style="flex:1;min-width:240px">
+        <button class="btn primary" onclick="testKb()">📚 检索</button>
+        <span class="hintline">BM25 bigram · 阈值见 navAnswer.js（kb-nav.json 由 gen_kb_nav.mjs 重建）</span>
+      </div>
+      <div id="kbResult" class="sub">输入问题进行浏览器端 BM25 检索测试（与智能体第二层同一算法）。</div>
+      <div class="toolbar"><span class="hintline" id="kbStat">语料列表</span></div>
+      <div id="kbList" style="max-height:420px;overflow-y:auto"><div class="empty">加载中…</div></div>
+    </div>
+
+    <div id="tab-announce" class="panel" style="display:none">
+      <div class="toolbar"><span class="hintline">发布站内公告（写入 public/data/announcements.json，用户端公告弹窗下次打开即见）</span></div>
+      <div class="llm" style="max-width:720px">
+        <label>标题<input id="annTitle" maxlength="80" placeholder="如：v1.4.0 大版本更新说明"></label>
+        <label>正文<textarea id="annContent" rows="6" maxlength="2000" placeholder="公告内容（支持换行）"></textarea></label>
+        <div class="row"><button class="btn primary" onclick="postAnnounce()">📢 发布公告</button><span id="annMsg" class="hintline"></span></div>
+      </div>
+      <div id="annList" class="sub">当前公告：</div>
+    </div>
+
+    <div id="tab-backup" class="panel" style="display:none">
+      <div class="toolbar"><span class="hintline">全量备份 community.json（评论/帖子/词库/反馈/审计/云脑配置）——恢复 = 放回 server/data/ 重启</span></div>
+      <div class="toolbar">
+        <button class="btn primary" onclick="downloadBackup()">⇩ 下载全量备份 JSON</button>
+        <button class="btn" onclick="refreshAll()">⟳ 刷新统计</button>
+        <span class="hintline">原子写保证断电完整；迁移到数据库期见 wall/config.js API_CONTRACT</span>
+      </div>
+      <div id="backupInfo" class="sub">点击下载生成带时间戳的备份文件。</div>
+    </div>
+
+    <div id="tab-audit" class="panel" style="display:none">
+      <div class="toolbar"><span class="hintline">管理操作留痕（最近 100 条）：登录 / 审核 / 词库 / 云脑配置。</span></div>
+      <div class="audit" id="auditList"><div class="empty">加载中…</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ════════════════════════════════════════════════
+ * 社区控制台前端（单文件零依赖）
+ * 接口对接见 server/community.mjs 头部「接口速查」
+ * ════════════════════════════════════════════════ */
+var BASE = location.origin;
+// 支持 ?api=https://公网网关 覆盖（Pages 纯静态演示时可指向自建网关）；
+// Pages 下无后端时登录必然失败，页面顶部会显示静态模式横幅，不再是空白 404。
+try {
+  var _apiQ = new URLSearchParams(location.search).get('api');
+  if (_apiQ) BASE = String(_apiQ).replace(/\/+$/, '');
+} catch (e) { /* noop */ }
+if (/\.github\.io$/.test(location.hostname)) {
+  document.addEventListener('DOMContentLoaded', function () {
+    var bar = document.createElement('div');
+    bar.style.cssText = 'background:#3b2f0b;color:#fbbf24;font-size:12.5px;padding:9px 16px;text-align:center;line-height:1.7';
+    bar.innerHTML = '本站为 GitHub Pages 纯静态演示，无后端 API，管理台仅展示界面；完整管理功能请在本地启动网关后访问 http://localhost:8787/admin（QDU）/ 8788（FJNU），或给本页 URL 加 ?api=你的网关地址 后重试。';
+    document.body.insertBefore(bar, document.body.firstChild);
+  });
+}
+var TOKEN = localStorage.getItem('admin_token') || '';
+var DATA = { reports: [], comments: [], posts: [], feedback: [], words: [], audit: [] };
+var currentTab = 'reports';
+
+function toast(msg, err) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (err ? ' err' : '');
+  setTimeout(function () { t.className = 'toast'; }, 2600);
+}
+
+function api(path, opts) {
+  opts = opts || {};
+  opts.headers = Object.assign({ 'Content-Type': 'application/json', 'x-admin-token': TOKEN }, opts.headers || {});
+  return fetch(BASE + path, opts).then(function (r) {
+    return r.json().then(function (d) {
+      if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
+      return d;
+    });
+  });
+}
+
+function fmt(ts) {
+  var d = new Date(ts);
+  return d.getMonth() + 1 + '-' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, function (m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]; });
+}
+
+/* ── 登录 ── */
+function login() {
+  var t = document.getElementById('tokenInput').value.trim();
+  if (!t) return;
+  api('/api/admin/login', { method: 'POST', body: JSON.stringify({ token: t }) }).then(function (d) {
+    TOKEN = d.token;
+    localStorage.setItem('admin_token', TOKEN);
+    enter();
+  }).catch(function (e) {
+    var el = document.getElementById('loginErr');
+    el.textContent = e.message;
+    el.style.display = 'block';
+  });
+}
+function logout() {
+  TOKEN = '';
+  localStorage.removeItem('admin_token');
+  document.getElementById('mainView').style.display = 'none';
+  document.getElementById('loginView').style.display = 'block';
+}
+function enter() {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('mainView').style.display = 'block';
+  refreshAll();
+  loadLlm();
+  loadAgentData();
+  refreshAnnList();
+}
+
+/* ── 概览与仪表盘 ── */
+function barPct(a, b) { return b ? Math.round((a / b) * 100) : 0; }
+
+var lastReportCount = -1
+function notifyReport(n, reason) {
+  try {
+    if (window.Notification && Notification.permission === 'granted') {
+      new Notification('🚩 社区新举报', { body: (reason || '').slice(0, 60) })
+    } else if (window.Notification && Notification.permission !== 'denied') {
+      Notification.requestPermission()
+    }
+  } catch (e) { /* noop */ }
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)()
+    var o = ctx.createOscillator(); var g = ctx.createGain()
+    o.connect(g); g.connect(ctx.destination); o.frequency.value = 980; g.gain.value = 0.05
+    o.start(); setTimeout(function () { o.stop(); ctx.close() }, 260)
+  } catch (e) { /* noop */ }
+  toast('🚩 收到 ' + n + ' 条待处理举报' + (reason ? '：' + reason.slice(0, 30) : ''), true)
+}
+
+function refreshAll() {
+  api('/api/admin/overview').then(function (d) {
+    DATA.reports = d.reports;
+    var okC = d.comments.ok, totC = d.comments.total || 1;
+    var okP = d.posts.ok, totP = d.posts.total || 1;
+    document.getElementById('stats').innerHTML =
+      stat(d.comments.total, '评论总数', '', Math.min(100, barPct(okC, totC)), '') +
+      stat(d.posts.total, '校园墙帖子', '', Math.min(100, barPct(okP, totP)), '') +
+      stat(d.feedback.new + '/' + d.feedback.total, '反馈 待处理/总', d.feedback.new ? 'warn' : 'good', 100, 'p') +
+      stat(d.reports.length, '待处理举报', d.reports.length ? 'bad' : 'good', d.reports.length ? 100 : 0, 'o') +
+      stat(d.words, '敏感词条数', '', 100, 'g') +
+      stat(d.llm.configured ? '已配置' : '未配置', '云脑 ' + (d.llm.model || ''), d.llm.configured ? 'good' : '', d.llm.configured ? 100 : 10, 'p');
+    var cRate = Math.round((okC / totC) * 100);
+    var pRate = Math.round((okP / totP) * 100);
+    document.getElementById('health').innerHTML =
+      hblock('内容健康度（正常占比）', cRate + '%', Math.min(100, cRate), cRate >= 90) +
+      hblock('帖子健康度', pRate + '%', Math.min(100, pRate), pRate >= 90) +
+      hblock('举报响应', d.reports.length ? d.reports.length + ' 条待处理' : '队列清空 ✓', d.reports.length ? 100 : 100, d.reports.length === 0);
+    document.getElementById('nReports').textContent = d.reports.length;
+    document.getElementById('nReports').className = 'n' + (d.reports.length ? ' hot' : '');
+    if (lastReportCount >= 0 && d.reports.length > lastReportCount) {
+      notifyReport(d.reports.length - lastReportCount, d.reports[0] && d.reports[0].reason)
+    }
+    lastReportCount = d.reports.length;
+    document.getElementById('nFeedback').textContent = d.feedback.new;
+    document.getElementById('nFeedback').className = 'n' + (d.feedback.new ? ' hot' : '');
+    document.getElementById('nComments').textContent = d.comments.total;
+    document.getElementById('nPosts').textContent = d.posts.total + (d.posts.votes ? ' (' + d.posts.votes + '投票)' : '');
+    document.getElementById('nWords').textContent = d.words;
+    renderReports();
+  }).catch(function (e) {
+    if (String(e.message).indexOf('未授权') >= 0) logout();
+    toast(e.message, true);
+  });
+  loadItems('comments');
+  loadItems('posts');
+  loadItems('feedback');
+  api('/api/admin/words').then(function (d) { DATA.words = d.words; renderWords(); }).catch(function () {});
+  api('/api/admin/audit').then(function (d) { DATA.audit = d.audit; renderAudit(); }).catch(function () {});
+}
+
+function stat(v, l, cls, pct, barCls) {
+  return '<div class="stat"><div class="v ' + cls + '">' + v + '</div><div class="l">' + l + '</div>' +
+    '<div class="bar ' + (barCls || '') + '" style="width:' + (pct || 0) + '%"></div></div>';
+}
+function hblock(title, val, pct, good) {
+  return '<div class="hblock"><div class="ht"><span>' + title + '</span><b style="color:' + (good ? 'var(--green)' : 'var(--orange)') + '">' + val + '</b></div>' +
+    '<div class="hbar"><i class="' + (good ? '' : 'o') + '" style="width:' + pct + '%"></i></div></div>';
+}
+
+function loadItems(type) {
+  var selId = type === 'comments' ? 'cStatus' : type === 'posts' ? 'pStatus' : 'fStatus';
+  var st = (document.getElementById(selId) || {}).value || '';
+  api('/api/admin/items?type=' + type + (st ? '&status=' + st : '')).then(function (d) {
+    DATA[type] = d.items;
+    renderItems();
+  }).catch(function (e) { toast(e.message, true); });
+}
+
+/* ── 渲染 ── */
+function badge(st) {
+  if (st === 'reported') return '<span class="badge reported">被举报</span>';
+  if (st === 'hidden') return '<span class="badge hidden">已隐藏</span>';
+  if (st === 'new') return '<span class="badge new">未处理</span>';
+  if (st === 'doing') return '<span class="badge reported">🛠 处理中</span>';
+  if (st === 'handled') return '<span class="badge ok">已处理</span>';
+  return '<span class="badge ok">正常</span>';
+}
+
+function opsHtml(type, item) {
+  var ops = '';
+  if (item.status === 'reported' || item.status === 'doing') ops += '<button class="btn sm" onclick="moderate(\'' + type + '\',\'' + item.id + '\',\'doing\')">🛠 处理中</button>';
+  if (item.status === 'doing') ops += '<button class="btn sm" onclick="moderate(\'' + type + '\',\'' + item.id + '\',\'done\')">✓ 完结</button>';
+  if (item.status !== 'ok' && item.status !== 'handled' && item.status !== 'doing') ops += '<button class="btn sm" onclick="moderate(\'' + type + '\',\'' + item.id + '\',\'approve\')">✓ 放行</button>';
+  if (item.status !== 'hidden' && type !== 'feedback') ops += '<button class="btn sm" onclick="moderate(\'' + type + '\',\'' + item.id + '\',\'hide\')">👁 隐藏</button>';
+  ops += '<button class="btn sm danger" onclick="moderate(\'' + type + '\',\'' + item.id + '\',\'delete\')">🗑 删除</button>';
+  return '<div class="ops">' + ops + '</div>';
+}
+
+function commentHtml(c) {
+  var replies = '';
+  var kids = DATA.comments.filter(function (x) { return x.parent === c.id; });
+  if (kids.length) {
+    replies = '<div class="quote">楼中楼 ×' + kids.length + '：' + esc(kids[kids.length - 1].author) + '：' + esc(kids[kids.length - 1].content.slice(0, 40)) + '</div>';
+  }
+  return '<div class="item">' +
+    '<div class="body">' +
+    '<div class="meta"><b>' + esc(c.author) + '</b>' + badge(c.status) +
+    (c.parent ? '<span class="badge tag">回复</span>' : '') +
+    (c.type === 'correction' ? '<span class="badge tag">纠错</span>' : '') +
+    (c.type === 'para' ? '<span class="badge tag">段落批注</span>' : '') +
+    '<span class="badge path">' + esc(c.path) + '</span><span>' + fmt(c.ts) + '</span>' +
+    (c.reportReason ? '<span style="color:var(--orange)">举报：' + esc(c.reportReason) + '</span>' : '') +
+    '</div>' +
+    (c.quote ? '<div class="quote">📌 ' + esc(c.quote) + '</div>' : '') +
+    '<div class="text">' + esc(c.content) + '</div>' + replies + '</div>' +
+    opsHtml('comments', c) + '</div>';
+}
+
+function postHtml(p) {
+  var vote = '';
+  if (p.vote) {
+    var total = (p.vote.tallies || []).reduce(function (a, b) { return a + b; }, 0);
+    vote = '<div class="quote">🗳 ' + esc(p.vote.question) + ' — 选项：' +
+      p.vote.options.map(function (o, i) { return esc(o) + ' ' + ((p.vote.tallies || [])[i] || 0); }).join(' / ') +
+      ' · 共 ' + total + ' 票</div>';
+  }
+  return '<div class="item">' +
+    '<div class="body">' +
+    '<div class="meta"><b>' + esc(p.author) + '</b>' + badge(p.status) +
+    '<span class="badge tag">' + esc(p.tag) + '</span>' +
+    (p.vote ? '<span class="badge vote">投票</span>' : '') +
+    '<span>' + fmt(p.ts) + '</span>' +
+    '<span>👍' + (p.likes || 0) + ' 💬' + ((p.replies || []).length) + '</span>' +
+    (p.reportReason ? '<span style="color:var(--orange)">举报：' + esc(p.reportReason) + '</span>' : '') +
+    '</div>' +
+    '<div class="text"><b>' + esc(p.title) + '</b>\n' + esc(p.content) + '</div>' + vote + '</div>' +
+    opsHtml('posts', p) + '</div>';
+}
+
+function feedbackHtml(f) {
+  return '<div class="item">' +
+    '<div class="body">' +
+    '<div class="meta"><b>👎 用户反馈</b>' + badge(f.status) +
+    '<span class="badge tag">' + esc(f.kind) + '</span>' +
+    (f.path ? '<span class="badge path">' + esc(f.path) + '</span>' : '') +
+    '<span>' + fmt(f.ts) + '</span></div>' +
+    '<div class="text">' + esc(f.text) + '</div>' +
+    (f.detail ? '<div class="quote">' + esc(f.detail) + '</div>' : '') +
+    '</div>' + opsHtml('feedback', f) + '</div>';
+}
+
+function renderReports() {
+  var el = document.getElementById('reportsList');
+  if (!DATA.reports.length) { el.innerHTML = '<div class="empty">🎉 暂无举报，社区风清气正</div>'; return; }
+  el.innerHTML = DATA.reports.map(function (r) {
+    var t = r.type === 'post' ? 'posts' : 'comments';
+    return '<div class="item"><div class="body">' +
+      '<div class="meta"><b>' + (r.type === 'post' ? '校园墙帖子' : '评论') + '</b><span class="badge reported">被举报</span>' +
+      '<span style="color:var(--orange)">理由：' + esc(r.reason || '-') + '</span><span>' + fmt(r.ts) + '</span></div>' +
+      '<div class="text">' + esc(r.text) + '</div></div>' +
+      '<div class="ops">' +
+      '<button class="btn sm" onclick="moderate(\'' + t + '\',\'' + r.id + '\',\'approve\')">✓ 放行</button>' +
+      '<button class="btn sm" onclick="moderate(\'' + t + '\',\'' + r.id + '\',\'hide\')">👁 隐藏</button>' +
+      '<button class="btn sm danger" onclick="moderate(\'' + t + '\',\'' + r.id + '\',\'delete\')">🗑 删除</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function renderItems() {
+  ['comments', 'posts', 'feedback'].forEach(function (tab) {
+    var selId = tab === 'comments' ? 'cSearch' : tab === 'posts' ? 'pSearch' : null;
+    var q = selId ? ((document.getElementById(selId) || {}).value || '') : '';
+    q = q.trim().toLowerCase();
+    var arr = (DATA[tab] || []).filter(function (x) {
+      if (!q) return true;
+      return ((x.content || '') + (x.title || '') + (x.text || '')).toLowerCase().indexOf(q) >= 0;
+    });
+    var el = document.getElementById(tab + 'List');
+    if (!el) return;
+    if (!arr.length) { el.innerHTML = '<div class="empty">暂无内容</div>'; return; }
+    var render = tab === 'comments' ? commentHtml : tab === 'posts' ? postHtml : feedbackHtml;
+    el.innerHTML = arr.map(render).join('');
+    if (tab === 'feedback') renderFbClusters(arr);
+  });
+}
+
+function renderWords() {
+  var el = document.getElementById('wordsList');
+  el.innerHTML = (DATA.words || []).map(function (w) {
+    return '<span class="wchip">' + esc(w) + '<button onclick="removeWord(\'' + esc(w) + '\')" title="删除">×</button></span>';
+  }).join('') || '<span class="empty">词库为空</span>';
+}
+
+function renderAudit() {
+  var el = document.getElementById('auditList');
+  if (!DATA.audit.length) { el.innerHTML = '<div class="empty">暂无审计记录</div>'; return; }
+  el.innerHTML = DATA.audit.map(function (a) {
+    return '<div class="arow"><span class="at">' + fmt(a.ts) + '</span><span class="aa">' + esc(a.action) + '</span><span class="ad">' + esc(a.detail) + '</span></div>';
+  }).join('');
+}
+
+/* ── 操作 ── */
+function moderate(type, id, action) {
+  if (action === 'delete' && !confirm('确认永久删除？（评论删除会级联删除楼中楼）')) return;
+  api('/api/admin/moderate', { method: 'POST', body: JSON.stringify({ type: type, id: id, action: action }) })
+    .then(function () { toast({ approve: '已放行', hide: '已隐藏', delete: '已删除' }[action]); refreshAll(); })
+    .catch(function (e) { toast(e.message, true); });
+}
+
+function addWord() {
+  var el = document.getElementById('newWord');
+  var w = el.value.trim();
+  if (!w) return;
+  api('/api/admin/words', { method: 'POST', body: JSON.stringify({ action: 'add', word: w }) })
+    .then(function (d) { DATA.words = d.words; el.value = ''; renderWords(); document.getElementById('nWords').textContent = d.words.length; toast('已添加：' + w); })
+    .catch(function (e) { toast(e.message, true); });
+}
+
+function removeWord(w) {
+  api('/api/admin/words', { method: 'POST', body: JSON.stringify({ action: 'remove', word: w }) })
+    .then(function (d) { DATA.words = d.words; renderWords(); document.getElementById('nWords').textContent = d.words.length; toast('已移除：' + w); })
+    .catch(function (e) { toast(e.message, true); });
+}
+
+/* ── 云脑配置 ── */
+function loadLlm() {
+  api('/api/admin/llm').then(function (d) {
+    document.getElementById('llmUrl').value = d.baseUrl || '';
+    document.getElementById('llmModel').value = d.model || 'deepseek-chat';
+    var st = document.getElementById('llmStatus');
+    st.className = 'st ' + (d.configured ? 'ok' : '');
+    st.textContent = d.configured ? '🟢 已配置 · ' + d.model + '（密钥已存本机）' : '⚪ 未配置 —— 智能体当前使用本地三层识别';
+  }).catch(function (e) { toast(e.message, true); });
+}
+function saveLlm(withTest) {
+  var cfg = {
+    baseUrl: document.getElementById('llmUrl').value.trim(),
+    apiKey: document.getElementById('llmKey').value.trim(),
+    model: document.getElementById('llmModel').value.trim() || 'deepseek-chat',
+    action: withTest ? 'test' : 'save'
+  };
+  if (!cfg.baseUrl) { toast('请填写接口地址', true); return; }
+  var msg = document.getElementById('llmMsg');
+  msg.textContent = withTest ? '测试中…' : '保存中…';
+  api('/api/admin/llm', { method: 'POST', body: JSON.stringify(cfg) })
+    .then(function (d) {
+      if (withTest) {
+        msg.textContent = '✅ ' + (d.msg || '连接成功') + (d.content ? '：' + d.content.slice(0, 30) : '');
+        toast('云脑连接成功 ✓');
+      } else {
+        msg.textContent = '已保存';
+        toast('云脑配置已保存 ✓');
+      }
+      document.getElementById('llmKey').value = '';
+      loadLlm();
+      refreshAll();
+    })
+    .catch(function (e) {
+      msg.textContent = '❌ ' + e.message;
+      msg.style.color = 'var(--red)';
+      setTimeout(function () { msg.style.color = ''; }, 3000);
+      toast(e.message, true);
+    });
+}
+function clearLlm() {
+  if (!confirm('清除云脑配置？智能体将回到纯本地模式。')) return;
+  api('/api/admin/llm', { method: 'POST', body: JSON.stringify({ action: 'clear' }) })
+    .then(function () { toast('已清除'); loadLlm(); refreshAll(); })
+    .catch(function (e) { toast(e.message, true); });
+}
+
+/* ── 反馈聚类：按 kind 分组统计（Agent 需求看板） ── */
+function renderFbClusters(list) {
+  var groups = {};
+  list.forEach(function (f) { var k = f.kind || 'other'; (groups[k] = groups[k] || []).push(f); });
+  var keys = Object.keys(groups).sort(function (a, b) { return groups[b].length - groups[a].length; });
+  var html = '<div class="sub"><b>📊 反馈聚类</b>（按来源分组 · 处理时优先看大簇）</div>' +
+    keys.map(function (k) {
+      var arr = groups[k];
+      var handled = arr.filter(function (x) { return x.status === 'handled'; }).length;
+      return '<div class="item"><div class="body"><div class="meta"><b>' + esc(k) + '</b>' +
+        '<span class="badge tag">' + arr.length + ' 条</span>' +
+        '<span class="badge ' + (handled === arr.length ? 'ok' : 'new') + '">已处理 ' + handled + '/' + arr.length + '</span>' +
+        '</div><div class="text" style="font-size:12px;color:var(--muted)">最新：' + esc((arr[0].text || '').slice(0, 70)) + '</div></div></div>';
+    }).join('');
+  var host = document.getElementById('feedbackList');
+  if (host) host.innerHTML = html + host.innerHTML;
+}
+
+/* 导出 CSV（UTF-8 BOM，Excel 直接打开中文不乱码） */
+function exportCsv(type) {
+  var rows = DATA[type] || [];
+  if (!rows.length) { toast('没有可导出的数据', true); return; }
+  var head = type === 'posts' ? ['id','tag','author','title','content','likes','replies','status','ts']
+    : type === 'feedback' ? ['id','kind','text','detail','status','ts']
+    : ['id','path','author','content','type','parent','likes','status','ts'];
+  var esc2 = function (v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; };
+  var csv = [head.join(',')].concat(rows.map(function (r) {
+    return head.map(function (k) { return esc2(r[k]); }).join(',');
+  })).join('\r\n');
+  var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = type + '-export-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('已导出 ' + rows.length + ' 条（CSV·UTF-8 BOM）');
+}
+
+
+/* ══════════ v4：意图测试台 / 知识库 / 公告 / 备份 ══════════ */
+var AGENT_DATA = { intents: [], kb: [], faqCount: 0 };
+
+function loadAgentData() {
+  api('/api/admin/agent-introspect').then(function (d) {
+    AGENT_DATA = d;
+    var kbEl = document.getElementById('nKb');
+    if (kbEl) kbEl.textContent = (d.kb || []).length;
+    renderIntents();
+    renderKb();
+  }).catch(function (e) { toast(e.message, true); });
+}
+
+/* 与 src/agent/intents.js matchIntent 同规则打分 */
+function scoreIntent(q, patterns) {
+  var t = q.toLowerCase().replace(/[\s\u3000-\u303f\uff00-\uffef？!。，,.、;：:~～'"]/g, '');
+  var best = 0;
+  for (var i = 0; i < patterns.length; i++) {
+    var pl = patterns[i].toLowerCase();
+    if (!pl) continue;
+    if (t === pl) best = Math.max(best, 100);
+    else if (t.indexOf(pl) >= 0) best = Math.max(best, 60 + pl.length * 2);
+    else if (pl.indexOf(t) >= 0 && t.length >= 2) best = Math.max(best, 40 + t.length * 3);
+  }
+  return best;
+}
+
+function testIntent() {
+  var q = (document.getElementById('intentQuery').value || '').trim();
+  var box = document.getElementById('intentResult');
+  if (!q) { box.textContent = '请输入一句话'; return; }
+  var ranked = (AGENT_DATA.intents || []).map(function (it) {
+    return { it: it, s: scoreIntent(q, it.patterns || []) };
+  }).filter(function (x) { return x.s > 0; }).sort(function (a, b) { return b.s - a.s; });
+  if (!ranked.length) {
+    box.innerHTML = '<span style="color:var(--orange)">未命中意图表</span> → 将走 FAQ/BM25 → 应用检索 → 云脑 → 兜底（与线上链路一致）。FAQ 库 ' + AGENT_DATA.faqCount + ' 条、知识库 ' + (AGENT_DATA.kb || []).length + ' 篇承接。';
+    return;
+  }
+  var top = ranked[0];
+  box.innerHTML = '<b style="color:var(--blue)">✓ 命中：' + top.it.id + '</b> · 目标 ' + top.it.target + ' · 置信度 ' + top.s + '%' +
+    (ranked[1] ? '　次高：' + ranked[1].it.id + '(' + ranked[1].s + ')' : '') +
+    '　<span class="hintline">kind=' + top.it.kind + ' · patterns=' + ((top.it.patterns || []).length) + '</span>';
+}
+
+function toggleIntentEditor() {
+  var el = document.getElementById('intentEditor')
+  if (el) el.style.display = el.style.display === 'none' ? '' : 'none'
+}
+
+function genIntentPatch() {
+  var id = (document.getElementById('niId').value || '').trim()
+  var kind = (document.getElementById('niKind').value || 'workflow').trim()
+  var target = (document.getElementById('niTarget').value || '').trim()
+  var pats = (document.getElementById('niPats').value || '').split(/[,，]/).map(function (x) { return x.trim() }).filter(Boolean)
+  if (!id || !pats.length) { toast('id 与触发语必填', true); return }
+  var line = kind === 'workflow'
+    ? "  { id: '" + id + "', kind: 'workflow', wf: '" + target + "', title: '" + id + "', patterns: [" + pats.map(function (x) { return "'" + x + "'" }).join(', ') + "] },"
+    : kind === 'app'
+      ? "  { id: '" + id + "', kind: 'app', app: '" + target + "', title: '" + id + "', patterns: [" + pats.map(function (x) { return "'" + x + "'" }).join(', ') + "] },"
+      : "  { id: '" + id + "', kind: 'meta', title: '" + id + "', patterns: [" + pats.map(function (x) { return "'" + x + "'" }).join(', ') + "], reply: '（在 intents.js 中补充回复文案）' },"
+  var patch = "// 新增意图补丁 · 生成于 " + new Date().toISOString().slice(0, 19) + "\n// 合并位置：src/agent/intents.js → INTENTS 数组内\n" + line + "\n"
+  var blob = new Blob([patch], { type: 'text/javascript' })
+  var a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'intent-patch.js'
+  a.click()
+  URL.revokeObjectURL(a.href)
+  toast('补丁已下载，合并进 intents.js 并 npm run build 生效')
+}
+
+function renderIntents() {
+  var kw = ((document.getElementById('intentFilter') || {}).value || '').toLowerCase();
+  var list = (AGENT_DATA.intents || []).filter(function (it) {
+    return !kw || it.id.toLowerCase().indexOf(kw) >= 0 || (it.patterns || []).join(',').toLowerCase().indexOf(kw) >= 0;
+  });
+  var el = document.getElementById('intentList');
+  if (!el) return;
+  el.innerHTML = list.map(function (it) {
+    return '<div class="item"><div class="body"><div class="meta"><b>' + it.id + '</b>' +
+      '<span class="badge tag">' + it.kind + '</span><span class="badge path">' + it.target + '</span></div>' +
+      '<div class="text" style="font-size:12px;color:var(--muted)">' + (it.patterns || []).map(esc).join(' · ') + '</div></div></div>';
+  }).join('') || '<div class="empty">无匹配意图</div>';
+}
+
+/* 知识库浏览器端 BM25（复刻 navAnswer 算法的精简版，bigram + df 来自文档文本） */
+function kbTokens(q) {
+  var clean = String(q).replace(/[^\u4e00-\u9fa5A-Za-z0-9]/g, ' ');
+  var out = [];
+  clean.split(/\s+/).forEach(function (seg) {
+    if (!seg) return;
+    if (/^[A-Za-z0-9]+$/.test(seg) && seg.length >= 2) out.push(seg.toLowerCase());
+    for (var i = 0; i < seg.length - 1; i++) out.push(seg.substr(i, 2));
+  });
+  return out;
+}
+function testKb() {
+  var q = ((document.getElementById('kbQuery') || {}).value || '').trim();
+  var box = document.getElementById('kbResult');
+  if (!q) { box.textContent = '请输入问题'; return; }
+  var qtok = kbTokens(q);
+  var scored = (AGENT_DATA.kb || []).map(function (d, i) {
+    var text = (d.t + ' ' + d.s + ' ' + (d.src || '')).toLowerCase();
+    var sc = 0;
+    qtok.forEach(function (w) { if (w.length >= 2 && text.indexOf(w) >= 0) sc += 1; });
+    return { d: d, sc: sc };
+  }).filter(function (x) { return x.sc > 0; }).sort(function (a, b) { return b.sc - a.sc; }).slice(0, 3);
+  if (!scored.length) { box.innerHTML = '<span style="color:var(--orange)">知识库无命中</span>（管理台为简化打分；线上为标准 BM25 加权）'; return; }
+  box.innerHTML = scored.map(function (x, i) {
+    return '<div class="sub">🏆' + (i + 1) + ' <b>' + esc(x.d.t) + '</b>（命中词位 ' + x.sc + '）<br><span class="hintline">' + esc(x.d.s) + ' — ' + esc(x.d.src) + '</span></div>';
+  }).join('');
+}
+
+function renderKb() {
+  var el = document.getElementById('kbList');
+  var st = document.getElementById('kbStat');
+  if (st) st.textContent = '语料 ' + (AGENT_DATA.kb || []).length + ' 篇 · FAQ ' + AGENT_DATA.faqCount + ' 条（重建：node scripts/gen_kb_nav.mjs）';
+  if (!el) return;
+  el.innerHTML = (AGENT_DATA.kb || []).map(function (d) {
+    return '<div class="item"><div class="body"><div class="meta"><b>' + esc(d.t) + '</b><span class="badge tag">' + esc(d.kind) + '</span><span class="badge path">' + esc(d.src || '') + '</span></div><div class="text" style="font-size:12px">' + esc(d.s) + '</div></div></div>';
+  }).join('') || '<div class="empty">kb-nav.json 未找到（先运行 node scripts/gen_kb_nav.mjs）</div>';
+}
+
+function postAnnounce() {
+  var title = (document.getElementById('annTitle').value || '').trim();
+  var content = (document.getElementById('annContent').value || '').trim();
+  var msg = document.getElementById('annMsg');
+  if (!title || !content) { msg.textContent = '标题与内容必填'; msg.style.color = 'var(--red)'; return; }
+  api('/api/admin/announce', { method: 'POST', body: { title: title, content: content } })
+    .then(function (d) { msg.textContent = '✓ 已发布（' + d.count + ' 条公告）'; msg.style.color = 'var(--green)'; toast('公告已发布'); document.getElementById('annTitle').value = ''; document.getElementById('annContent').value = ''; refreshAnnList(); })
+    .catch(function (e) { msg.textContent = e.message; msg.style.color = 'var(--red)'; });
+}
+
+function refreshAnnList() {
+  fetch(BASE + '/data/announcements.json').then(function (r) { return r.json(); }).then(function (d) {
+    var list = d.list || d.notices || [];
+    var el = document.getElementById('annList');
+    if (el) el.innerHTML = '当前公告（' + list.length + '）：' + list.slice(0, 6).map(function (a) {
+      return '<div class="sub">· <b>' + esc(a.title) + '</b> <span class="hintline">' + esc(a.date) + '</span></div>';
+    }).join('');
+  }).catch(function () {});
+}
+
+function downloadBackup() {
+  api('/api/admin/backup').then(function (d) {
+    var blob = new Blob([JSON.stringify(d.data, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'community-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    var el = document.getElementById('backupInfo');
+    if (el) el.textContent = '✓ 已导出（评论 ' + (d.data.comments || []).length + ' · 帖子 ' + (d.data.posts || []).length + ' · 词库 ' + (d.data.words || []).length + '）@ ' + d.exportedAt;
+    toast('备份已下载');
+  }).catch(function (e) { toast(e.message, true); });
+}
+
+function switchTab(t) {
+  currentTab = t;
+  document.querySelectorAll('.tab').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === t); });
+  ['reports', 'feedback', 'comments', 'posts', 'words', 'llm', 'audit', 'intents', 'kb', 'announce', 'backup'].forEach(function (k) {
+    var el = document.getElementById('tab-' + k);
+    if (el) el.style.display = k === t ? '' : 'none';
+  });
+  renderItems();
+}
+
+/* ── 启动（支持站内暗门口令自动登录） ── */
+(function boot() {
+  var pend = '';
+  try { pend = localStorage.getItem('pending_admin_token') || '' } catch (e) { /* noop */ }
+  if (pend && !TOKEN) {
+    // 从隐秘入口带过来的口令：自动尝试登录
+    api('/api/admin/login', { method: 'POST', body: JSON.stringify({ token: pend }) }).then(function (d) {
+      TOKEN = d.token;
+      localStorage.setItem('admin_token', TOKEN);
+      try { localStorage.removeItem('pending_admin_token') } catch (e) { /* noop */ }
+      enter();
+    }).catch(function () {
+      try { localStorage.removeItem('pending_admin_token') } catch (e) { /* noop */ }
+    });
+    return;
+  }
+  if (TOKEN) enter();
+})();
+document.getElementById('tokenInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') login(); });
+setInterval(function () { if (TOKEN && document.getElementById('mainView').style.display !== 'none') refreshAll(); }, 20000);
+</script>
+</body>
+</html>

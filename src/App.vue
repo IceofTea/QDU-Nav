@@ -4,7 +4,7 @@ import Welcome from './views/Welcome.vue'
 import TourOverlay from './components/TourOverlay.vue'
 import ChatDock from './components/agent/ChatDock.vue'
 import { SITE } from './config/site'
-import { NAV_APPS, useViewState } from './router'
+import { NAV_APPS, useViewState, preloadPopular } from './router'
 import { apps } from './data/apps'
 import { fetchLikes, toggleLike, likedByMe } from './utils/like'
 import { useI18n } from './i18n'
@@ -38,7 +38,8 @@ onMounted(() => {
   applyTheme(t2)
 })
 
-const { current, currentComp, openApp, goHome } = useViewState()
+const { current, currentComp, openApp, goHome, loadingView } = useViewState()
+onMounted(() => { preloadPopular() })
 
 /** 新手引导 */
 function triggerTour() {
@@ -176,6 +177,7 @@ onMounted(() => {
       <div v-if="mourning" class="mourning-bar">
         {{ mourningCause === 'memorial' ? '🕯 12月13日 · 南京大屠杀死难者国家公祭日 · 铭记历史，吾辈自强' : '🕯 今日为全国哀悼日，本站以灰白页面寄托哀思' }}
       </div>
+      <div v-if="loadingView" class="view-loading">⏳ 应用加载中…（弱网请稍候）</div>
       <component :is="currentComp" @open="openApp" @back="goHome" />
     </main>
 

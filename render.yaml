@@ -1,0 +1,14 @@
+# Render 一键部署（Blueprint）：连接仓库后 New → Blueprint 即生服务
+# 注意：免费实例无持久盘，server/data 重启会丢；要长期存档评论/墙数据请挂 Disk
+# （面板 Disks → Mount Path 填 /app/server/data）或把 ADMIN_TOKEN 换强口令。
+services:
+  - type: web
+    name: qdu-nav-gateway
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: ADMIN_TOKEN
+        sync: false
+      - key: HOST
+        value: 0.0.0.0

@@ -75,6 +75,7 @@ function hueOf(i) {
     <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('contributors.community') }}</div>
     <ul class="changelog">
       
+      <li><b>v1.5.0 大版本</b> — {{ lang === 'en' ? 'Online-ready: lazy routes (3x first load), API base switch, Data Manager, DM + Focus apps, SSE backoff, Docker/Render deploy, E2E scenes 10/10.' : '在线化大版本：路由懒加载（首屏 3 倍）、网关地址一键切换、数据管家、私信+番茄钟、SSE 退避、Docker/Render 部署物、E2E 场景包 10/10。' }}</li>
       <li><b>v1.4.1</b> — {{ lang === 'en' ? 'Skill market, trust levels & badges, course importer, about-agent page, drafts, AI summary.' : '技能市场、信任等级徽章、课表导入器、智能体介绍页、草稿保存、AI 帖子摘要。' }}</li>
       <li><b>v1.4.0 大版本</b> — {{ lang === 'en' ? 'Conversational agent x super forum: 27 workflows, BM25 knowledge, 12-partition forum, hidden console.' : '对话式智能体 × 超级论坛：27 工作流一句话办事、BM25 知识层、12 分区论坛、隐秘管理台。' }}</li>
       <li><b>v1.3.24</b> — {{ lang === 'en' ? 'Rebrand .bat launcher + site workshop: form editing, live styles, site.js generator.' : '换校 bat 启动器 + 网站工坊：表单编辑、样式实时生效、生成 site.js。' }}</li>

@@ -12,65 +12,56 @@ import { ref, computed, markRaw } from 'vue'
 import { SITE } from './config/site'
 import { visitorId } from './utils/visitor'
 import Home from './views/Home.vue'
-import CampusNews from './views/CampusNews.vue'
-import Timetable from './views/Timetable.vue'
-import StudentId from './views/StudentId.vue'
-import PhysicalTest from './views/PhysicalTest.vue'
-import Calendar from './views/Calendar.vue'
-import WhatToEat from './views/WhatToEat.vue'
-import ClassroomNav from './views/ClassroomNav.vue'
-import QuizGame from './views/QuizGame.vue'
-import FoodWheel from './views/FoodWheel.vue'
-import OfficialSites from './views/OfficialSites.vue'
-import Canteen from './views/Canteen.vue'
-import Categories from './views/Categories.vue'
-import BuildingMatch from './views/BuildingMatch.vue'
-import LeaderTest from './views/LeaderTest.vue'
-import CourseStats from './views/CourseStats.vue'
-import Budget from './views/Budget.vue'
-import TiebaSentiment from './views/TiebaSentiment.vue'
-import Contributors from './views/Contributors.vue'
-import SiteStats from './views/SiteStats.vue'
-import Assistant from './views/Assistant.vue'
-import CampusWall from './views/CampusWall.vue'
-import ReminderCenter from './views/ReminderCenter.vue'
-import CommunityInsights from './views/CommunityInsights.vue'
-import RebrandPreview from './views/RebrandPreview.vue'
-import SkillMarket from './views/SkillMarket.vue'
-import AboutAgent from './views/AboutAgent.vue'
-import CourseImporter from './views/CourseImporter.vue'
-import BuildingGallery from './views/BuildingGallery.vue'
 
-/** 应用 id → 视图组件注册表 */
-export const VIEWS = {
-  campusNews: CampusNews,
-  timetable: Timetable,
-  studentId: StudentId,
-  physicalTest: PhysicalTest,
-  calendar: Calendar,
-  whatToEat: WhatToEat,
-  classroomNav: ClassroomNav,
-  canteen: Canteen,
-  quiz: QuizGame,
-  foodWheel: FoodWheel,
-  officialSites: OfficialSites,
-  categories: Categories,
-  buildingMatch: BuildingMatch,
-  leaderTest: LeaderTest,
-  courseStats: CourseStats,
-  budget: Budget,
-  tiebaSentiment: TiebaSentiment,
-  contributors: Contributors,
-  siteStats: SiteStats,
-  assistant: Assistant,
-  campusWall: CampusWall,
-  reminder: ReminderCenter,
-  insights: CommunityInsights,
-  rebrand: RebrandPreview,
-  skills: SkillMarket,
-  aboutagent: AboutAgent,
-  importer: CourseImporter,
-  buildingGallery: BuildingGallery
+/** 首页同步加载，其他页面懒加载（手机弱网首屏只下 ~200KB，应用页按需再下） */
+const VIEWS = {
+  campusNews: () => import('./views/CampusNews.vue'),
+  timetable: () => import('./views/Timetable.vue'),
+  studentId: () => import('./views/StudentId.vue'),
+  physicalTest: () => import('./views/PhysicalTest.vue'),
+  calendar: () => import('./views/Calendar.vue'),
+  whatToEat: () => import('./views/WhatToEat.vue'),
+  classroomNav: () => import('./views/ClassroomNav.vue'),
+  canteen: () => import('./views/Canteen.vue'),
+  quiz: () => import('./views/QuizGame.vue'),
+  foodWheel: () => import('./views/FoodWheel.vue'),
+  officialSites: () => import('./views/OfficialSites.vue'),
+  categories: () => import('./views/Categories.vue'),
+  buildingMatch: () => import('./views/BuildingMatch.vue'),
+  leaderTest: () => import('./views/LeaderTest.vue'),
+  courseStats: () => import('./views/CourseStats.vue'),
+  budget: () => import('./views/Budget.vue'),
+  tiebaSentiment: () => import('./views/TiebaSentiment.vue'),
+  contributors: () => import('./views/Contributors.vue'),
+  siteStats: () => import('./views/SiteStats.vue'),
+  assistant: () => import('./views/Assistant.vue'),
+  campusWall: () => import('./views/CampusWall.vue'),
+  reminder: () => import('./views/ReminderCenter.vue'),
+  insights: () => import('./views/CommunityInsights.vue'),
+  rebrand: () => import('./views/RebrandPreview.vue'),
+  skills: () => import('./views/SkillMarket.vue'),
+  aboutagent: () => import('./views/AboutAgent.vue'),
+  importer: () => import('./views/CourseImporter.vue'),
+  buildingGallery: () => import('./views/BuildingGallery.vue'),
+  messages: () => import('./views/Messages.vue'),
+  focus: () => import('./views/FocusTimer.vue'),
+  data: () => import('./views/DataManager.vue')
+}
+
+/** 应用 id → 视图组件注册表（懒加载版，返回 Promise；直链分享由 setView 解析） */
+export const VIEWS_LAZY = VIEWS
+
+/** 组件缓存（避免重复动态导入；失败不缓存，下次可重试） */
+const componentCache = new Map()
+
+async function loadComponent(id) {
+  if (componentCache.has(id)) return componentCache.get(id)
+  const loader = VIEWS[id]
+  if (!loader) return Home
+  const mod = await loader()
+  const comp = markRaw(mod.default)
+  componentCache.set(id, comp)
+  return comp
 }
 
 /** 底部快捷导航（首页 + 高频应用） */
@@ -95,15 +86,32 @@ export function useViewState() {
   /** 当前视图 id（'home' 表示首页） */
   const current = ref('home')
 
-  /** 当前视图组件（markRaw 避免被 Vue 转为响应式代理） */
-  const currentComp = computed(() =>
-    markRaw(current.value === 'home' ? Home : VIEWS[current.value] || Home)
-  )
+  /** 当前视图组件（异步加载，失败回首页；loadingView 供骨架屏用） */
+  const currentComp = ref(Home)
+  const loadingView = ref(false)
+
+  /** 加载并设置视图组件 */
+  async function setView(id) {
+    if (id === 'home') {
+      currentComp.value = Home
+      return
+    }
+    loadingView.value = true
+    try {
+      currentComp.value = await loadComponent(id)
+    } catch {
+      currentComp.value = Home
+    } finally {
+      loadingView.value = false
+    }
+  }
 
   /** 解析地址栏 hash，决定渲染哪个视图（支持分享链接直达应用页） */
   function parseHash() {
     const m = location.hash.match(/^#\/app\/(\w+)/)
-    current.value = m && VIEWS[m[1]] ? m[1] : 'home'
+    const id = m && VIEWS[m[1]] ? m[1] : 'home'
+    current.value = id
+    setView(id)
   }
   window.addEventListener('hashchange', parseHash)
   parseHash()
@@ -112,6 +120,7 @@ export function useViewState() {
   function openApp(id) {
     current.value = id
     location.hash = APP_ROUTE + id
+    setView(id)
     window.scrollTo(0, 0)
     reportApp(id)
   }
@@ -119,11 +128,23 @@ export function useViewState() {
   /** 返回首页 */
   function goHome() {
     current.value = 'home'
+    currentComp.value = Home
     location.hash = '#/'
     window.scrollTo(0, 0)
   }
 
-  return { current, currentComp, openApp, goHome }
+  return { current, currentComp, openApp, goHome, loadingView }
+}
+
+/** 预加载热门应用（首页空闲后调用，手机 WiFi 下提前 warming，被 FJNU 验证有效） */
+export function preloadPopular() {
+  const popular = ['assistant', 'campusWall', 'timetable', 'classroomNav', 'whatToEat', 'campusNews']
+  const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 3000))
+  idle(() => {
+    popular.forEach((id) => {
+      loadComponent(id).catch(() => { /* 弱网跳过，下次点击再下 */ })
+    })
+  })
 }
 
 /** 应用打开自动上报（本站舆情 · 纯自动化；每会话每应用限报 1 次，控制计数服务请求量） */

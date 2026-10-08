@@ -1101,3 +1101,6 @@ html.mourning .bottom-nav {
 .notice-item-title { font-size: 13px; font-weight: 700; display: flex; gap: 8px; align-items: center; }
 .notice-item-date { font-size: 11px; }
 .notice-item-content { margin-top: 6px; font-size: 12px; line-height: 1.9; color: var(--text-sub); white-space: pre-line; }
+
+/* ── 懒加载视图骨架（手机弱网首屏拆包后，应用页按需加载时的占位）── */
+.view-loading { text-align: center; padding: 40px 0; color: var(--text-sub); font-size: 14px; }
