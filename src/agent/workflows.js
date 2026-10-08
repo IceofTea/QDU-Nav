@@ -166,21 +166,34 @@ export const WORKFLOWS = {
       {
         label: '确认班级与日期',
         run: async (ctx) => {
+          // 优先级①：本机导入课表（CourseImporter 写入，免班级）
+          let imported = []
+          try { imported = JSON.parse(localStorage.getItem('qdu_imported_courses') || '[]') } catch { imported = [] }
+          ctx.state.imported = imported
           ctx.state.cls = getClass()
-          if (!ctx.state.cls) throw new CLARIFY('class')
+          if (!imported.length && !ctx.state.cls) throw new CLARIFY('class')
           const time = extractTime(ctx.text)
           ctx.state.day = time ? time.day : ((new Date().getDay() || 7))
           ctx.state.dateLabel = time ? time.dateLabel : '今天'
-          return `${ctx.state.cls} · ${ctx.state.dateLabel}（${WEEK[ctx.state.day]}）`
+          return imported.length
+            ? `本机导入课表 ${imported.length} 条 · ${ctx.state.dateLabel}（${WEEK[ctx.state.day]}）`
+            : `${ctx.state.cls} · ${ctx.state.dateLabel}（${WEEK[ctx.state.day]}）`
         }
       },
       {
         label: '查询课表快照',
         run: async (ctx) => {
+          if (ctx.state.imported && ctx.state.imported.length) {
+            const rows = ctx.state.imported.filter((r) => r.d === ctx.state.day).sort((a, b) => a.s - b.s)
+            ctx.state.rows = rows
+            ctx.state.source = '本机导入课表'
+            return `本机数据命中 ${rows.length} 节课（免班级）`
+          }
           const d = await apiFetch(`/courseQuery?q=${encodeURIComponent(ctx.state.cls)}`)
           if (!d) throw new Error('课表数据暂不可用')
           const rows = (d.rows || []).filter((r) => r.d === ctx.state.day).sort((a, b) => a.s - b.s)
           ctx.state.rows = rows
+          ctx.state.source = '教务快照 · 班级查询'
           return `命中 ${rows.length} 节课`
         }
       }
@@ -189,7 +202,7 @@ export const WORKFLOWS = {
       const rows = ctx.state.rows || []
       return {
         title: `🗓️ ${ctx.state.dateLabel}（${WEEK[ctx.state.day]}）的课 · ${rows.length} 节`,
-        subtitle: `班级：${ctx.state.cls}`,
+        subtitle: ctx.state.source === '本机导入课表' ? '数据源：本机导入课表（CourseImporter）' : `班级：${ctx.state.cls}`,
         rows: rows.length
           ? rows.map((r) => ({ icon: '📚', label: `${r.c}${r.r ? ' @ ' + r.r : ''}`, value: `第 ${r.s}-${r.e} 节 · ${r.t || ''}` }))
           : [{ icon: '🎉', label: '今天没有课', value: '享受空闲的一天' }],

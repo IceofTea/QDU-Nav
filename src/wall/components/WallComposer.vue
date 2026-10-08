@@ -20,6 +20,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['publish', 'cancel'])
 
+const DRAFT_KEY = 'wall_draft_v1'   // 草稿自动保存（Discourse 式：误关不丢）
 const mode = ref('normal')           // normal | vote | bounty | resource | notice
 const title = ref('')
 const content = ref('')
@@ -44,6 +45,43 @@ const resCode = ref('')
 const noticeOrg = ref('')
 
 const err = ref('')
+const draftSaved = ref(false)
+
+/* ── 草稿：输入即存，打开恢复，发布后清空 ── */
+function saveDraft() {
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      mode: mode.value, title: title.value, content: content.value, tag: tag.value,
+      voteQ: voteQ.value, voteOpts: voteOpts.value, bountyNeed: bountyNeed.value,
+      resUrl: resUrl.value, resTitle: resTitle.value, resCode: resCode.value, ts: Date.now()
+    }))
+    draftSaved.value = true
+  } catch { /* noop */ }
+}
+function restoreDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null')
+    if (!d || Date.now() - d.ts > 7 * 86400000) return   // 7 天过期
+    if (!d.content && !d.title && !d.voteQ && !d.resUrl) return
+    mode.value = d.mode || 'normal'
+    title.value = d.title || ''
+    content.value = d.content || ''
+    tag.value = d.tag || 'chat'
+    voteQ.value = d.voteQ || ''
+    voteOpts.value = d.voteOpts || ['', '']
+    bountyNeed.value = d.bountyNeed || ''
+    resUrl.value = d.resUrl || ''
+    resTitle.value = d.resTitle || ''
+    resCode.value = d.resCode || ''
+    err.value = '♻️ 已恢复上次未发布的草稿'
+  } catch { /* noop */ }
+}
+function clearDraft() {
+  try { localStorage.removeItem(DRAFT_KEY) } catch { /* noop */ }
+  draftSaved.value = false
+}
+import { watch } from 'vue'
+watch([title, content, voteQ], () => { if (title.value || content.value || voteQ.value) saveDraft() })
 const usableParts = computed(() => PARTS.filter((p) => p.id !== 'all'))
 
 function precheck(text) {
@@ -99,6 +137,7 @@ function submit() {
   if (hit) { err.value = '内容包含违规词「' + hit + '」，已被拦截'; return }
 
   emit('publish', payload)
+  clearDraft()
 }
 
 function reset() {
@@ -106,11 +145,14 @@ function reset() {
   bountyNeed.value = ''; resUrl.value = ''; resTitle.value = ''; resCode.value = ''
   noticeOrg.value = ''; err.value = ''
 }
+import { onMounted } from 'vue'
+onMounted(restoreDraft)
 defineExpose({ reset })
 </script>
 
 <template>
   <div class="wc">
+    <div v-if="err && err.startsWith('♻️')" class="wc-hint">{{ err }} <button class="wc-x" style="width:auto;font-size:11px" @click="clearDraft(); err=''">放弃草稿</button></div>
     <div class="wc-modes">
       <button v-for="t in POST_TYPES" :key="t.id" class="wc-mode" :class="{ on: mode === t.id }" @click="mode = t.id">
         {{ t.icon }} {{ t.name }}

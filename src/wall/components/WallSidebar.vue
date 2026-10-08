@@ -10,7 +10,8 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { ADS, PARTS, POINTS } from '../config'
+import { ADS, PARTS, POINTS, levelOf, nextLevel, BADGES } from '../config'
+import { getWallet, streakDays } from '../api'
 
 const props = defineProps({
   hotPosts: { type: Array, default: () => [] },
@@ -21,6 +22,26 @@ const props = defineProps({
   offline: { type: Boolean, default: false }
 })
 const emit = defineEmits(['signIn', 'openPost', 'openPart'])
+
+/* ── 信任等级与徽章（Discourse 式轻量本土化） ── */
+const myLevel = computed(() => levelOf(props.points))
+const nextLv = computed(() => nextLevel(props.points))
+const lvProgress = computed(() => {
+  if (!nextLv.value) return 100
+  const base = myLevel.value.min
+  return Math.min(100, Math.round(((props.points - base) / (nextLv.value.min - base)) * 100))
+})
+const myBadges = computed(() => {
+  const w = getWallet()
+  const stats = {
+    streak: props.streak,
+    posts: (w.history || []).filter((h) => h.reason === '每日签到').length >= 1 ? 1 : 0,
+    replies: 0,
+    skills: 0
+  }
+  // posts/replies 的精确计数由父组件传入更佳，此处以可得数据近似（徽章为演示级激励）
+  return BADGES.map((b) => ({ ...b, earned: b.test(w, stats) }))
+})
 
 /* 侧栏广告轮播（俏皮话占位） */
 const sidebarAds = ADS.filter((a) => a.slot === 'sidebar')
@@ -55,6 +76,17 @@ const rules = [
       <div class="ws-points">
         <span class="ws-points-num">{{ points }}</span>
         <span class="ws-points-label">我的积分 · 连续 {{ streak }} 天</span>
+      </div>
+      <div class="ws-level">
+        <span class="ws-level-chip" :style="{ background: myLevel.color }">{{ myLevel.icon }} {{ myLevel.name }}</span>
+        <span class="ws-level-desc">{{ myLevel.desc }}</span>
+      </div>
+      <div class="ws-lvbar"><i :style="{ width: lvProgress + '%' }"></i></div>
+      <div class="ws-lvnext" v-if="nextLv">{{ nextLv.icon }} 距「{{ nextLv.name }}」还差 {{ nextLv.min - points }} 积分</div>
+      <div class="ws-badges">
+        <span v-for="b in myBadges" :key="b.id" class="ws-badge" :class="{ earned: b.earned }" :title="b.desc">
+          {{ b.icon }}{{ b.earned ? b.name : '' }}
+        </span>
       </div>
       <button class="ws-sign" :class="{ done: signed }" :disabled="signed" @click="emit('signIn')">
         {{ signed ? '✓ 今日已签到（+' + POINTS.signIn + '）' : '📅 签到 +' + POINTS.signIn + ' 积分' }}
@@ -123,6 +155,15 @@ const rules = [
 .ws-points { display: flex; align-items: baseline; gap: 9px; }
 .ws-points-num { font-size: 30px; font-weight: 800; color: #d97706; font-variant-numeric: tabular-nums; }
 .ws-points-label { font-size: 11.5px; color: var(--muted, #8a94a6); }
+.ws-level { display: flex; align-items: center; gap: 8px; margin-top: 9px; }
+.ws-level-chip { font-size: 12px; font-weight: 800; color: #fff; border-radius: 999px; padding: 3px 12px; }
+.ws-level-desc { font-size: 11px; color: var(--muted, #8a94a6); }
+.ws-lvbar { height: 6px; background: #eef1f5; border-radius: 999px; overflow: hidden; margin-top: 6px; }
+.ws-lvbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--primary, #1b66c9), #4f8df0); border-radius: 999px; transition: width 0.5s; }
+.ws-lvnext { font-size: 10.5px; color: var(--muted, #8a94a6); margin-top: 4px; }
+.ws-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
+.ws-badge { font-size: 11px; filter: grayscale(1); opacity: 0.4; background: var(--bg, #f7f9fc); border-radius: 999px; padding: 3px 9px; cursor: help; }
+.ws-badge.earned { filter: none; opacity: 1; background: rgba(217, 119, 6, 0.12); color: #b45309; font-weight: 700; }
 .ws-sign { width: 100%; margin-top: 9px; border: none; background: linear-gradient(135deg, #d97706, #f59e0b); color: #fff; padding: 9px; border-radius: 10px; font-size: 13.5px; font-weight: 700; cursor: pointer; font-family: inherit; }
 .ws-sign.done { background: #21262d; color: var(--muted, #8a94a6); cursor: default; }
 .ws-points-flow { font-size: 10.5px; color: var(--muted, #8a94a6); margin-top: 7px; }

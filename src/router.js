@@ -36,6 +36,9 @@ import CampusWall from './views/CampusWall.vue'
 import ReminderCenter from './views/ReminderCenter.vue'
 import CommunityInsights from './views/CommunityInsights.vue'
 import RebrandPreview from './views/RebrandPreview.vue'
+import SkillMarket from './views/SkillMarket.vue'
+import AboutAgent from './views/AboutAgent.vue'
+import CourseImporter from './views/CourseImporter.vue'
 
 /** 应用 id → 视图组件注册表 */
 export const VIEWS = {
@@ -62,7 +65,10 @@ export const VIEWS = {
   campusWall: CampusWall,
   reminder: ReminderCenter,
   insights: CommunityInsights,
-  rebrand: RebrandPreview
+  rebrand: RebrandPreview,
+  skills: SkillMarket,
+  aboutagent: AboutAgent,
+  importer: CourseImporter
 }
 
 /** 底部快捷导航（首页 + 高频应用） */

@@ -3,6 +3,9 @@
  * 首页应用网格与「应用分类」面板都从本数组渲染。
  */
 export const apps = [
+  { id: 'skills', title: '技能市场', titleEn: 'Skill Market', desc: '27 条工作流卡片化：分类搜索、使用统计、一键运行', descEn: '27 workflows as cards: search, stats, run', icon: '🧩', color: '#2563eb', group: '服务', groupEn: 'Services' },
+  { id: 'aboutagent', title: '关于智能体', titleEn: 'About Agent', desc: '架构五层、三模式、双 Agent 飞轮与现场演示引导', descEn: 'Architecture, modes, flywheel & demo guide', icon: '🤖', color: '#0891b2', group: '服务', groupEn: 'Services' },
+  { id: 'importer', title: '课表导入器', titleEn: 'Course Importer', desc: '粘贴课表即解析存本机，解锁免班级查课表', descEn: 'Paste to import schedule, query without class', icon: '📥', color: '#0f766e', group: '学习', groupEn: 'Study' },
   { id: 'assistant', title: '智能助手', titleEn: 'AI Assistant', desc: '说一句话就能办事：查课表、找空教室、加日程、直达服务', descEn: 'One sentence to get things done: schedule, rooms, reminders', icon: '🤖', color: '#1b66c9', group: '服务', groupEn: 'Services' },
   { id: 'campusWall', title: '校园墙', titleEn: 'Campus Wall', desc: '发帖吐槽、失物招领、求助美食，匿名互动全员可见', descEn: 'Anonymous posts, lost & found, help & food', icon: '🧱', color: '#ea580c', group: '生活', groupEn: 'Life' },
   { id: 'reminder', title: '提醒中心', titleEn: 'Reminders', desc: '定时提醒引擎：页内弹窗+桌面通知+提示音，与智能体日程打通', descEn: 'Timer engine with toast & notification', icon: '⏰', color: '#d97706', group: '生活', groupEn: 'Life' },

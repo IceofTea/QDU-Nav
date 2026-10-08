@@ -53,6 +53,38 @@ export const SIGN_KEY = 'wall_sign_v1'
 export const FAV_KEY = 'wall_fav_v1'
 
 /* ════════════════════════════════════════════════════════════════════
+ * 信任等级（借鉴 Discourse Trust Level 的轻量本土化）
+ * —— 以积分为唯一依据（本地钱包），等级随贡献自然晋升，
+ *    徽章展示在发帖人昵称旁；能力解锁做演示级提示（后端期服务端校验）
+ * ════════════════════════════════════════════════════════════════════ */
+export const LEVELS = [
+  { min: 0, name: '见习', icon: '🌱', color: '#8b949e', desc: '新同学，先逛逛再说话' },
+  { min: 20, name: '成员', icon: '🌿', color: '#2e7d32', desc: '可以发起投票与资源分享' },
+  { min: 60, name: '活跃', icon: '🌟', color: '#1b66c9', desc: '发起悬赏、帖子更易被热榜推荐' },
+  { min: 150, name: '资深', icon: '🔥', color: '#d97706', desc: '昵称专属描边 + 精华帖申请通道' },
+  { min: 400, name: '领袖', icon: '👑', color: '#7c3aed', desc: '社区领袖：可推荐精选（后端期置顶权）' }
+]
+
+export function levelOf(points) {
+  let cur = LEVELS[0]
+  for (const l of LEVELS) if ((points || 0) >= l.min) cur = l
+  return cur
+}
+export function nextLevel(points) {
+  return LEVELS.find((l) => (points || 0) < l.min) || null
+}
+
+/* 成就徽章（本地达成即点亮，展示于个人积分卡） */
+export const BADGES = [
+  { id: 'first_post', name: '初来乍到', icon: '🎈', desc: '发布第一篇帖子', test: (w, s) => (s.posts || 0) >= 1 },
+  { id: 'streak3', name: '三日之约', icon: '📅', desc: '连续签到 3 天', test: (w, s) => (s.streak || 0) >= 3 },
+  { id: 'streak7', name: '一周全勤', icon: '🗓️', desc: '连续签到 7 天', test: (w, s) => (s.streak || 0) >= 7 },
+  { id: 'rich', name: '积分自由', icon: '💰', desc: '积分达到 100', test: (w) => (w.points || 0) >= 100 },
+  { id: 'reply5', name: '热心同学', icon: '💬', desc: '累计回复 5 次', test: (w, s) => (s.replies || 0) >= 5 },
+  { id: 'explorer', name: '技能探索者', icon: '🧩', desc: '使用过 10 个智能体技能', test: (w, s) => (s.skills || 0) >= 10 }
+]
+
+/* ════════════════════════════════════════════════════════════════════
  * 广告位：现阶段用「俏皮话」占位（真实感 + 幽默感），后端期一键换真广告
  * ────────────────────────────────────────────────────────────────────
  * adSlot API 预留（后端实现后，ADS 换成接口返回即可，卡片渲染无需改）：

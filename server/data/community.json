@@ -178,6 +178,26 @@
   ],
   "audit": [
     {
+      "ts": 1791450490692,
+      "action": "feedback:delete",
+      "detail": "[smoke muzbd96i] 冒烟反馈"
+    },
+    {
+      "ts": 1791450490686,
+      "action": "posts:delete",
+      "detail": "（冒烟投票帖）"
+    },
+    {
+      "ts": 1791450490681,
+      "action": "comments:delete",
+      "detail": "[smoke muzbd96i] 正常评论链路"
+    },
+    {
+      "ts": 1791450490672,
+      "action": "login",
+      "detail": "管理台登录成功"
+    },
+    {
       "ts": 1791445138084,
       "action": "feedback:delete",
       "detail": "[smoke muz86j24] 冒烟反馈"
@@ -273,6 +293,7 @@
     "::1|muz25b3uv9h67d": true,
     "::1|muz39axtuy1vg1": true,
     "::1|muz5csrj6kz2gn": true,
-    "::1|muz86j653oaco5": true
+    "::1|muz86j653oaco5": true,
+    "::1|muzbd993iw73bs": true
   }
 }

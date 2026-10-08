@@ -86,6 +86,7 @@ async function send(text) {
   const q = (text ?? input.value).trim()
   if (!q || busy.value) return
   input.value = ''
+  histIdx.value = -1
   cmdMenu.value = false
   messages.push({ role: 'user', text: q })
   busy.value = true
@@ -239,6 +240,18 @@ function toggleVoice() {
 }
 
 const layerLabel = (l) => ({ intent: '意图命中', faq: '知识库', app: '应用检索', cloud: '云端推理', none: '未识别', 'clarify-resume': '多轮续接', 'plan-confirm': '计划执行' }[l] || l)
+
+/* ── 输入历史：↑/↓ 回溯（TUI 同款，减少重复输入） ── */
+const histIdx = ref(-1)
+function onHistKey(e) {
+  if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
+  let h = []
+  try { h = JSON.parse(localStorage.getItem('qdu_chat_history_v1') || '[]') } catch { h = [] }
+  if (!h.length) return
+  if (e.key === 'ArrowUp') { histIdx.value = Math.min(histIdx.value + 1, h.length - 1) }
+  else { histIdx.value = Math.max(histIdx.value - 1, -1) }
+  input.value = histIdx.value === -1 ? '' : h[histIdx.value]
+}
 
 const suggestions = AGENT_PROFILE.examples
 onMounted(() => {
@@ -394,6 +407,7 @@ defineExpose({ send, restoreSession })
         :disabled="busy && !stopped"
         @input="onInput"
         @keydown.enter.prevent="send()"
+        @keydown="onHistKey"
       />
       <button v-if="busy" class="ac-send stop" title="停止" @click="stop">⏹</button>
       <button v-else class="ac-send" :disabled="!input.trim()" @click="send()">➤</button>

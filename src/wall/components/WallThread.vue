@@ -26,6 +26,7 @@ const onlyAuthor = ref(false)
 const replyText = ref('')
 const replyAuthor = ref('')
 const fav = ref(isFav(props.post.id))
+const quoteFloor = ref(null)   // 引用的楼层 {floor, author, text}（Discourse 式选中引用）
 const err = ref('')
 const copied = ref(false)
 
@@ -45,6 +46,12 @@ function fmt(ts) {
 function precheck(t) {
   const s = (t || '').toLowerCase()
   return props.words.find((w) => w && s.includes(String(w).toLowerCase()))
+}
+function quote(r, floor) {
+  quoteFloor.value = { floor, author: r.author, text: r.content.slice(0, 60) }
+  replyText.value = '> #' + floor + '楼 ' + r.author + '：' + r.content.slice(0, 60) + (r.content.length > 60 ? '…' : '') + '\n\n'
+  const ta = document.querySelector('.wt-text')
+  if (ta) ta.focus()
 }
 function doReply() {
   err.value = ''
@@ -106,6 +113,7 @@ function isMyPost() {
           </div>
           <div class="wt-floor-content">{{ r.content }}</div>
           <div class="wt-floor-ops">
+            <button class="wt-quote" @click="quote(r, i + 1)">💬 引用</button>
             <button v-if="post.bounty && !post.bounty.adoptedId && (isMyPost() || offline)" class="wt-adopt" @click="emit('adopt', r)">
               ⭐ 采纳此回答（{{ post.bounty.points || POINTS.adopted }} 积分）
             </button>
@@ -116,7 +124,10 @@ function isMyPost() {
       <!-- 回复框 -->
       <div class="wt-replybox">
         <input v-model="replyAuthor" class="wt-input" maxlength="24" placeholder="昵称（留空=匿名）" />
-        <textarea v-model="replyText" class="wt-text" rows="3" maxlength="500" placeholder="写下你的回复…（自动敏感词校验）"></textarea>
+        <div v-if="quoteFloor" class="wt-quotehint">💬 正在引用 #{{ quoteFloor.floor }} 楼 @{{ quoteFloor.author }}
+          <button class="wt-mini" @click="quoteFloor = null; replyText = ''">取消引用</button>
+        </div>
+        <textarea v-model="replyText" class="wt-text" rows="3" maxlength="500" placeholder="写下你的回复…（自动敏感词校验；点楼层「引用」可带上下文）"></textarea>
         <div class="wt-reply-foot">
           <span v-if="err" class="wt-err">⚠ {{ err }}</span>
           <span class="wt-count">{{ replyText.length }}/500</span>
@@ -153,6 +164,9 @@ function isMyPost() {
 .wt-time { margin-left: auto; font-size: 11px; }
 .wt-floor-content { font-size: 13.5px; line-height: 1.7; color: var(--text, #24292f); margin-top: 5px; white-space: pre-wrap; word-break: break-word; }
 .wt-floor-ops { margin-top: 6px; }
+.wt-quote { border: 1px solid var(--border, #e5eaf2); background: transparent; color: var(--muted, #8a94a6); font-size: 11.5px; padding: 4px 12px; border-radius: 999px; cursor: pointer; font-family: inherit; }
+.wt-quote:hover { border-color: var(--primary, #1b66c9); color: var(--primary, #1b66c9); }
+.wt-quotehint { font-size: 12px; color: var(--primary, #1b66c9); background: var(--primary-soft, rgba(27,102,201,0.08)); border-radius: 8px; padding: 7px 11px; display: flex; align-items: center; gap: 10px; }
 .wt-adopt { border: 1px solid #d97706; background: rgba(217, 119, 6, 0.08); color: #d97706; font-size: 11.5px; padding: 4px 12px; border-radius: 999px; cursor: pointer; font-family: inherit; font-weight: 600; }
 .wt-adopt:hover { background: #d97706; color: #fff; }
 
