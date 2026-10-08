@@ -1,0 +1,278 @@
+{
+  "comments": [
+    {
+      "id": "muxwwkgd0o2t3q",
+      "path": "/live/dorm/",
+      "title": "宿舍熄灯",
+      "author": "测试同学",
+      "content": "请问空调晚上也断电吗？",
+      "parent": null,
+      "ts": 1791365731213,
+      "likes": 1,
+      "status": "ok",
+      "reactions": {}
+    },
+    {
+      "id": "muy97rrdpon2g0",
+      "path": "/live/dorm/",
+      "title": "住宿💬 1",
+      "author": "路过的大一萌新",
+      "content": "评论功能端到端测试：宿舍介绍很有帮助！",
+      "parent": null,
+      "ts": 1791386409299,
+      "likes": 0,
+      "status": "ok",
+      "reactions": {}
+    },
+    {
+      "id": "muy9920l5zty6f",
+      "path": "/live/dorm/",
+      "title": "住宿💬 2",
+      "author": "路过的大一萌新",
+      "content": "宿舍介绍很有帮助，给大一的自己省了不少弯路！",
+      "parent": null,
+      "ts": 1791386469237,
+      "likes": 0,
+      "status": "ok",
+      "reactions": {}
+    },
+    {
+      "id": "muy9akhrgj0xib",
+      "path": "/live/dorm/",
+      "title": "住宿💬 3",
+      "author": "路过的大一萌新",
+      "content": "宿舍介绍很有帮助，给大一的自己省了不少弯路！",
+      "type": "para",
+      "paraIndex": 1,
+      "quote": "本页部分信息可能较旧或尚未核实，欢迎通过 GitHub 提交补充。",
+      "parent": null,
+      "ts": 1791386539839,
+      "likes": 0,
+      "status": "ok",
+      "reactions": {}
+    },
+    {
+      "id": "muyaldqihnshpr",
+      "path": "/",
+      "title": "青岛大学指南💬 0",
+      "author": "匿名同学",
+      "content": "你好",
+      "type": "page",
+      "paraIndex": null,
+      "quote": "",
+      "parent": null,
+      "ts": 1791388723914,
+      "likes": 0,
+      "status": "ok",
+      "reactions": {}
+    },
+    {
+      "id": "muyb0zwcbqloj8",
+      "path": "/t/",
+      "title": "",
+      "author": "同学A",
+      "content": "教学楼东区的自习室体验很好",
+      "type": "page",
+      "paraIndex": null,
+      "quote": "",
+      "parent": null,
+      "status": "ok",
+      "ts": 1791389452476,
+      "likes": 0,
+      "reactions": {}
+    }
+  ],
+  "posts": [
+    {
+      "id": "muyb1u5maf86ns",
+      "title": "东区食堂新档口测评",
+      "content": "今天试了东区二楼新开的麻辣香锅，人均15，推荐！",
+      "tag": "美食",
+      "author": "干饭人",
+      "anonymous": false,
+      "status": "ok",
+      "ts": 1791389491690,
+      "likes": 0,
+      "replies": [
+        {
+          "id": "muyb1u7gcpaj38",
+          "author": "路人",
+          "content": "这家我也去过，强推他的酥肉",
+          "ts": 1791389491756,
+          "likes": 0
+        }
+      ],
+      "reportedAt": 1791389491759,
+      "reactions": {}
+    },
+    {
+      "id": "muyutks24e6clt",
+      "title": "期末自习室开放时间投票",
+      "content": "希望图书馆考试周延长到 23:00",
+      "tag": "投票",
+      "author": "匿名同学",
+      "anonymous": true,
+      "vote": {
+        "question": "考试周自习室应延长到几点？",
+        "options": [
+          "22:30",
+          "23:00",
+          "23:30",
+          "通宵"
+        ],
+        "tallies": [
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "status": "ok",
+      "ts": 1791422698610,
+      "likes": 0,
+      "reactions": {},
+      "replies": []
+    }
+  ],
+  "words": [
+    "加微信",
+    "加vx",
+    "加v信",
+    "微信号是",
+    "加qq",
+    "qq号",
+    "QQ群",
+    "群号是",
+    "代写",
+    "代考",
+    "包过",
+    "刷单",
+    "兼职刷",
+    "日结工资",
+    "一夜暴富",
+    "色情",
+    "援交",
+    "裸聊",
+    "赌博",
+    "博彩",
+    "六合彩",
+    "网贷口子",
+    "傻逼",
+    "脑残",
+    "去死",
+    "滚蛋",
+    "贱人",
+    "狗东西",
+    "智障玩意"
+  ],
+  "feedback": [
+    {
+      "id": "muyuukzemg0for",
+      "text": "????????",
+      "kind": "dislike",
+      "detail": "",
+      "path": "",
+      "status": "new",
+      "ts": 1791422745530
+    }
+  ],
+  "audit": [
+    {
+      "ts": 1791445138084,
+      "action": "feedback:delete",
+      "detail": "[smoke muz86j24] 冒烟反馈"
+    },
+    {
+      "ts": 1791445138080,
+      "action": "posts:delete",
+      "detail": "（冒烟投票帖）"
+    },
+    {
+      "ts": 1791445138078,
+      "action": "comments:delete",
+      "detail": "[smoke muz86j24] 正常评论链路"
+    },
+    {
+      "ts": 1791445138073,
+      "action": "login",
+      "detail": "管理台登录成功"
+    },
+    {
+      "ts": 1791440391869,
+      "action": "feedback:delete",
+      "detail": "[smoke muz5csmm] 冒烟反馈"
+    },
+    {
+      "ts": 1791440391831,
+      "action": "posts:delete",
+      "detail": "（冒烟投票帖）"
+    },
+    {
+      "ts": 1791440391771,
+      "action": "comments:delete",
+      "detail": "[smoke muz5csmm] 正常评论链路"
+    },
+    {
+      "ts": 1791440391698,
+      "action": "login",
+      "detail": "管理台登录成功"
+    },
+    {
+      "ts": 1791440176412,
+      "action": "announce",
+      "detail": "接口连通测试"
+    },
+    {
+      "ts": 1791436869345,
+      "action": "feedback:delete",
+      "detail": "[smoke muz39aur] 冒烟反馈"
+    },
+    {
+      "ts": 1791436869340,
+      "action": "posts:delete",
+      "detail": "（冒烟投票帖）"
+    },
+    {
+      "ts": 1791436869333,
+      "action": "comments:delete",
+      "detail": "[smoke muz39aur] 正常评论链路"
+    },
+    {
+      "ts": 1791436869314,
+      "action": "login",
+      "detail": "管理台登录成功"
+    },
+    {
+      "ts": 1791435003313,
+      "action": "feedback:delete",
+      "detail": "[smoke muz25b0b] 冒烟反馈"
+    },
+    {
+      "ts": 1791435003306,
+      "action": "posts:delete",
+      "detail": "（冒烟投票帖）"
+    },
+    {
+      "ts": 1791435003301,
+      "action": "comments:delete",
+      "detail": "[smoke muz25b0b] 正常评论链路"
+    },
+    {
+      "ts": 1791435003287,
+      "action": "login",
+      "detail": "管理台登录成功"
+    }
+  ],
+  "llm": {
+    "baseUrl": "",
+    "apiKey": "",
+    "model": "deepseek-chat"
+  },
+  "voted": {
+    "::1|muyutks24e6clt": true,
+    "::1|muz25b3uv9h67d": true,
+    "::1|muz39axtuy1vg1": true,
+    "::1|muz5csrj6kz2gn": true,
+    "::1|muz86j653oaco5": true
+  }
+}

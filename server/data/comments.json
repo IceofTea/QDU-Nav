@@ -1,0 +1,60 @@
+{
+  "comments": [
+    {
+      "id": "muxwwkgd0o2t3q",
+      "path": "/live/dorm/",
+      "title": "宿舍熄灯",
+      "author": "测试同学",
+      "content": "请问空调晚上也断电吗？",
+      "parent": null,
+      "ts": 1791365731213,
+      "likes": 1
+    },
+    {
+      "id": "muy97rrdpon2g0",
+      "path": "/live/dorm/",
+      "title": "住宿💬 1",
+      "author": "路过的大一萌新",
+      "content": "评论功能端到端测试：宿舍介绍很有帮助！",
+      "parent": null,
+      "ts": 1791386409299,
+      "likes": 0
+    },
+    {
+      "id": "muy9920l5zty6f",
+      "path": "/live/dorm/",
+      "title": "住宿💬 2",
+      "author": "路过的大一萌新",
+      "content": "宿舍介绍很有帮助，给大一的自己省了不少弯路！",
+      "parent": null,
+      "ts": 1791386469237,
+      "likes": 0
+    },
+    {
+      "id": "muy9akhrgj0xib",
+      "path": "/live/dorm/",
+      "title": "住宿💬 3",
+      "author": "路过的大一萌新",
+      "content": "宿舍介绍很有帮助，给大一的自己省了不少弯路！",
+      "type": "para",
+      "paraIndex": 1,
+      "quote": "本页部分信息可能较旧或尚未核实，欢迎通过 GitHub 提交补充。",
+      "parent": null,
+      "ts": 1791386539839,
+      "likes": 0
+    },
+    {
+      "id": "muyaldqihnshpr",
+      "path": "/",
+      "title": "青岛大学指南💬 0",
+      "author": "匿名同学",
+      "content": "你好",
+      "type": "page",
+      "paraIndex": null,
+      "quote": "",
+      "parent": null,
+      "ts": 1791388723914,
+      "likes": 0
+    }
+  ]
+}

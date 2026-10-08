@@ -1,0 +1,19 @@
+{
+  "university": "福建师范大学",
+  "shortName": "福star",
+  "brand": "FJNU-Nav",
+  "motto": "知明行笃 · 立诚致广",
+  "jwUrl": "https://jwc.fjnu.edu.cn",
+  "tiebaUrl": "https://tieba.baidu.com/f?kw=%E7%A6%8F%E5%BB%BA%E5%B8%88%E8%8C%83%E5%A4%A7%E5%AD%A6",
+  "github": "https://github.com/icyteacn/FJNU-Nav",
+  "pagesUrl": "https://icyteacn.github.io/FJNU-Nav/",
+  "campuses": 2,
+  "colleges": 28,
+  "majors": 84,
+  "theme": {
+    "name": "闽都红",
+    "primary": "#c62828",
+    "accent": "#ff5722",
+    "bg": "#fef2f2"
+  }
+}

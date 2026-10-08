@@ -31,6 +31,11 @@ import Budget from './views/Budget.vue'
 import TiebaSentiment from './views/TiebaSentiment.vue'
 import Contributors from './views/Contributors.vue'
 import SiteStats from './views/SiteStats.vue'
+import Assistant from './views/Assistant.vue'
+import CampusWall from './views/CampusWall.vue'
+import ReminderCenter from './views/ReminderCenter.vue'
+import CommunityInsights from './views/CommunityInsights.vue'
+import RebrandPreview from './views/RebrandPreview.vue'
 
 /** 应用 id → 视图组件注册表 */
 export const VIEWS = {
@@ -52,11 +57,17 @@ export const VIEWS = {
   budget: Budget,
   tiebaSentiment: TiebaSentiment,
   contributors: Contributors,
-  siteStats: SiteStats
+  siteStats: SiteStats,
+  assistant: Assistant,
+  campusWall: CampusWall,
+  reminder: ReminderCenter,
+  insights: CommunityInsights,
+  rebrand: RebrandPreview
 }
 
 /** 底部快捷导航（首页 + 高频应用） */
 export const NAV_APPS = [
+  { id: 'assistant', icon: '🤖', label: '智能体', labelEn: 'Agent' },
   { id: 'campusNews', icon: '📢', label: '动态', labelEn: 'News' },
   { id: 'officialSites', icon: '🏛️', label: '官网', labelEn: 'Portal' },
   { id: 'budget', icon: '🧮', label: '生活费', labelEn: 'Budget' },

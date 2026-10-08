@@ -3,6 +3,11 @@
  * 首页应用网格与「应用分类」面板都从本数组渲染。
  */
 export const apps = [
+  { id: 'assistant', title: '智能助手', titleEn: 'AI Assistant', desc: '说一句话就能办事：查课表、找空教室、加日程、直达服务', descEn: 'One sentence to get things done: schedule, rooms, reminders', icon: '🤖', color: '#1b66c9', group: '服务', groupEn: 'Services' },
+  { id: 'campusWall', title: '校园墙', titleEn: 'Campus Wall', desc: '发帖吐槽、失物招领、求助美食，匿名互动全员可见', descEn: 'Anonymous posts, lost & found, help & food', icon: '🧱', color: '#ea580c', group: '生活', groupEn: 'Life' },
+  { id: 'reminder', title: '提醒中心', titleEn: 'Reminders', desc: '定时提醒引擎：页内弹窗+桌面通知+提示音，与智能体日程打通', descEn: 'Timer engine with toast & notification', icon: '⏰', color: '#d97706', group: '生活', groupEn: 'Life' },
+  { id: 'insights', title: '社区洞察', titleEn: 'Insights', desc: '评论趋势、分区占比、热词与治理健康度的可视化看板', descEn: 'Comment trends, tags & governance board', icon: '📈', color: '#0f766e', group: '服务', groupEn: 'Services' },
+  { id: 'rebrand', title: '换校向导', titleEn: 'Rebrand Wizard', desc: '一键换校可视化：品牌实时预览、9 套主题、导出配置脚本直改', descEn: 'One-click rebrand wizard with live preview', icon: '🔁', color: '#7c3aed', group: '服务', groupEn: 'Services' },
   { id: 'officialSites', title: '学校官网', titleEn: 'University Portal', desc: '青岛大学官方网站与各学院官网大全', descEn: 'Official QDU website and all college portals', icon: '🏛️', color: '#7c3aed', group: '服务', groupEn: 'Services' },
   { id: 'campusNews', title: '校园动态', titleEn: 'Campus News', desc: '教务处官方通知与动态实时同步', descEn: 'Real-time Academic Affairs Office notices', icon: '📢', color: '#e11d48', group: '学习', groupEn: 'Study' },
   { id: 'calendar', title: '校历', titleEn: 'Calendar', desc: '查看每学期校历与放假安排', descEn: 'View academic calendar & holidays', icon: '📅', color: '#f43f5e', group: '学习', groupEn: 'Study' },

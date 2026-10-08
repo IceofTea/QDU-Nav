@@ -5,6 +5,7 @@ import os from 'node:os'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
+import { handleCommunity, communityCors } from './community.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DIST = path.join(__dirname, '..', 'dist')
@@ -355,12 +356,33 @@ function json(res, status, obj) {
 }
 
 const server = http.createServer(async (req, res) => {
+  const u = new URL(req.url, 'http://localhost')
+  const urlPath = u.pathname
+
+  // 管理端页面（隐秘多路径：/admin · /console · /.g/9f3a；普通用户不会发现）
+  if (urlPath === '/admin' || urlPath === '/admin.html' || urlPath === '/console' || urlPath === '/.g/9f3a') {
+    const adminFile = path.join(__dirname, 'admin.html')
+    if (fs.existsSync(adminFile)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'X-Robots-Tag': 'noindex, nofollow' })
+      return res.end(fs.readFileSync(adminFile))
+    }
+  }
+
+  // 社区服务：评论 / 校园墙 / 敏感词 / 反馈 / 表情 / 云脑 / 管理 API（跨站 CORS）
+  if (urlPath.startsWith('/api/comments') || urlPath.startsWith('/api/wall') ||
+      urlPath.startsWith('/api/moderation') || urlPath.startsWith('/api/admin') ||
+      urlPath.startsWith('/api/feedback') || urlPath.startsWith('/api/react') ||
+      urlPath === '/api/chat') {
+    communityCors(res)
+    if (req.method === 'OPTIONS') { res.writeHead(204); return res.end() }
+    const r = await handleCommunity(req, urlPath, u.searchParams, req.socket.remoteAddress)
+    return json(res, r.status, r.body)
+  }
+
   if (req.method !== 'GET') {
     res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' })
     return res.end('Method Not Allowed')
   }
-  const u = new URL(req.url, 'http://localhost')
-  const urlPath = u.pathname
   if (urlPath.startsWith('/api/')) {
     const handler = routes[urlPath]
     if (handler) {

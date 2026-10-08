@@ -1,0 +1,19 @@
+{
+  "university": "青岛大学",
+  "shortName": "青大",
+  "brand": "QDU-Nav",
+  "motto": "明德 · 博学 · 守正 · 出奇",
+  "jwUrl": "https://xjw.qdu.edu.cn/jsxsd",
+  "tiebaUrl": "https://tieba.baidu.com/f?kw=%E9%9D%92%E5%B2%9B%E5%A4%A7%E5%AD%A6",
+  "github": "https://github.com/IceofTea/QDU-Nav",
+  "pagesUrl": "https://iceoftea.github.io/QDU-Nav/",
+  "campuses": 3,
+  "colleges": 28,
+  "majors": 90,
+  "theme": {
+    "name": "青大蓝",
+    "primary": "#1b66c9",
+    "accent": "#4f8df0",
+    "bg": "#f0f7ff"
+  }
+}

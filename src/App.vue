@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import Welcome from './views/Welcome.vue'
 import TourOverlay from './components/TourOverlay.vue'
+import ChatDock from './components/agent/ChatDock.vue'
 import { SITE } from './config/site'
 import { NAV_APPS, useViewState } from './router'
 import { apps } from './data/apps'
@@ -100,6 +101,23 @@ function openNotices() {
   try { localStorage.setItem('qdu_notice_read', JSON.stringify([...noticeRead.value])) } catch {}
 }
 
+/** 隐秘暗门：连点品牌 Logo 3 次 → 弹口令 → 跳转社区控制台（普通用户不可感知） */
+let logoTaps = 0
+let logoTimer = null
+function secretPortal() {
+  logoTaps++
+  clearTimeout(logoTimer)
+  logoTimer = setTimeout(() => { logoTaps = 0 }, 1600)
+  if (logoTaps >= 3) {
+    logoTaps = 0
+    const t = prompt('🛰️ 社区控制台\n请输入管理口令：')
+    if (t) {
+      try { localStorage.setItem('pending_admin_token', t) } catch { /* noop */ }
+      window.open('/admin', '_blank', 'noopener')
+    }
+  }
+}
+
 const mourning = ref(false)
 const mourningCause = ref('')
 function enableMourning(cause) {
@@ -125,7 +143,7 @@ onMounted(() => {
   <div v-else class="app-shell">
     <header class="header">
       <div class="header-inner">
-        <div class="brand" @click="goHome">
+        <div class="brand" @click="goHome; secretPortal()">
           <div class="brand-logo"><span>{{ SITE.brand }}</span></div>
           <div>
             <div class="brand-name">{{ t('site.name') }}</div>
@@ -133,6 +151,7 @@ onMounted(() => {
           </div>
         </div>
         <div class="header-right">
+          <button class="ghost-btn agent-btn" data-tour="agent-btn" title="智能助手 · 说一句话办事" @click="openApp('assistant')">🤖<span class="agent-btn-label desktop-only">助手</span></button>
           <button class="ghost-btn notice-bell" :class="{ 'has-unread': unreadCount > 0 }" title="查看公告" @click="openNotices">
             📢<span v-if="unreadCount > 0" class="notice-dot">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
           </button>
@@ -205,4 +224,7 @@ onMounted(() => {
 
   <!-- 新手引导覆盖层 -->
   <TourOverlay />
+
+  <!-- 全站悬浮智能体 -->
+  <ChatDock @open="openApp" />
 </template>

@@ -2,6 +2,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { apps, campusStats } from '../data/apps'
 import { searchApps } from '../data/searchIndex'
+import { recognize } from '../agent/intents'
+import { AGENT_PROFILE } from '../agent/config'
 import { campuses } from '../data/campus'
 import { getCourseStats, EMPTY_STATS } from '../api/courseStats'
 import { SITE } from '../config/site'
@@ -72,6 +74,26 @@ const filtered = computed(() => {
 
 const expanded = ref(null)
 function toggleCampus(name) { expanded.value = expanded.value === name ? null : name }
+
+/* ── 首页对话式入口：回车先过意图识别，命中即交给智能体办事 ── */
+function pushInbox(text) {
+  try { localStorage.setItem('qdu_agent_inbox', text) } catch { /* noop */ }
+}
+function onSearchEnter() {
+  const q = keyword.value.trim()
+  if (!q) return
+  const r = recognize(q)
+  if (r.layer === 'intent' || r.layer === 'faq') {
+    pushInbox(q)
+    keyword.value = ''
+    emit('open', 'assistant')
+  }
+  // 未命中强意图 → 保留现有关键词过滤（下方应用网格实时响应）
+}
+function askAgent(text) {
+  pushInbox(text)
+  emit('open', 'assistant')
+}
 </script>
 
 <template>
@@ -80,8 +102,18 @@ function toggleCampus(name) { expanded.value = expanded.value === name ? null : 
       <h2 class="hero-title">{{ greeting() }}</h2>
       <p class="hero-sub">{{ lang === 'en' ? 'Welcome to' : '欢迎回到' }} {{ t('site.name') }}，{{ t('site.heroSub') }}</p>
       <div class="search-bar" data-tour="search">
-        <span class="search-icon">🔍</span>
-        <input v-model="keyword" class="search-input" :placeholder="lang === 'en' ? 'Search apps or features...' : '搜索应用或功能：空教室、记账、体测…'" />
+        <span class="search-icon">🤖</span>
+        <input
+          v-model="keyword"
+          class="search-input"
+          :placeholder="lang === 'en' ? 'Say your need: free room tomorrow, what to eat…' : '说出你的需求：明天有空教室吗、今天吃什么、加个日程…'"
+          @keydown.enter.prevent="onSearchEnter"
+        />
+        <button class="search-agent-go" title="交给智能体执行" @click="askAgent(keyword || '你能做什么')">执行 ›</button>
+      </div>
+      <div class="hero-chips">
+        <span class="hero-chips-label">试试：</span>
+        <button v-for="s in AGENT_PROFILE.examples.slice(0, 4)" :key="s" class="hero-chip" @click="askAgent(s)">{{ s }}</button>
       </div>
     </section>
 
@@ -244,4 +276,32 @@ function toggleCampus(name) { expanded.value = expanded.value === name ? null : 
 .site-like.on .sl-num { color: #e11d48; }
 .section-head-right { display: flex; align-items: center; gap: 10px; }
 .about-actions { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.search-agent-go {
+  flex-shrink: 0;
+  border: none;
+  background: var(--primary, #1b66c9);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.15s;
+}
+.search-agent-go:hover { transform: translateY(-1px); }
+.hero-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; align-items: center; justify-content: center; }
+.hero-chips-label { font-size: 12px; color: var(--muted, #8a94a6); }
+.hero-chip {
+  border: 1px dashed var(--border, #e5eaf2);
+  background: var(--card, rgba(255, 255, 255, 0.75));
+  color: var(--text, #24292f);
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.hero-chip:hover { border-color: var(--primary, #1b66c9); color: var(--primary, #1b66c9); transform: translateY(-1px); }
 </style>

@@ -1,0 +1,19 @@
+{
+  "university": "北京大学",
+  "shortName": "北大",
+  "brand": "PKU-Nav",
+  "motto": "思想自由 · 包容并包",
+  "jwUrl": "https://dean.pku.edu.cn",
+  "tiebaUrl": "https://tieba.baidu.com/f?kw=%E5%8C%97%E4%BA%AC%E5%A4%A7%E5%AD%A6",
+  "github": "https://github.com/example/PKU-Nav",
+  "pagesUrl": "https://example.github.io/PKU-Nav/",
+  "campuses": 3,
+  "colleges": 42,
+  "majors": 120,
+  "theme": {
+    "name": "北大红",
+    "primary": "#8b0000",
+    "accent": "#cc0000",
+    "bg": "#fff5f5"
+  }
+}
