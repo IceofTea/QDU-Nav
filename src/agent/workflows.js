@@ -1188,6 +1188,163 @@ export const WORKFLOWS = {
         note: '问答模式只答不办事；计划模式先出计划再执行——按场景切换'
       }
     }
+  },
+
+  /* ── 28. 找实习（画像匹配 → 投递登记） ── */
+  jobHunt: {
+    id: 'jobHunt', title: '找实习', icon: '💼',
+    steps: [
+      {
+        label: '读取画像算匹配',
+        run: async (ctx) => {
+          const { readProfile } = await import('./profile.js')
+          const { matchJobs } = await import('../data/jobs.js')
+          const prof = readProfile()
+          const kw = extractKeyword(ctx.text)
+          if (kw) prof.interests = [...new Set([...(prof.interests || []), kw])]
+          const matched = matchJobs(prof, 5)
+          ctx.state.matched = matched
+          ctx.state.prof = prof
+          return `画像技能[${(prof.skills || []).join('、') || '未填写'}] → 命中 ${matched.length} 个岗位`
+        }
+      },
+      {
+        label: '生成投递清单',
+        run: async (ctx) => {
+          const top = ctx.state.matched[0]
+          if (!top) throw new Error('暂无匹配岗位，先去画像页补技能')
+          ctx.state.top = top
+          return `首推：${top.job.title}（匹配词：${top.hits.join('、') || '综合推荐'}）`
+        }
+      }
+    ],
+    buildCard(ctx) {
+      const rows = ctx.state.matched.map((m) => ({
+        icon: m.score > 0 ? '🎯' : '📌',
+        label: `${m.job.title} · ${m.job.dept} · ${m.job.pay}`,
+        value: m.hits.length ? `匹配：${m.hits.join('、')}` : '综合推荐'
+      }))
+      return {
+        title: `💼 实习/勤工岗 · ${ctx.state.matched.length} 个`,
+        subtitle: '示例岗位（格式示范，求职以官方渠道为准）· 匹配来自你的画像',
+        rows,
+        actions: [
+          { label: '📋 看全部岗位', type: 'openApp', value: 'jobs' },
+          { label: '🧬 完善画像更准', type: 'openApp', value: 'profile' }
+        ],
+        note: '投递登记在岗位页完成（本机记录，后端期同步就业网）'
+      }
+    }
+  },
+
+  /* ── 29. 活动报名（选活动 → 报名 → 写日程） ── */
+  activitySignup: {
+    id: 'activitySignup', title: '活动报名', icon: '🎪', needConfirm: true,
+    steps: [
+      {
+        label: '找对味的活动',
+        run: async (ctx) => {
+          const { upcoming, signedIds } = await import('../data/activities.js')
+          const kw = extractKeyword(ctx.text)
+          let list = upcoming().filter((a) => !a.expired)
+          if (kw) {
+            const kl = kw.toLowerCase()
+            const hit = list.filter((a) => (a.title + a.org + (a.tags || []).join('')).toLowerCase().includes(kl))
+            if (hit.length) list = hit
+          }
+          const signed = new Set(signedIds())
+          ctx.state.list = list.slice(0, 5)
+          if (!ctx.state.list.length) throw new Error('近期没找到对味的活动，换个关键词试试')
+          return `近期可报 ${list.length} 个：${ctx.state.list.map((a) => a.title).join('、')}`
+        }
+      },
+      {
+        label: '报名并写入日程',
+        run: async (ctx) => {
+          const { signupLocal } = await import('../data/activities.js')
+          const target = ctx.state.list[0]
+          const r = signupLocal(target.id)
+          if (!r.already) {
+            const sched = loadSched()
+            sched.push({ text: `参加${target.title}`, date: target.date, ts: Date.now(), from: 'activity' })
+            saveSched(sched)
+          }
+          ctx.state.target = target
+          ctx.state.dup = r.already
+          return r.already ? `${target.title}（已报过，不重复）` : `${target.title} 报名成功 + 已写入日程`
+        }
+      }
+    ],
+    buildCard(ctx) {
+      const t = ctx.state.target
+      return {
+        title: `🎪 ${ctx.state.dup ? '已报过' : '报名成功'} · ${t.title}`,
+        subtitle: `${t.org} · ${t.date} · ${t.place}（余 ${Math.max(0, (t.quota || 0) - (t.signed || 0))} 位）`,
+        rows: ctx.state.list.map((a) => ({ icon: '📌', label: `${a.title}`, value: `${a.date} · ${a.place}` })),
+        actions: [
+          { label: '🗓️ 看我的日程', type: 'reask', value: '我的日程' },
+          { label: '🎪 全部活动', type: 'openApp', value: 'jobs' }
+        ],
+        note: '本机报名记录；名额校验后端期由服务端做'
+      }
+    }
+  },
+
+  /* ── 30. 宿舍报修（一句话 → 工单 → 管理台复用反馈通道） ── */
+  fixReport: {
+    id: 'fixReport', title: '宿舍报修', icon: '🔧', needConfirm: true,
+    steps: [
+      {
+        label: '解析报修内容与地点',
+        run: async (ctx) => {
+          const place = extractPlace(ctx.text) || ''
+          const kw = extractKeyword(ctx.text) || ctx.text.slice(0, 20)
+          if (!/灯|水|电|网|门|窗|锁|空调|暖气|马桶|淋浴|报修|坏|修|漏/.test(ctx.text)) {
+            throw new CLARIFY('thing')
+          }
+          ctx.state.place = place
+          ctx.state.thing = kw
+          return `报修：${kw}${place ? ' @' + place : ''}`
+        }
+      },
+      {
+        label: '生成工单并上报',
+        run: async (ctx) => {
+          const text = `【报修】${ctx.state.thing}${ctx.state.place ? '（' + ctx.state.place + '）' : ''}`
+          let online = false
+          try {
+            const r = await fetch('/api/feedback', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text, kind: 'fix', verdict: 'new' })
+            })
+            online = r.ok
+          } catch { /* 本机模式 */ }
+          if (!online) {
+            const arr = JSON.parse(localStorage.getItem('qdu_fix_orders') || '[]')
+            arr.unshift({ thing: ctx.state.thing, place: ctx.state.place, ts: Date.now(), status: 'local' })
+            try { localStorage.setItem('qdu_fix_orders', JSON.stringify(arr.slice(0, 50))) } catch { /* noop */ }
+          }
+          ctx.state.online = online
+          return online ? '工单已进管理台反馈队列' : '已存本机工单（联网自动上报）'
+        }
+      }
+    ],
+    clarify: { field: 'thing', ask: '具体什么东西坏了？比如“宿舍灯”“水龙头”' },
+    buildCard(ctx) {
+      return {
+        title: `🔧 报修工单 · ${ctx.state.thing}`,
+        subtitle: `${ctx.state.place || '地点待补充'} · ${ctx.state.online ? '管理台可见' : '本机模式'}`,
+        rows: [
+          { icon: '📝', label: '报修内容', value: ctx.state.thing },
+          { icon: '📍', label: '地点', value: ctx.state.place || '未说明（可在管理台补充）' },
+          { icon: '📡', label: '通道', value: ctx.state.online ? '已上报管理台' : '本机暂存' }
+        ],
+        actions: [
+          { label: '🧱 去墙里问问有没有人同坏', type: 'reask', value: '搜墙 宿舍报修' }
+        ],
+        note: '紧急情况（停电/漏水）请直接打后勤电话，线上工单只做记录流转'
+      }
+    }
   }
 }
 

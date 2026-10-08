@@ -111,6 +111,9 @@ export const INTENTS = [
   { id: 'wf.reportFeedback', kind: 'workflow', wf: 'reportFeedback', title: '提交反馈', patterns: ['提交反馈', '提个建议', '我要反馈', '反馈一下', '提建议', '意见反馈', '我要提bug', '提个bug'] },
   { id: 'wf.taskChain', kind: 'workflow', wf: 'taskChain', title: '任务链', patterns: ['任务链', '跑任务链', '晨间组合', '学习组合', '生活组合', '连续执行', '一口气'] },
   { id: 'wf.helpGuide', kind: 'workflow', wf: 'helpGuide', title: '使用指南', patterns: ['使用指南', '能力地图', '你能干嘛', '功能清单', '会什么', '教我用', '怎么用你', '使用说明', '功能列表'] },
+  { id: 'wf.jobHunt', kind: 'workflow', wf: 'jobHunt', title: '找实习', patterns: ['找实习', '实习', '找工作', '勤工俭学', '兼职', '投简历', '岗位推荐', '有什么兼职', '想打工'] },
+  { id: 'wf.activitySignup', kind: 'workflow', wf: 'activitySignup', title: '活动报名', patterns: ['活动报名', '报名活动', '有什么活动', '讲座', '比赛报名', '招新', '志愿者报名', '参加活动'] },
+  { id: 'wf.fixReport', kind: 'workflow', wf: 'fixReport', title: '宿舍报修', patterns: ['报修', '宿舍坏了', '灯坏了', '水龙头', '修东西', '找人修', '空调坏了', '门锁坏了', '报修宿舍'] },
 
   // ── 应用直达 ───────────────────────────────────────────
   { id: 'app.reminder', kind: 'app', app: 'reminder', title: '提醒中心', patterns: ['提醒中心', '定时提醒', '看提醒', '闹钟', '提醒列表'] },
@@ -127,7 +130,12 @@ export const INTENTS = [
   { id: 'app.tieba', kind: 'app', app: 'tiebaSentiment', title: '贴吧舆情', patterns: ['贴吧', '青大吧', '热帖', '论坛'] },
   { id: 'app.siteStats', kind: 'app', app: 'siteStats', title: '访问统计', patterns: ['访问统计', '访客', '流量统计'] },
   { id: 'app.contributors', kind: 'app', app: 'contributors', title: '贡献者', patterns: ['贡献者', '开发者', '更新日志'] },
-  { id: 'app.categories', kind: 'app', app: 'categories', title: '全部应用', patterns: ['全部应用', '所有应用', '应用列表', '更多应用'] }
+  { id: 'app.categories', kind: 'app', app: 'categories', title: '全部应用', patterns: ['全部应用', '所有应用', '应用列表', '更多应用'] },
+  { id: 'app.jobs', kind: 'app', app: 'jobs', title: '招聘求职', patterns: ['招聘', '求职', '岗位', '就业', '双选会', '校招'] },
+  { id: 'app.compare', kind: 'app', app: 'compare', title: '为什么选我', patterns: ['为什么选你', '和豆包区别', '对比', '优势', '和官网区别', '小程序区别'] },
+  { id: 'app.flywheel', kind: 'app', app: 'flywheel', title: '协作飞轮', patterns: ['飞轮', '协作看板详情', '维护进展', 'AI贡献'] },
+  { id: 'app.transplant', kind: 'app', app: 'transplant', title: '换校移植', patterns: ['换校移植', '移植看板', '复制到别的学校', '开分站'] },
+  { id: 'app.profile', kind: 'app', app: 'profile', title: '我的画像', patterns: ['我的画像', '画像', '了解我', '个性化', '我的标签'] }
 ]
 
 /** 归一化：去标点、降噪 */

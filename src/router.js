@@ -11,6 +11,7 @@
 import { ref, computed, markRaw } from 'vue'
 import { SITE } from './config/site'
 import { visitorId } from './utils/visitor'
+import { recordAppOpen } from './agent/profile'
 import Home from './views/Home.vue'
 
 /** 首页同步加载，其他页面懒加载（手机弱网首屏只下 ~200KB，应用页按需再下） */
@@ -45,7 +46,12 @@ const VIEWS = {
   buildingGallery: () => import('./views/BuildingGallery.vue'),
   messages: () => import('./views/Messages.vue'),
   focus: () => import('./views/FocusTimer.vue'),
-  data: () => import('./views/DataManager.vue')
+  data: () => import('./views/DataManager.vue'),
+  jobs: () => import('./views/Jobs.vue'),
+  compare: () => import('./views/Compare.vue'),
+  flywheel: () => import('./views/Flywheel.vue'),
+  transplant: () => import('./views/Transplant.vue'),
+  profile: () => import('./views/Profile.vue')
 }
 
 /** 应用 id → 视图组件注册表（懒加载版，返回 Promise；直链分享由 setView 解析） */
@@ -122,6 +128,7 @@ export function useViewState() {
     location.hash = APP_ROUTE + id
     setView(id)
     window.scrollTo(0, 0)
+    try { recordAppOpen(id) } catch { /* 画像行为记录失败不挡主流程 */ }
     reportApp(id)
   }
 
