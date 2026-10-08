@@ -248,5 +248,42 @@ ok('PUBLIC_API_DEFAULT 为空（部署后填）', () => {
   assert.equal(apiBase.PUBLIC_API_DEFAULT, '')
 })
 
+console.log('── wall.cloud ──')
+const cloud = await import('../src/wall/cloud.js')
+ok('未配置关闭且抛错', async () => {
+  localStorage.removeItem('qdu_supabase')
+  assert.equal(cloud.cloudEnabled(), false)
+  await assert.rejects(cloud.cloudList(), /未配置/)
+})
+ok('setCloud/getCloud 闭环', () => {
+  cloud.setCloud('https://xxx.supabase.co/', 'anon-key')
+  const c = cloud.getCloud()
+  assert.equal(c.url, 'https://xxx.supabase.co')
+  assert.equal(cloud.cloudEnabled(), true)
+})
+ok('mock 行映射：帖子+回复+id 前缀 C', async () => {
+  const realFetch = globalThis.fetch
+  globalThis.fetch = async (url) => ({
+    ok: true, status: 200,
+    json: async () => String(url).includes('wall_replies')
+      ? [{ id: 7, post_id: 3, author: '小李', content: '同去', likes: 0, parent_cloud: null, reply_to: '', created_at: new Date().toISOString() }]
+      : [{ id: 3, title: '食堂', content: '好吃', tag: 'food', ptype: 'normal', author: '阿珍', anonymous: false, vote: null, bounty: null, resource: null, likes: 5, views: 10, reactions: {}, created_at: new Date().toISOString() }]
+  })
+  try {
+    const posts = await cloud.cloudList({ tag: 'all' })
+    assert.equal(posts.length, 1)
+    assert.equal(posts[0].id, 'C3')
+    assert.equal(posts[0].replies.length, 1)
+    assert.equal(posts[0].replies[0].id, 'C7')
+  } finally {
+    globalThis.fetch = realFetch
+    cloud.setCloud('', '')
+  }
+})
+ok('probeCloud 未配置直接失败', async () => {
+  const r = await cloud.probeCloud(null)
+  assert.equal(r.ok, false)
+})
+
 console.log(`\n done: pass=${pass} fail=${fail}`)
 process.exit(fail ? 1 : 0)

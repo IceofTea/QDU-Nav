@@ -18,6 +18,7 @@ import {
   WALLET_KEY, SIGN_KEY, FAV_KEY, POINTS, hotScore
 } from './config.js'
 import { apiUrl } from './apiBase.js'
+import { cloudEnabled, cloudList, cloudCreate, cloudReply, cloudLike, cloudView } from './cloud.js'
 
 const LS_POSTS = 'wall_posts_v1'
 const LS_VOTED = 'wall_voted_v1'
@@ -54,6 +55,16 @@ function now() { return Date.now() }
 
 /** 拉取帖子列表（tag 过滤 + 排序 hot|new|top） */
 export async function loadPosts({ tag = 'all', sort = 'hot' } = {}) {
+  // 第一轨：公有云（配好即全员共享；失败自动往下掉）
+  if (cloudEnabled()) {
+    try {
+      let posts = await cloudList({ tag, limit: 100 })
+      if (sort === 'top') posts = posts.filter((p) => p.status === 'top' || p.best)
+      if (sort === 'hot') posts = posts.slice().sort((a, b) => hotScore(b) - hotScore(a))
+      if (sort === 'new') posts = posts.slice().sort((a, b) => b.ts - a.ts)
+      return { posts, offline: false, cloud: true }
+    } catch { /* 掉到网关轨 */ }
+  }
   try {
     const q = new URLSearchParams()
     if (tag && tag !== 'all') q.set('tag', tag)
@@ -75,6 +86,13 @@ export async function loadPosts({ tag = 'all', sort = 'hot' } = {}) {
 
 /** 发帖（type: normal|vote|bounty|resource|notice；离线入本机草稿） */
 export async function createPost(payload) {
+  if (cloudEnabled()) {
+    try {
+      const post = await cloudCreate(payload)
+      addPoints(POINTS.post)
+      return { post, offline: false, cloud: true }
+    } catch { /* 掉到网关轨 */ }
+  }
   const local = {
     id: genId(),
     title: payload.title || '',
@@ -107,6 +125,13 @@ export async function createPost(payload) {
 }
 
 export async function likePost(id) {
+  // 云帖（id 以 C 开头）：走公有云计数
+  if (cloudEnabled() && String(id || '').startsWith('C')) {
+    try {
+      const likes = await cloudLike(Number(String(id).slice(1)))
+      return { likes, offline: false, cloud: true }
+    } catch { return { likes: 0, offline: true, cloud: true } }
+  }
   try {
     const d = await http('/api/wall/like', { method: 'POST', body: { id } })
     return { likes: d.likes, offline: false }
@@ -119,6 +144,15 @@ export async function likePost(id) {
 }
 
 export async function replyPost(id, content, author) {
+  if (cloudEnabled() && String(id || '').startsWith('C')) {
+    try {
+      const reply = await cloudReply(Number(String(id).slice(1)), content, author)
+      addPoints(POINTS.reply)
+      return { reply: { id: 'C' + reply.id, author: reply.author, content: reply.content, ts: Date.now(), likes: 0 }, offline: false, cloud: true }
+    } catch (e) {
+      throw new Error('云回复失败，请稍后重试')
+    }
+  }
   try {
     const d = await http('/api/wall/reply', { method: 'POST', body: { id, content, author } })
     addPoints(POINTS.reply)
@@ -147,6 +181,7 @@ export async function reportPost(id, reason) {
 
 /** 浏览计数（后端期换 POST /api/wall/:id/view 去重） */
 export async function viewPost(id) {
+  if (cloudEnabled() && String(id || '').startsWith('C')) { cloudView(Number(String(id).slice(1))); return }
   try { await http('/api/wall/view', { method: 'POST', body: { id } }) } catch { /* noop */ }
 }
 

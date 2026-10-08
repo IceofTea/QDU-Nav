@@ -16,6 +16,7 @@ import { ref, onMounted } from 'vue'
 import {
   getApiBase, setApiBase, probeGateway, describeMode, apiFromQuery
 } from '../wall/apiBase'
+import { getCloud, setCloud, probeCloud } from '../wall/cloud'
 import { exportDrafts, importDrafts, draftCount } from '../wall/drafts'
 import { exportThreads, unreadTotal } from '../im/api'
 import { getWallet } from '../wall/api'
@@ -28,6 +29,10 @@ const probeMsg = ref('')
 const probing = ref(false)
 const backupMsg = ref('')
 const usage = ref([])
+const sbUrl = ref('')
+const sbKey = ref('')
+const sbMsg = ref('')
+const sbProbing = ref(false)
 
 function refreshMode() {
   try {
@@ -56,6 +61,27 @@ function saveApi() {
   probeMsg.value = '已保存' + (apiInput.value ? '，刷新页面即生效' : '（已切回同源/自动模式）')
 }
 function clearApi() { apiInput.value = ''; saveApi() }
+
+/* ── 公有云共享（Supabase）：填好即全员共享墙帖子，手机同样生效 ── */
+function refreshCloud() {
+  try {
+    const c = getCloud()
+    sbUrl.value = c ? c.url : ''
+    sbKey.value = c ? c.key : ''
+  } catch { /* noop */ }
+}
+async function testCloud() {
+  sbProbing.value = true
+  sbMsg.value = '测试中…'
+  const r = await probeCloud({ url: sbUrl.value.trim(), key: sbKey.value.trim() })
+  sbProbing.value = false
+  sbMsg.value = r.ok ? `✅ 云端连通（${r.ms}ms），保存后发帖全员可见` : `❌ ${r.error}`
+}
+function saveCloud() {
+  const ok = setCloud(sbUrl.value.trim(), sbKey.value.trim())
+  sbMsg.value = ok ? '已保存，刷新页面即走公有云（清空两格即关闭）' : '已关闭公有云，回退网关/本机模式'
+  refreshMode()
+}
 
 /* ── 备份 / 恢复 ── */
 function download(name, obj) {
@@ -116,6 +142,7 @@ onMounted(() => {
   const q = apiFromQuery()
   if (q) apiInput.value = q
   refreshMode()
+  refreshCloud()
   refreshUsage()
 })
 </script>
@@ -140,6 +167,22 @@ onMounted(() => {
       </div>
       <div v-if="probeMsg" class="dm-msg">{{ probeMsg }}</div>
       <div class="dm-hint">部署完网关（见 Dockerfile/render.yaml）后，把公网地址填这里点保存：墙/私信/评论即走线上版；Wiki 页用 <code>?api=地址</code> 同样生效。</div>
+    </section>
+
+    <section class="dm-card">
+      <b>☁️ 公有云共享（Supabase · 免自建服务器）</b>
+      <div class="dm-row">
+        <input v-model="sbUrl" placeholder="https://xxx.supabase.co" />
+      </div>
+      <div class="dm-row">
+        <input v-model="sbKey" placeholder="anon key（设置→API 里复制）" type="password" />
+      </div>
+      <div class="dm-row">
+        <button @click="testCloud" :disabled="sbProbing">测试云端</button>
+        <button class="primary" @click="saveCloud">保存</button>
+      </div>
+      <div v-if="sbMsg" class="dm-msg">{{ sbMsg }}</div>
+      <div class="dm-hint">建表跑一次 <code>supabase/schema.sql</code>；保存后墙帖子全员共享（含手机）。清空两格保存即关闭。</div>
     </section>
 
     <section class="dm-card">
