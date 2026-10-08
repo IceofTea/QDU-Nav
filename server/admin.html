@@ -290,6 +290,20 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI"
  * 接口对接见 server/community.mjs 头部「接口速查」
  * ════════════════════════════════════════════════ */
 var BASE = location.origin;
+// 支持 ?api=https://公网网关 覆盖（Pages 纯静态演示时可指向自建网关）；
+// Pages 下无后端时登录必然失败，页面顶部会显示静态模式横幅，不再是空白 404。
+try {
+  var _apiQ = new URLSearchParams(location.search).get('api');
+  if (_apiQ) BASE = String(_apiQ).replace(/\/+$/, '');
+} catch (e) { /* noop */ }
+if (/\.github\.io$/.test(location.hostname)) {
+  document.addEventListener('DOMContentLoaded', function () {
+    var bar = document.createElement('div');
+    bar.style.cssText = 'background:#3b2f0b;color:#fbbf24;font-size:12.5px;padding:9px 16px;text-align:center;line-height:1.7';
+    bar.innerHTML = '本站为 GitHub Pages 纯静态演示，无后端 API，管理台仅展示界面；完整管理功能请在本地启动网关后访问 http://localhost:8787/admin（QDU）/ 8788（FJNU），或给本页 URL 加 ?api=你的网关地址 后重试。';
+    document.body.insertBefore(bar, document.body.firstChild);
+  });
+}
 var TOKEN = localStorage.getItem('admin_token') || '';
 var DATA = { reports: [], comments: [], posts: [], feedback: [], words: [], audit: [] };
 var currentTab = 'reports';
