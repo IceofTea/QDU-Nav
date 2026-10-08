@@ -13,7 +13,10 @@ export default defineConfig({
   base: './',
   server: {
     proxy: {
-      '/api': 'http://localhost:8787'
+      '/api': 'http://localhost:8787',
+      '/admin': 'http://localhost:8787',
+      '/console': 'http://localhost:8787',
+      '/.g': 'http://localhost:8787'
     }
   }
 })

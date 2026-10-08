@@ -94,7 +94,7 @@ function onPickWf(id) { recordUsage(id) }
           <div class="asst-desc">{{ AGENT_PROFILE.subtitle }}</div>
         </div>
       </div>
-      <button class="asst-link" :disabled="demoRunning" @click="runDemo">{{ demoRunning ? '▶ 演示中…' : '🎬 自动演示' }}</button>
+      <!-- 演示模式仅通过 ?demo=1 触发（评委专用链接），不设可见入口以免影响正常使用 -->
       <button class="asst-link" @click="emit('open', 'aboutagent')">关于智能体 ›</button>
     </div>
 

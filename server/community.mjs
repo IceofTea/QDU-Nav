@@ -66,6 +66,18 @@ const EMOJIS = ['👍', '😂', '🤔', '❤️', '🎉']
 
 let db = null
 const rateMap = new Map()
+
+/* ── 轻量事件总线（SSE 广播源）：任何社区写操作 → bus.emit → /api/events 推送 ── */
+export const bus = {
+  listeners: new Set(),
+  emit(type) {
+    const payload = JSON.stringify({ type, ts: Date.now() })
+    for (const fn of this.listeners) {
+      try { fn(payload) } catch { /* 连接已断 */ }
+    }
+  },
+  on(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn) }
+}
 const loginFails = new Map() // ip -> {t, n}
 
 /* ──────────────────────── 存储层 ──────────────────────── */
@@ -222,6 +234,7 @@ async function handleComments(req, urlPath, searchParams, ip) {
       c.reportReason = sanitize(body.reason, 100) || '违规内容'
       c.reportedAt = Date.now()
       persist()
+      bus.emit('report')
     }
     return { status: 200, body: { ok: true, msg: '已收到举报，管理员将尽快处理' } }
   }
@@ -290,6 +303,7 @@ async function handleComments(req, urlPath, searchParams, ip) {
     data.comments.push(c)
     if (data.comments.length > 8000) data.comments = data.comments.slice(-8000)
     persist()
+    bus.emit('comment')
     return { status: 200, body: { ok: true, comment: c } }
   }
 
@@ -386,7 +400,8 @@ async function handleWall(req, urlPath, searchParams, ip) {
     if (content.length < 2) return { status: 400, body: { ok: false, error: '内容太短' } }
     const hits = hitWords(content)
     if (hits.length) return { status: 400, body: { ok: false, error: '内容包含违规词语，已被拦截', hits: hits.slice(0, 3) } }
-    const reply = { id: genId(), author: sanitize(body.author, MAX_AUTHOR) || '匿名同学', content, ts: Date.now(), likes: 0 }
+    const parent = body.parent ? sanitize(String(body.parent), 40) : null
+    const reply = { id: genId(), author: sanitize(body.author, MAX_AUTHOR) || '匿名同学', content, ts: Date.now(), likes: 0, parent, replyTo: body.replyTo ? sanitize(String(body.replyTo), MAX_AUTHOR) : '' }
     p.replies.push(reply)
     persist()
     return { status: 200, body: { ok: true, reply } }
@@ -403,6 +418,7 @@ async function handleWall(req, urlPath, searchParams, ip) {
       p.reportReason = sanitize(body.reason, 100) || '违规内容'
       p.reportedAt = Date.now()
       persist()
+      bus.emit('report')
     }
     return { status: 200, body: { ok: true, msg: '已收到举报' } }
   }
@@ -443,6 +459,7 @@ async function handleWall(req, urlPath, searchParams, ip) {
     data.posts.push(p)
     if (data.posts.length > 3000) data.posts = data.posts.slice(-3000)
     persist()
+    bus.emit('post')
     return { status: 200, body: { ok: true, post: p } }
   }
 
@@ -609,6 +626,14 @@ async function handleAdmin(req, urlPath, searchParams, ip) {
       delete item.reportReason
     } else if (body.action === 'hide') {
       item.status = 'hidden'
+    } else if (body.action === 'doing') {
+      item.status = 'doing'
+      item.note = sanitize(body.note, 200)
+      item.doingAt = Date.now()
+    } else if (body.action === 'done') {
+      item.status = 'handled'
+      item.note = sanitize(body.note, 200)
+      item.doneAt = Date.now()
     } else {
       return { status: 400, body: { ok: false, error: 'unknown action' } }
     }

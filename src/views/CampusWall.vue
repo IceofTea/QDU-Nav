@@ -145,6 +145,16 @@ function onAdopt(reply) {
   showToast('已采纳 ✓ 赏金结算接口已预留（后端期自动切换）')
 }
 
+/** 本机帖编辑/删除后落盘（网关帖提示走管理台） */
+function saveLocalPost() {
+  try {
+    const posts = JSON.parse(localStorage.getItem('wall_posts_v1') || '[]')
+    const i = posts.findIndex((x) => x.id === detailPost.value.id)
+    if (i >= 0) { posts[i] = detailPost.value; localStorage.setItem('wall_posts_v1', JSON.stringify(posts)); showToast('本机帖已保存 ✓') }
+    else showToast('网关帖修改需管理员在管理台操作')
+  } catch { showToast('保存失败', true) }
+}
+
 function onOpen(id) { detailId.value = id; const p = posts.value.find((x) => x.id === id); if (p) viewPost(id) }
 
 function doSignIn() {
@@ -156,11 +166,23 @@ function doSignIn() {
   wallet.value = getWallet()
 }
 
+let es = null
 onMounted(async () => {
   await Promise.all([refresh(), loadWords()])
-  timer = setInterval(() => { if (!document.hidden && !detailId.value) refresh() }, 20000)
+  // SSE 实时推送优先（服务端 bus 广播 → 即时刷新）；断开自动回退 20s 轮询
+  try {
+    es = new EventSource('/api/events')
+    es.onmessage = (e) => {
+      try {
+        const d = JSON.parse(e.data)
+        if (d.type === 'comment' || d.type === 'post') refresh()
+      } catch { /* noop */ }
+    }
+    es.onerror = () => { /* 连接断开：保持轮询兜底 */ }
+  } catch { /* 浏览器不支持则纯轮询 */ }
+  timer = setInterval(() => { if (!document.hidden && !detailId.value && (!es || es.readyState !== 1)) refresh() }, 20000)
 })
-onBeforeUnmount(() => { if (timer) clearInterval(timer) })
+onBeforeUnmount(() => { if (timer) clearInterval(timer); if (es) es.close() })
 
 async function loadWords() {
   try {
@@ -217,7 +239,7 @@ async function loadWords() {
         <!-- 详情模式 -->
         <WallThread v-if="detailPost" :post="detailPost" :offline="offline" :words="words"
           @back="detailId = null" @reply="onReplyInThread" @adopt="onAdopt"
-          @report="onReport" @like="onLike" @react="onReact" @vote="onVote" />
+          @report="onReport" @like="onLike" @react="onReact" @vote="onVote" @edit-local="saveLocalPost" />
 
         <!-- 列表模式 -->
         <template v-else>

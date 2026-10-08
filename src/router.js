@@ -39,6 +39,7 @@ import RebrandPreview from './views/RebrandPreview.vue'
 import SkillMarket from './views/SkillMarket.vue'
 import AboutAgent from './views/AboutAgent.vue'
 import CourseImporter from './views/CourseImporter.vue'
+import BuildingGallery from './views/BuildingGallery.vue'
 
 /** 应用 id → 视图组件注册表 */
 export const VIEWS = {
@@ -68,7 +69,8 @@ export const VIEWS = {
   rebrand: RebrandPreview,
   skills: SkillMarket,
   aboutagent: AboutAgent,
-  importer: CourseImporter
+  importer: CourseImporter,
+  buildingGallery: BuildingGallery
 }
 
 /** 底部快捷导航（首页 + 高频应用） */

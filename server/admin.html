@@ -228,7 +228,18 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI"
         <span class="hintline">打分：全等100 · 包含60+len×2 · 被包含40+len×3 · 阈值40（与线上 engine 一致）</span>
       </div>
       <div id="intentResult" class="sub">测试结果将显示命中意图、目标工作流/应用与得分。</div>
-      <div class="toolbar"><span class="hintline">意图全集（来自 src/agent/intents.js 实时内省）</span><input id="intentFilter" placeholder="过滤…" oninput="renderIntents()" style="max-width:200px"></div>
+      <div class="toolbar"><span class="hintline">意图全集（来自 src/agent/intents.js 实时内省）</span><input id="intentFilter" placeholder="过滤…" oninput="renderIntents()" style="max-width:200px">
+        <button class="btn sm" onclick="toggleIntentEditor()">＋ 新增意图</button></div>
+      <div id="intentEditor" class="llm" style="display:none;max-width:760px;padding:12px">
+        <label>意图 id（如 wf.newThing）<input id="niId" placeholder="wf.newThing"></label>
+        <label>类型 kind（workflow / app / meta）<input id="niKind" value="workflow"></label>
+        <label>目标（workflow 的 wf id 或 app 的应用 id）<input id="niTarget" placeholder="dailyBriefing"></label>
+        <label>触发语 patterns（逗号分隔）<input id="niPats" placeholder="新功能,说这话触发"></label>
+        <div class="row">
+          <button class="btn primary" onclick="genIntentPatch()">生成补丁 JSON 并下载</button>
+          <span class="hintline">补丁文件随源码合并进 intents.js 后生效（人在回路）</span>
+        </div>
+      </div>
       <div id="intentList" style="max-height:420px;overflow-y:auto"><div class="empty">加载中…</div></div>
     </div>
 
@@ -341,6 +352,24 @@ function enter() {
 /* ── 概览与仪表盘 ── */
 function barPct(a, b) { return b ? Math.round((a / b) * 100) : 0; }
 
+var lastReportCount = -1
+function notifyReport(n, reason) {
+  try {
+    if (window.Notification && Notification.permission === 'granted') {
+      new Notification('🚩 社区新举报', { body: (reason || '').slice(0, 60) })
+    } else if (window.Notification && Notification.permission !== 'denied') {
+      Notification.requestPermission()
+    }
+  } catch (e) { /* noop */ }
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)()
+    var o = ctx.createOscillator(); var g = ctx.createGain()
+    o.connect(g); g.connect(ctx.destination); o.frequency.value = 980; g.gain.value = 0.05
+    o.start(); setTimeout(function () { o.stop(); ctx.close() }, 260)
+  } catch (e) { /* noop */ }
+  toast('🚩 收到 ' + n + ' 条待处理举报' + (reason ? '：' + reason.slice(0, 30) : ''), true)
+}
+
 function refreshAll() {
   api('/api/admin/overview').then(function (d) {
     DATA.reports = d.reports;
@@ -361,6 +390,10 @@ function refreshAll() {
       hblock('举报响应', d.reports.length ? d.reports.length + ' 条待处理' : '队列清空 ✓', d.reports.length ? 100 : 100, d.reports.length === 0);
     document.getElementById('nReports').textContent = d.reports.length;
     document.getElementById('nReports').className = 'n' + (d.reports.length ? ' hot' : '');
+    if (lastReportCount >= 0 && d.reports.length > lastReportCount) {
+      notifyReport(d.reports.length - lastReportCount, d.reports[0] && d.reports[0].reason)
+    }
+    lastReportCount = d.reports.length;
     document.getElementById('nFeedback').textContent = d.feedback.new;
     document.getElementById('nFeedback').className = 'n' + (d.feedback.new ? ' hot' : '');
     document.getElementById('nComments').textContent = d.comments.total;
@@ -401,13 +434,16 @@ function badge(st) {
   if (st === 'reported') return '<span class="badge reported">被举报</span>';
   if (st === 'hidden') return '<span class="badge hidden">已隐藏</span>';
   if (st === 'new') return '<span class="badge new">未处理</span>';
+  if (st === 'doing') return '<span class="badge reported">🛠 处理中</span>';
   if (st === 'handled') return '<span class="badge ok">已处理</span>';
   return '<span class="badge ok">正常</span>';
 }
 
 function opsHtml(type, item) {
   var ops = '';
-  if (item.status !== 'ok' && item.status !== 'handled') ops += '<button class="btn sm" onclick="moderate(\'' + type + '\',\'' + item.id + '\',\'approve\')">✓ 放行</button>';
+  if (item.status === 'reported' || item.status === 'doing') ops += '<button class="btn sm" onclick="moderate(\'' + type + '\',\'' + item.id + '\',\'doing\')">🛠 处理中</button>';
+  if (item.status === 'doing') ops += '<button class="btn sm" onclick="moderate(\'' + type + '\',\'' + item.id + '\',\'done\')">✓ 完结</button>';
+  if (item.status !== 'ok' && item.status !== 'handled' && item.status !== 'doing') ops += '<button class="btn sm" onclick="moderate(\'' + type + '\',\'' + item.id + '\',\'approve\')">✓ 放行</button>';
   if (item.status !== 'hidden' && type !== 'feedback') ops += '<button class="btn sm" onclick="moderate(\'' + type + '\',\'' + item.id + '\',\'hide\')">👁 隐藏</button>';
   ops += '<button class="btn sm danger" onclick="moderate(\'' + type + '\',\'' + item.id + '\',\'delete\')">🗑 删除</button>';
   return '<div class="ops">' + ops + '</div>';
@@ -667,6 +703,32 @@ function testIntent() {
   box.innerHTML = '<b style="color:var(--blue)">✓ 命中：' + top.it.id + '</b> · 目标 ' + top.it.target + ' · 置信度 ' + top.s + '%' +
     (ranked[1] ? '　次高：' + ranked[1].it.id + '(' + ranked[1].s + ')' : '') +
     '　<span class="hintline">kind=' + top.it.kind + ' · patterns=' + ((top.it.patterns || []).length) + '</span>';
+}
+
+function toggleIntentEditor() {
+  var el = document.getElementById('intentEditor')
+  if (el) el.style.display = el.style.display === 'none' ? '' : 'none'
+}
+
+function genIntentPatch() {
+  var id = (document.getElementById('niId').value || '').trim()
+  var kind = (document.getElementById('niKind').value || 'workflow').trim()
+  var target = (document.getElementById('niTarget').value || '').trim()
+  var pats = (document.getElementById('niPats').value || '').split(/[,，]/).map(function (x) { return x.trim() }).filter(Boolean)
+  if (!id || !pats.length) { toast('id 与触发语必填', true); return }
+  var line = kind === 'workflow'
+    ? "  { id: '" + id + "', kind: 'workflow', wf: '" + target + "', title: '" + id + "', patterns: [" + pats.map(function (x) { return "'" + x + "'" }).join(', ') + "] },"
+    : kind === 'app'
+      ? "  { id: '" + id + "', kind: 'app', app: '" + target + "', title: '" + id + "', patterns: [" + pats.map(function (x) { return "'" + x + "'" }).join(', ') + "] },"
+      : "  { id: '" + id + "', kind: 'meta', title: '" + id + "', patterns: [" + pats.map(function (x) { return "'" + x + "'" }).join(', ') + "], reply: '（在 intents.js 中补充回复文案）' },"
+  var patch = "// 新增意图补丁 · 生成于 " + new Date().toISOString().slice(0, 19) + "\n// 合并位置：src/agent/intents.js → INTENTS 数组内\n" + line + "\n"
+  var blob = new Blob([patch], { type: 'text/javascript' })
+  var a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'intent-patch.js'
+  a.click()
+  URL.revokeObjectURL(a.href)
+  toast('补丁已下载，合并进 intents.js 并 npm run build 生效')
 }
 
 function renderIntents() {

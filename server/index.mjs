@@ -5,7 +5,7 @@ import os from 'node:os'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
-import { handleCommunity, communityCors } from './community.mjs'
+import { handleCommunity, communityCors, bus } from './community.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DIST = path.join(__dirname, '..', 'dist')
@@ -366,6 +366,21 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'X-Robots-Tag': 'noindex, nofollow' })
       return res.end(fs.readFileSync(adminFile))
     }
+  }
+
+  // SSE 实时推送：社区内容变化即时广播（前端 EventSource 收听，替代长轮询）
+  if (urlPath === '/api/events') {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*'
+    })
+    res.write(': connected\n\n')
+    const off = bus.on((payload) => { try { res.write('data: ' + payload + '\n\n') } catch { /* noop */ } })
+    const hb = setInterval(() => { try { res.write(': hb\n\n') } catch { /* noop */ } }, 15000)
+    req.on('close', () => { clearInterval(hb); off() })
+    return
   }
 
   // 社区服务：评论 / 校园墙 / 敏感词 / 反馈 / 表情 / 云脑 / 管理 API（跨站 CORS）

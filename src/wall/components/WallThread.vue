@@ -20,7 +20,7 @@ const props = defineProps({
   offline: { type: Boolean, default: false },
   words: { type: Array, default: () => [] }
 })
-const emit = defineEmits(['back', 'reply', 'adopt', 'report', 'like', 'react', 'vote'])
+const emit = defineEmits(['back', 'reply', 'adopt', 'report', 'like', 'react', 'vote', 'editLocal'])
 
 const onlyAuthor = ref(false)
 const replyText = ref('')
@@ -33,6 +33,39 @@ const copied = ref(false)
 watch(() => props.post.id, () => { onlyAuthor.value = false; replyText.value = ''; fav.value = isFav(props.post.id) })
 
 const part = computed(() => partOf(props.post.tag))
+/** 楼层的子回复（嵌套一层：parent 指向楼层 id） */
+function subOf(id) { return (props.post.replies || []).filter((r) => r.parent === id) }
+/** 是否本人可编辑/删除（本地帖或本机作者） */
+function mine(r) {
+  try {
+    const me = localStorage.getItem('qdu_wall_name') || ''
+    return (me && r.author === me && !props.offline) || String(props.post.id).startsWith('L')
+  } catch { return String(props.post.id).startsWith('L') }
+}
+function editReply(r) {
+  const text = prompt('编辑回复（原文会显示在框中）：', r.content)
+  if (text == null) return
+  if (text.trim().length < 2) return
+  r.content = text.trim()
+  r.edited = true
+  emit('editLocal')   // 通知父组件把本机帖落盘
+}
+function deleteReply(r) {
+  if (!confirm('删除这条回复？')) return
+  const arr = props.post.replies
+  const i = arr.indexOf(r)
+  if (i >= 0) arr.splice(i, 1)
+  // 连带删除其子回复
+  for (let j = arr.length - 1; j >= 0; j--) if (arr[j].parent === r.id) arr.splice(j, 1)
+  emit('editLocal')
+}
+/** @提及：输入 @ 弹出本帖作者列表插入 */
+function insertMention(r) {
+  replyText.value = ('@' + r.author + ' ') + replyText.value
+  const ta = document.querySelector('.wt-text')
+  if (ta) ta.focus()
+}
+
 const shownReplies = computed(() => {
   const list = props.post.replies || []
   if (!onlyAuthor.value) return list
@@ -109,11 +142,22 @@ function isMyPost() {
             <b>{{ r.author }}</b>
             <span v-if="post.author === r.author" class="wt-op">楼主</span>
             <span v-if="post.bounty && post.bounty.adoptedId === r.id" class="wt-adopted">🌟 已采纳 +{{ post.bounty.points || POINTS.adopted }}</span>
+            <span v-if="r.edited" class="wt-edited">已编辑</span>
             <span class="wt-time">{{ fmt(r.ts) }}</span>
           </div>
           <div class="wt-floor-content">{{ r.content }}</div>
+          <!-- 嵌套子回复（一层缩进） -->
+          <div v-if="subOf(r.id).length" class="wt-subs">
+            <div v-for="sr in subOf(r.id)" :key="sr.id" class="wt-sub">
+              <b>{{ sr.author }}</b><span class="wt-time">{{ fmt(sr.ts) }}</span>
+              <div class="wt-floor-content">{{ sr.content }}</div>
+            </div>
+          </div>
           <div class="wt-floor-ops">
             <button class="wt-quote" @click="quote(r, i + 1)">💬 引用</button>
+            <button class="wt-quote" @click="insertMention(r)">@ 提及</button>
+            <button v-if="mine(r)" class="wt-quote" @click="editReply(r)">✏️ 编辑</button>
+            <button v-if="mine(r)" class="wt-quote danger" @click="deleteReply(r)">🗑 删除</button>
             <button v-if="post.bounty && !post.bounty.adoptedId && (isMyPost() || offline)" class="wt-adopt" @click="emit('adopt', r)">
               ⭐ 采纳此回答（{{ post.bounty.points || POINTS.adopted }} 积分）
             </button>
@@ -165,6 +209,12 @@ function isMyPost() {
 .wt-floor-content { font-size: 13.5px; line-height: 1.7; color: var(--text, #24292f); margin-top: 5px; white-space: pre-wrap; word-break: break-word; }
 .wt-floor-ops { margin-top: 6px; }
 .wt-quote { border: 1px solid var(--border, #e5eaf2); background: transparent; color: var(--muted, #8a94a6); font-size: 11.5px; padding: 4px 12px; border-radius: 999px; cursor: pointer; font-family: inherit; }
+.wt-quote.danger:hover { border-color: #e11d48; color: #e11d48; }
+.wt-edited { font-size: 10px; color: var(--muted, #8a94a6); font-style: italic; }
+.wt-subs { margin-top: 8px; margin-left: 22px; border-left: 2px solid rgba(27,102,201,0.3); padding-left: 11px; display: flex; flex-direction: column; gap: 7px; }
+.wt-sub { background: var(--bg, #f7f9fc); border-radius: 8px; padding: 7px 11px; font-size: 12.5px; }
+.wt-sub b { color: var(--primary, #1b66c9); font-size: 12.5px; }
+.wt-sub .wt-time { margin-left: 8px; font-size: 10.5px; color: var(--muted, #8a94a6); }
 .wt-quote:hover { border-color: var(--primary, #1b66c9); color: var(--primary, #1b66c9); }
 .wt-quotehint { font-size: 12px; color: var(--primary, #1b66c9); background: var(--primary-soft, rgba(27,102,201,0.08)); border-radius: 8px; padding: 7px 11px; display: flex; align-items: center; gap: 10px; }
 .wt-adopt { border: 1px solid #d97706; background: rgba(217, 119, 6, 0.08); color: #d97706; font-size: 11.5px; padding: 4px 12px; border-radius: 999px; cursor: pointer; font-family: inherit; font-weight: 600; }

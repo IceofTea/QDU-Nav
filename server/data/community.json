@@ -178,6 +178,26 @@
   ],
   "audit": [
     {
+      "ts": 1791456672551,
+      "action": "feedback:delete",
+      "detail": "[smoke muzf1r59] 冒烟反馈"
+    },
+    {
+      "ts": 1791456672548,
+      "action": "posts:delete",
+      "detail": "（冒烟投票帖）"
+    },
+    {
+      "ts": 1791456672544,
+      "action": "comments:delete",
+      "detail": "[smoke muzf1r59] 正常评论链路"
+    },
+    {
+      "ts": 1791456672538,
+      "action": "login",
+      "detail": "管理台登录成功"
+    },
+    {
       "ts": 1791452307457,
       "action": "feedback:delete",
       "detail": "[smoke muzcg700] 冒烟反馈"
@@ -315,6 +335,7 @@
     "::1|muz5csrj6kz2gn": true,
     "::1|muz86j653oaco5": true,
     "::1|muzbd993iw73bs": true,
-    "::1|muzcg72wgrnv22": true
+    "::1|muzcg72wgrnv22": true,
+    "::1|muzf1r7oaweak3": true
   }
 }

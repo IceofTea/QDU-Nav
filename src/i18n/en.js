@@ -1301,4 +1301,24 @@ export default {
     give: 'Like "{name}"',
     site: 'Like this site',
   },
+  skillMarket: {
+    title: 'Skill Market', sub: '27 workflows · categories · usage stats',
+    run: '▶ Run', detail: 'Details', search: 'Search skills…', favOnly: '★ Favorites',
+    empty: 'No matching skills', steps: 'Steps', trigger: 'How to trigger', safety: 'Fallback & safety',
+    all: 'All', study: 'Study', life: 'Life', comm: 'Community', sys: 'System'
+  },
+  aboutAgent: {
+    title: 'About Agent', sub: 'Architecture · capabilities · flywheel · demo guide',
+    demo: '▶ Live demo', layers: 'Five layers', modes: 'Three modes', flywheel: 'Dual-agent flywheel',
+    demos: '4-step live demo', openChat: 'Open assistant', openSkills: 'Skill market', openInsights: 'Insights'
+  },
+  importer: {
+    title: 'Course Importer', sub: 'Paste to import · stored locally · query without class',
+    paste: '① Paste schedule text', parse: '🔍 Parse', preview: '② Preview & confirm',
+    save: '💾 Save locally', clear: 'Clear all', hint: 'Copy from教务 system row by row; each line needs weekday + period'
+  },
+  buildingGallery: {
+    title: 'Building Gallery', sub: 'Real schedule data: floor maps & room status',
+    search: 'Search building / room', copyHint: 'Click to copy · double-click for status'
+  }
 }

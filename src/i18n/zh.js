@@ -1303,4 +1303,46 @@ export default {
     give: '给「{name}」点赞',
     site: '给本站点赞',
   },
+  skillMarket: {
+    title: '技能市场',
+    sub: '27 条工作流 · 分类直达 · 使用统计个性化排序',
+    run: '▶ 立即使用',
+    detail: '详情',
+    search: '搜索技能：简报 / 空教室 / 发帖…',
+    favOnly: '⭐ 只看收藏',
+    empty: '没有匹配的技能——换个关键词或切回「全部」',
+    steps: '执行步骤',
+    trigger: '触发方式',
+    safety: '兜底与安全',
+    all: '全部', study: '学习', life: '生活', comm: '社区', sys: '系统'
+  },
+  aboutAgent: {
+    title: '关于本智能体',
+    sub: '架构 · 能力 · 飞轮 · 演示引导 —— 评委请从这里开始',
+    demo: '▶ 现场演示',
+    layers: '五层架构（一句话办事的完整链路）',
+    modes: '三模式（输入框下方随时切换）',
+    flywheel: '双 Agent 飞轮 —— 标题的可视化',
+    demos: '四步现场演示（点任意一条直接开始）',
+    openChat: '打开智能助手',
+    openSkills: '逛技能市场',
+    openInsights: '看社区洞察'
+  },
+  importer: {
+    title: '课表导入器',
+    sub: '粘贴即解析 · 存本机 · 解锁免班级查课表',
+    paste: '① 粘贴课表文本',
+    parse: '🔍 解析',
+    preview: '② 解析预览 —— 确认后保存',
+    save: '💾 保存到本机',
+    clear: '清除全部',
+    hint: '教务系统课表页直接全选复制 · Excel 每行粘贴；每行需含「周X + 节次」'
+  },
+  buildingGallery: {
+    title: '楼宇图鉴',
+    sub: '真实排课数据：楼层房间格子图，点房查占用',
+    search: '搜楼名 / 房间号',
+    copyHint: '单击房间复制 · 双击查占用与路线'
+  }
+
 }
