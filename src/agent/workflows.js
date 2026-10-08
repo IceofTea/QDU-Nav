@@ -1104,6 +1104,63 @@ export const WORKFLOWS = {
     }
   },
 
+
+  /* ── 19. 任务链执行器（串联 CHAINS 中的预设链） ── */
+  taskChain: {
+    id: 'taskChain', title: '任务链执行', icon: '⛓️',
+    clarify: { field: 'keyword', ask: '想跑哪条链？晨间组合 / 学习组合 / 生活组合（说名称即可）' },
+    steps: [
+      {
+        label: '解析目标任务链',
+        run: async (ctx) => {
+          const q = (ctx.text + ' ' + (ctx.slots.keyword || '')).toLowerCase()
+          let key = null
+          if (/晨间|早晨|早上|morning/.test(q)) key = 'morning'
+          else if (/学习|上课|教室/.test(q)) key = 'study'
+          else if (/生活|吃饭|吃喝/.test(q)) key = 'life'
+          if (!key) throw new CLARIFY('keyword')
+          ctx.state.chain = CHAINS[key]
+          return `${ctx.state.chain.icon} ${ctx.state.chain.name} · ${ctx.state.chain.steps.length} 步链`
+        }
+      },
+      {
+        label: '按序执行链上工作流（每步真实调用）',
+        run: async (ctx) => {
+          const results = []
+          for (const wfId of ctx.state.chain.steps) {
+            try {
+              const sub = { text: ctx.text, slots: { ...ctx.slots }, state: {}, lang: ctx.lang }
+              const card = await runWorkflow(wfId, sub, null)
+              results.push({ wfId, ok: true, title: card.title })
+            } catch (e) {
+              results.push({ wfId, ok: false, title: e.isClarify ? '需补充信息（已跳过）' : '执行失败已跳过' })
+            }
+          }
+          ctx.state.results = results
+          return `${results.filter((r) => r.ok).length}/${results.length} 成功`
+        }
+      }
+    ],
+    buildCard(ctx) {
+      const chain = ctx.state.chain
+      return {
+        title: `${chain.icon} 任务链「${chain.name}」执行完成`,
+        subtitle: chain.desc + ' · 串联 ' + chain.steps.length + ' 个工作流',
+        rows: (ctx.state.results || []).map((r) => ({
+          icon: r.ok ? '✅' : '⚠️',
+          label: r.title,
+          value: r.ok ? '完成' : '跳过'
+        })),
+        actions: [
+          { label: '看今日简报', type: 'agent', value: '今日简报' },
+          { label: '打开校园墙', type: 'openApp', value: 'campusWall' },
+          { label: '跑学习组合', type: 'agent', value: '跑任务链 学习组合' }
+        ],
+        note: '任务链 = 多工作流编排：失败步自动跳过不中断，每步结果汇入一张卡（后续开放自定义链）'
+      }
+    }
+  },
+
   /* ── 27. 使用指南（能力地图） ── */
   helpGuide: {
     id: 'helpGuide', title: '使用指南', icon: '🗺️',
@@ -1133,6 +1190,14 @@ export const WORKFLOWS = {
     }
   }
 }
+
+/* ── 任务链定义（多工作流串联编排：一句指令连续执行，一张卡汇总） ── */
+export const CHAINS = {
+  morning: { id: 'morning', name: '晨间组合', icon: '🌅', steps: ['dailyBriefing', 'wallView', 'signIn'], desc: '简报 → 逛热墙 → 签到，早晨三连' },
+  study: { id: 'study', name: '学习组合', icon: '📖', steps: ['dayClass', 'findRoom'], desc: '看今天的课 → 顺手找空教室' },
+  life: { id: 'life', name: '生活组合', icon: '🍜', steps: ['whatEat', 'myPoints'], desc: '今天吃什么 → 查个积分' }
+}
+
 export class CLARIFY extends Error {
   constructor(field) { super('clarify:' + field); this.field = field; this.isClarify = true }
 }

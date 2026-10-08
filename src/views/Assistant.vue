@@ -13,7 +13,30 @@ const emit = defineEmits(['open', 'back'])
 const chatRef = ref(null)
 
 /* 接收首页对话框传入的话术（一次性收件箱） */
+/* ── Demo 自动演示模式（?demo=1 或演示按钮）：按 D1–D4 剧本自动播放 ── */
+const demoQueue = ['今日简报', '哪里有空教室', '我的积分', '协作看板']
+const demoRunning = ref(false)
+async function runDemo() {
+  if (demoRunning.value) return
+  demoRunning.value = true
+  for (const q of demoQueue) {
+    chatRef.value?.send(q)
+    // 等待执行完成（轮询：无思考态且有新卡片）
+    for (let i = 0; i < 40; i++) {
+      await new Promise((r) => setTimeout(r, 500))
+      if (!document.querySelector('.ac-thinking')) break
+    }
+    await new Promise((r) => setTimeout(r, 900))
+  }
+  demoRunning.value = false
+}
 onMounted(() => {
+  // 演示入口：#/app/assistant?demo=1 或按钮
+  if (/(?:^|\?)demo=1/.test(location.hash)) {
+    setTimeout(() => runDemo(), 700)
+    try { history.replaceState(null, '', location.hash.replace(/[?&]demo=1/, '')) } catch { /* noop */ }
+  }
+
   // 入口①：站内收件箱（首页对话框）
   try {
     const inbox = localStorage.getItem('qdu_agent_inbox')
@@ -71,7 +94,8 @@ function onPickWf(id) { recordUsage(id) }
           <div class="asst-desc">{{ AGENT_PROFILE.subtitle }}</div>
         </div>
       </div>
-      <button class="asst-link" @click="emit('open', 'contributors')">协作看板 ›</button>
+      <button class="asst-link" :disabled="demoRunning" @click="runDemo">{{ demoRunning ? '▶ 演示中…' : '🎬 自动演示' }}</button>
+      <button class="asst-link" @click="emit('open', 'aboutagent')">关于智能体 ›</button>
     </div>
 
     <div class="asst-grid">

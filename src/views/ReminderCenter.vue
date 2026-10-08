@@ -173,6 +173,41 @@ function tickEngine() {
   }
 }
 
+/* ── 导出 .ics（iCalendar 标准）：双击/传手机即可加入系统日历 ── */
+function pad(n) { return String(n).padStart(2, '0') }
+function fmtIcs(dt) {
+  return dt.getUTCFullYear() + pad(dt.getUTCMonth() + 1) + pad(dt.getUTCDate()) + 'T' +
+    pad(dt.getUTCHours()) + pad(dt.getUTCMinutes()) + '00Z'
+}
+function toICS() {
+  const items = merged.value.filter((m) => m.ts && !m.done)
+  if (!items.length) { showToast('没有可导出的待办日程', true); return }
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//QDU Agent//ReminderCenter//CN', 'CALSCALE:GREGORIAN']
+  for (const m of items) {
+    const start = new Date(m.ts)
+    const end = new Date(m.ts + 30 * 60000)
+    lines.push('BEGIN:VEVENT')
+    lines.push('UID:' + m.id + '@agent-reminder')
+    lines.push('DTSTAMP:' + fmtIcs(new Date()))
+    lines.push('DTSTART:' + fmtIcs(start))
+    lines.push('DTEND:' + fmtIcs(end))
+    lines.push('SUMMARY:' + String(m.title || '提醒').replace(/[\r\n]/g, ' '))
+    lines.push('DESCRIPTION:' + String(m.label || '来自校园智能体提醒中心').replace(/[\r\n]/g, ' '))
+    lines.push('BEGIN:VALARM', 'TRIGGER:-PT10M', 'ACTION:DISPLAY', 'DESCRIPTION:提醒', 'END:VALARM')
+    lines.push('END:VEVENT')
+  }
+  lines.push('END:VCALENDAR')
+  try {
+    const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = 'reminders-' + new Date().toISOString().slice(0, 10) + '.ics'
+    a.click()
+    URL.revokeObjectURL(a.href)
+    showToast('已导出 ' + items.length + ' 条日程 · 传手机打开即入系统日历')
+  } catch { showToast('导出失败', true) }
+}
+
 function jumpToAgent() {
   try { localStorage.setItem('qdu_agent_inbox', '我的日程') } catch { /* noop */ }
   emit('back')
@@ -197,6 +232,7 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
       <div class="rc-title">⏰ 提醒中心 <span class="rc-sub">定时引擎 30s · 页内弹窗 + 桌面通知 + 提示音 · 与智能体日程打通</span></div>
       <label class="rc-sound"><input type="checkbox" v-model="soundOn" /> 🔔 声音</label>
       <button class="rc-mini" @click="jumpToAgent">🤖 去智能体加提醒</button>
+      <button class="rc-mini" @click="toICS">📅 导出 .ics（手机日历）</button>
     </div>
 
     <!-- 概览 -->

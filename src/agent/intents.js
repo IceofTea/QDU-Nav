@@ -109,6 +109,7 @@ export const INTENTS = [
   { id: 'wf.resourceShare', kind: 'workflow', wf: 'resourceShare', title: '分享资源', patterns: ['分享资源', '发资源', '分享链接', '共享资料', '分享个资料'] },
   { id: 'wf.hotTopics', kind: 'workflow', wf: 'hotTopics', title: '话题热词', patterns: ['话题热词', '热词', '大家在聊什么', '热门话题', '讨论热度', '最近热什么'] },
   { id: 'wf.reportFeedback', kind: 'workflow', wf: 'reportFeedback', title: '提交反馈', patterns: ['提交反馈', '提个建议', '我要反馈', '反馈一下', '提建议', '意见反馈', '我要提bug', '提个bug'] },
+  { id: 'wf.taskChain', kind: 'workflow', wf: 'taskChain', title: '任务链', patterns: ['任务链', '跑任务链', '晨间组合', '学习组合', '生活组合', '连续执行', '一口气'] },
   { id: 'wf.helpGuide', kind: 'workflow', wf: 'helpGuide', title: '使用指南', patterns: ['使用指南', '能力地图', '你能干嘛', '功能清单', '会什么', '教我用', '怎么用你', '使用说明', '功能列表'] },
 
   // ── 应用直达 ───────────────────────────────────────────
