@@ -178,6 +178,21 @@
   ],
   "audit": [
     {
+      "ts": 1791457666987,
+      "action": "posts:approve",
+      "detail": "希望图书馆考试周延长到 23:00"
+    },
+    {
+      "ts": 1791457666092,
+      "action": "posts:hide",
+      "detail": "希望图书馆考试周延长到 23:00"
+    },
+    {
+      "ts": 1791457655045,
+      "action": "login",
+      "detail": "管理台登录成功"
+    },
+    {
       "ts": 1791456672551,
       "action": "feedback:delete",
       "detail": "[smoke muzf1r59] 冒烟反馈"
