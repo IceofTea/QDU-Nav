@@ -202,5 +202,49 @@ ok('工作流总数≥30', async () => {
   assert.ok(Object.keys(WORKFLOWS).length >= 30)
 })
 
+console.log('── converse ──')
+const converse = await import('../src/agent/converse.js')
+const LAST = { wfId: 'findRoom', slots: {}, text: '哪里有空教室自习' }
+ok('明天呢→time续', () => {
+  const d = converse.detectContinue('明天呢', LAST)
+  assert.ok(d && d.kind === 'time' && d.time)
+})
+ok('换博文楼→change', () => {
+  const d = converse.detectContinue('换博文楼', LAST)
+  assert.ok(d && d.kind === 'change' && d.rest.includes('博文楼'))
+})
+ok('再查一次→again', () => {
+  const d = converse.detectContinue('再查一次', LAST)
+  assert.ok(d && d.kind === 'again')
+})
+ok('长句不续', () => {
+  assert.equal(converse.detectContinue('明天早上八点从宿舍到三号教学楼怎么走顺路带早饭', LAST), null)
+})
+ok('不可续工作流不续', () => {
+  assert.equal(converse.detectContinue('明天呢', { wfId: 'addSchedule', slots: {}, text: '' }), null)
+})
+ok('mergeContinue新条件前置', () => {
+  const d = converse.detectContinue('明天呢', LAST)
+  const m = converse.mergeContinue(LAST, d, '明天呢')
+  assert.equal(m.wfId, 'findRoom')
+  assert.ok(m.ctx.text.indexOf('明天呢') === 0)
+})
+ok('followupsFor专属', () => {
+  assert.ok(converse.followupsFor('findRoom').includes('明天呢'))
+  assert.equal(converse.followupsFor('xxx')[0], '还有其他需求吗？')
+})
+ok('daypart分段', () => {
+  assert.equal(converse.daypart(new Date(2026, 1, 1, 8)), '早上好')
+  assert.equal(converse.daypart(new Date(2026, 1, 1, 21)), '晚上好')
+})
+ok('buildGreeting有推送', () => {
+  const g = converse.buildGreeting({ agentName: '小青', pushes: [{ icon: '🧠', kind: 'review', text: '到期2项', action: { type: 'openApp', value: 'focus' } }] })
+  assert.ok(g.reply.includes('小青') && g.card && g.chips.length)
+})
+ok('buildGreeting空态', () => {
+  const g = converse.buildGreeting({ agentName: '小青', pushes: [] })
+  assert.ok(g.card === null && g.chips.includes('今日简报'))
+})
+
 console.log(`\n done: pass=${pass} fail=${fail}`)
 process.exit(fail ? 1 : 0)

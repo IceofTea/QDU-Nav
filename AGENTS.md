@@ -59,6 +59,7 @@
 
 | 日期 | 版本 | 内容 |
 | --- | --- | --- |
+| 2026-10-08 | v1.6.1 | **智能体交互升级（patch）**。①`agent/converse.js` 纯模块（指代消解/追问 chips/问候文案，可单测）；②engine 上下文记忆 + 强意图让路 + 专属 chips + greeting；③AgentChat 打字机 + 动态问候卡 + 全文存储；④`/admin` 跳转垫片；⑤Wiki 评论提示诚实化 + 存储失败显式警告；⑥Wiki 客服上下文追问（还有呢/那X呢）。验证：grow 44 项/build 全绿。版本纪律：今后只 bump patch。 |
 | 2026-10-08 | **v1.6.0** | **【大版本·冲奖六件套】**①三新工作流 jobHunt/activitySignup/fixReport（画像/报名/工单，30 条）；②画像 profile.js（行为记录接路由 choke 点、可解释、一键清空）+ Profile 页；③Jobs 页（示例岗诚实标注）+ Compare 对比页 + Flywheel 飞轮看板 + Transplant 移植看板；④aiMod AI 治理（摘要/争议/选题/纠错）；⑤意图 8 新增 + playbooks 3 + unit-grow 34 项。验证：build/单测 148 项/scenes 全绿。 |
 | 2026-10-08 | **v1.5.0** | **【大版本·在线化】**①`wall/apiBase.js` 五源解析（?api/localStorage/meta/window/缺省/同源）+ `apiUrl/eventsUrl/probeGateway/describeMode`，墙/私信/SSE 全切；②路由懒加载（主包1369→422KB）+骨架屏+热门预载；③私信/番茄钟/数据管家三应用；④SSE指数退避；⑤Dockerfile/render.yaml；⑥E2E场景包10/10；⑦网关HOST+管理台?api+Pages横幅+admin进dist；⑧FJNU同步+SSE路由补齐+端口修正。验证：双站build/单测105+105/scenes10+10。 |
 | 2026-10-08 | v1.4.1 | **技能市场与信任体系（patch）**。①`views/SkillMarket.vue`：27 工作流卡片化运营位（分类/搜索/收藏/使用计数排序/详情弹层/立即使用写收件箱跳助手）；②`wall/config.js` LEVELS 5 级信任等级 + BADGES 6 成就徽章，Sidebar 展示等级进度与徽章墙；③`views/CourseImporter.vue` 宽松课表解析（周X+节次+教室+教师），`workflows.dayClass` 本机导入优先，免班级查询；④`views/AboutAgent.vue` 智能体介绍页（架构/模式/飞轮/演示引导）；⑤草稿自动保存+楼层引用+输入↑↓历史+AI帖子摘要+管理台反馈聚类。验证：双站 build 通过，unit 24 项回归。 |

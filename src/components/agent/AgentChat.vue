@@ -63,7 +63,7 @@ const HISTORY_KEY = 'qdu_agent_session'
 function saveSession() {
   try {
     const slim = messages.slice(-24).map((m) => ({
-      role: m.role, text: m.text,
+      role: m.role, text: m.fullText || m.text,
       res: m.res ? { kind: m.res.kind, reply: m.res.reply, layer: m.res.layer, confidence: m.res.confidence, source: m.res.source, chips: m.res.chips, confirmActions: m.res.confirmActions, mode: m.res.mode } : null,
       card: m.card || null
     }))
@@ -120,13 +120,47 @@ async function send(text) {
   msg.thinking = false
   msg.done = true
   msg.res = res
-  msg.text = res.reply || ''
+  msg.fullText = res.reply || ''
   if (res.card) msg.card = res.card
   if (res.mode) mode.value = res.mode
+  reveal(msg, msg.fullText)
   if (msg.steps.length) msg.stepsOpen = false // 默认折叠为摘要
   busy.value = false
   scrollBottom()
-  saveSession()
+}
+
+/* ── 打字机揭示（交互感；减弱动效用户直接全显，点击气泡立即补全） ── */
+function reduceMotion() {
+  try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches } catch { return false }
+}
+function reveal(m, full) {
+  m.fullText = full || ''
+  if (reduceMotion() || !full || full.length < 24) {
+    m.text = full || ''
+    saveSession()
+    return
+  }
+  m.text = ''
+  const step = () => {
+    if (!m._tw) return
+    m.text = full.slice(0, m.text.length + 4)
+    scrollBottom()
+    if (m.text.length >= full.length) {
+      m._tw = null
+      saveSession()
+      return
+    }
+    m._tw = setTimeout(step, 16)
+  }
+  m._tw = setTimeout(step, 16)
+}
+function finishReveal(m) {
+  if (m && m._tw) {
+    clearTimeout(m._tw)
+    m._tw = null
+    m.text = m.fullText || m.text
+    saveSession()
+  }
 }
 
 function stop() {
@@ -255,29 +289,38 @@ function onHistKey(e) {
 
 const suggestions = AGENT_PROFILE.examples
 onMounted(() => {
-  newAgentMsg({
-    text: AGENT_PROFILE.welcome,
-    card: {
-      title: `🤖 ${AGENT_PROFILE.agentName} 已就绪 · ${MODES.length} 种模式`,
-      subtitle: AGENT_PROFILE.subtitle + ' · 支持 "/" 命令直达工作流',
-      rows: [
-        { icon: '☀️', label: '今日简报：课表 + 日程 + 通知一次看全', value: '说"今日简报"' },
-        { icon: '📋', label: '计划模式：先看执行计划再动手', value: '输入框下方切换' },
-        { icon: '🧱', label: '校园墙：发帖 / 吐槽 / 失物招领', value: '说"发墙 …"' }
-      ],
-      actions: [
-        { label: '☀️ 今日简报', type: 'reask', value: '今日简报' },
-        { label: '哪里有空教室？', type: 'reask', value: '哪里有空教室自习' },
-        { label: '看校园墙', type: 'reask', value: '看校园墙' }
-      ]
-    },
-    chips: ['今日简报', ...suggestions.slice(0, 3)]
+  // 动态问候（时段 + 画像推送；失败回退静态欢迎，首屏永远有话说）
+  let greet = null
+  try { greet = engine.greeting() } catch { greet = null }
+  const pushesCard = greet && greet.card ? greet.card : {
+    title: `🤖 ${AGENT_PROFILE.agentName} 已就绪 · ${MODES.length} 种模式`,
+    subtitle: AGENT_PROFILE.subtitle + ' · 支持 "/" 命令直达工作流',
+    rows: [
+      { icon: '☀️', label: '今日简报：课表 + 日程 + 通知一次看全', value: '说"今日简报"' },
+      { icon: '📋', label: '计划模式：先看执行计划再动手', value: '输入框下方切换' },
+      { icon: '🧱', label: '校园墙：发帖 / 吐槽 / 失物招领', value: '说"发墙 …"' }
+    ],
+    actions: [
+      { label: '☀️ 今日简报', type: 'reask', value: '今日简报' },
+      { label: '哪里有空教室？', type: 'reask', value: '哪里有空教室自习' },
+      { label: '看校园墙', type: 'reask', value: '看校园墙' }
+    ]
+  }
+  const hello = newAgentMsg({
+    text: '',
+    fullText: '',
+    card: pushesCard,
+    chips: (greet && greet.chips) || ['今日简报', ...suggestions.slice(0, 3)]
   })
+  reveal(hello, (greet && greet.reply) || AGENT_PROFILE.welcome)
   initSpeech()
   scrollBottom()
 })
 
-onBeforeUnmount(() => { if (tick) clearInterval(tick) })
+onBeforeUnmount(() => {
+  if (tick) clearInterval(tick)
+  try { messages.forEach((m) => { if (m._tw) { clearTimeout(m._tw); m._tw = null; m.text = m.fullText || m.text } }) } catch { /* noop */ }
+})
 
 defineExpose({ send, restoreSession })
 </script>
@@ -315,7 +358,7 @@ defineExpose({ send, restoreSession })
           </div>
 
           <template v-else>
-            <div class="ac-text">{{ m.text }}</div>
+            <div class="ac-text" title="点击立即显示全文" @click="finishReveal(m)">{{ m.text }}<span v-if="m._tw" class="ac-caret">▍</span></div>
 
             <div v-if="m.res && m.res.layer && m.res.confidence" class="ac-meta">
               <span class="ac-badge">{{ layerLabel(m.res.layer) }}</span>
@@ -437,7 +480,10 @@ defineExpose({ send, restoreSession })
 .ac-bubble { max-width: 92%; border-radius: 14px; padding: 9px 12px; font-size: 13.5px; line-height: 1.6; }
 .ac-bubble.user { background: var(--primary, #1b66c9); color: #fff; border-bottom-right-radius: 4px; }
 .ac-bubble.agent { background: var(--card, #f7f9fc); border: 1px solid var(--border, #e5eaf2); border-bottom-left-radius: 4px; width: 96%; }
-.ac-text { white-space: pre-wrap; word-break: break-word; }
+.ac-text { white-space: pre-wrap; word-break: break-word; cursor: pointer; }
+.ac-caret { color: #1b66c9; animation: acBlink 0.8s infinite; font-weight: 400; }
+@keyframes acBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .ac-caret { animation: none; } }
 
 .ac-thinking { display: flex; align-items: center; gap: 5px; color: var(--muted, #8a94a6); font-size: 12.5px; flex-wrap: wrap; }
 .ac-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary, #1b66c9); animation: acBlink 1.2s infinite; }

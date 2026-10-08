@@ -11,6 +11,11 @@ import { navAnswer } from './navAnswer'
 import { AGENT_PROFILE, agentText } from './config'
 import { runWorkflow, workflowMeta, CLARIFY } from './workflows'
 import { extractKeyword, extractScheduleSlots } from './slots'
+import { detectContinue, mergeContinue, followupsFor, buildGreeting } from './converse'
+import { pushList, readProfile } from './profile'
+import { dueReviews } from '../utils/studyPlan'
+import { upcoming } from '../data/activities'
+import { matchJobs } from '../data/jobs'
 
 const ASK = {
   time: '什么时间的日程？（例如：明天下午三点）',
@@ -33,6 +38,7 @@ export class AgentEngine {
     this.mode = mode // 'agent' 直达 | 'plan' 先计划后执行 | 'ask' 仅问答
     this.pending = null
     this.turns = 0
+    this.lastCtx = null // 上条成功执行的工作流上下文（指代消解用）
   }
 
   /** 三模式切换（WorkBuddy 同款语义：直达/计划/问答） */
@@ -45,7 +51,7 @@ export class AgentEngine {
 
   t() { return agentText(this.lang) }
 
-  reset() { this.pending = null }
+  reset() { this.pending = null; this.lastCtx = null }
 
   /**
    * 主入口
@@ -89,6 +95,21 @@ export class AgentEngine {
       }
       // 既非确认也非取消 → 视为新请求
       this.pending = null
+    }
+
+    // ── 上下文追问（“明天呢”“换博文楼”“再查一次”）：沿用上条工作流 ──
+    // 强新意图一律让路（阈值 60 分且目标不同），避免“明天有什么课”被误续成找教室
+    if (!this.pending && this.lastCtx) {
+      const cont = detectContinue(raw, this.lastCtx)
+      if (cont) {
+        const r2 = recognize(raw)
+        const strongNew = r2.layer === 'intent' && r2.score >= 60 &&
+          (!r2.intent || r2.intent.kind !== 'workflow' || r2.intent.wf !== cont.wfId)
+        if (!strongNew) {
+          const merged = mergeContinue(this.lastCtx, cont, raw, this.lang)
+          return this._execute(merged.wfId, merged.ctx, { confidence: 88, layer: 'context' }, onStep)
+        }
+      }
     }
 
     // ── 三层识别 ────────────────────────────────────
@@ -320,11 +341,15 @@ export class AgentEngine {
     const meta = workflowMeta(wfId)
     try {
       const card = await runWorkflow(wfId, ctx, onStep)
+      // 记住本次成功执行（供下一轮指代消解；失败不记，避免错上加错）
+      try {
+        this.lastCtx = { wfId, slots: JSON.parse(JSON.stringify(ctx.slots || {})), text: ctx.text }
+      } catch { this.lastCtx = { wfId, slots: {}, text: ctx.text } }
       return {
         ...base, kind: 'workflow',
         reply: `${meta.icon} ${meta.title} 执行完成`,
         wf: meta, card,
-        chips: ['还有其他需求吗？', '最新通知', '今天吃什么']
+        chips: followupsFor(wfId)
       }
     } catch (e) {
       if (e && e.isClarify) {
@@ -368,6 +393,20 @@ export class AgentEngine {
     const r = recognize(id)
     if (r.layer === 'app') return this._appCard(r.app, r.apps)
     return { title: `📱 ${id}`, rows: [], actions: [{ label: '打开', type: 'openApp', value: id }] }
+  }
+
+  /* ── 主动问候（助手页空会话开场：时段 + 画像推送，不打扰老会话） ── */
+  greeting() {
+    let pushes = []
+    try {
+      pushes = pushList({
+        dueReviews: dueReviews(),
+        activities: upcoming(),
+        jobs: matchJobs(readProfile(), 2).map((m) => m.job)
+      })
+    } catch { pushes = [] }
+    const g = buildGreeting({ agentName: AGENT_PROFILE.agentName, pushes })
+    return { kind: 'meta', layer: 'greeting', confidence: 100, reply: g.reply, card: g.card, chips: g.chips }
   }
 
   /* ── 云脑（走本机 /api/chat 代理：密钥只存 server，前端零暴露） ── */
