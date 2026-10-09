@@ -5,9 +5,9 @@
  *      计划确认卡 · 消息操作（复制/重试/反馈）· "/" 命令面板 · 会话历史
  */
 import { ref, reactive, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
-import { createEngine } from '../../agent/engine'
-import { AGENT_PROFILE, agentText } from '../../agent/config'
-import { WORKFLOWS } from '../../agent/workflows'
+import { createEngine } from '../../agent/engine.js'
+import { AGENT_PROFILE, agentText } from '../../agent/config.js'
+import { WORKFLOWS } from '../../agent/workflows.js'
 
 const props = defineProps({
   variant: { type: String, default: 'dock' }

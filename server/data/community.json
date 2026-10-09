@@ -178,6 +178,126 @@
   ],
   "audit": [
     {
+      "ts": 1791508717194,
+      "action": "comments:delete",
+      "detail": "场景包评论"
+    },
+    {
+      "ts": 1791508717191,
+      "action": "posts:delete",
+      "detail": "选一个"
+    },
+    {
+      "ts": 1791508717188,
+      "action": "posts:delete",
+      "detail": "E2E 场景包自动发帖，稍后清理"
+    },
+    {
+      "ts": 1791508717179,
+      "action": "login",
+      "detail": "管理台登录成功"
+    },
+    {
+      "ts": 1791505721205,
+      "action": "comments:delete",
+      "detail": "场景包评论"
+    },
+    {
+      "ts": 1791505721200,
+      "action": "posts:delete",
+      "detail": "选一个"
+    },
+    {
+      "ts": 1791505721197,
+      "action": "posts:delete",
+      "detail": "E2E 场景包自动发帖，稍后清理"
+    },
+    {
+      "ts": 1791505721136,
+      "action": "login",
+      "detail": "管理台登录成功"
+    },
+    {
+      "ts": 1791467617809,
+      "action": "comments:delete",
+      "detail": "场景包评论"
+    },
+    {
+      "ts": 1791467617806,
+      "action": "posts:delete",
+      "detail": "选一个"
+    },
+    {
+      "ts": 1791467617803,
+      "action": "posts:delete",
+      "detail": "E2E 场景包自动发帖，稍后清理"
+    },
+    {
+      "ts": 1791467617792,
+      "action": "login",
+      "detail": "管理台登录成功"
+    },
+    {
+      "ts": 1791464696649,
+      "action": "comments:delete",
+      "detail": "场景包评论"
+    },
+    {
+      "ts": 1791464696647,
+      "action": "posts:delete",
+      "detail": "选一个"
+    },
+    {
+      "ts": 1791464696645,
+      "action": "posts:delete",
+      "detail": "E2E 场景包自动发帖，稍后清理"
+    },
+    {
+      "ts": 1791464696332,
+      "action": "login",
+      "detail": "管理台登录成功"
+    },
+    {
+      "ts": 1791464563691,
+      "action": "comments:delete",
+      "detail": "场景包评论"
+    },
+    {
+      "ts": 1791464563688,
+      "action": "posts:delete",
+      "detail": "选一个"
+    },
+    {
+      "ts": 1791464563686,
+      "action": "posts:delete",
+      "detail": "E2E 场景包自动发帖，稍后清理"
+    },
+    {
+      "ts": 1791464563659,
+      "action": "login",
+      "detail": "管理台登录成功"
+    },
+    {
+      "ts": 1791463661896,
+      "action": "feedback:delete",
+      "detail": "[smoke muzj7k1o] 冒烟反馈"
+    },
+    {
+      "ts": 1791463661892,
+      "action": "posts:delete",
+      "detail": "（冒烟投票帖）"
+    },
+    {
+      "ts": 1791463661884,
+      "action": "comments:delete",
+      "detail": "[smoke muzj7k1o] 正常评论链路"
+    },
+    {
+      "ts": 1791463661881,
+      "action": "login",
+      "detail": "管理台登录成功"
+    },
+    {
       "ts": 1791457666987,
       "action": "posts:approve",
       "detail": "希望图书馆考试周延长到 23:00"
@@ -351,6 +471,12 @@
     "::1|muz86j653oaco5": true,
     "::1|muzbd993iw73bs": true,
     "::1|muzcg72wgrnv22": true,
-    "::1|muzf1r7oaweak3": true
+    "::1|muzf1r7oaweak3": true,
+    "::1|muzj7k8b4kzurp": true,
+    "::1|muzjqw1j7oish8": true,
+    "127.0.0.1|muzjtqf23y6bqp": true,
+    "127.0.0.1|muzlkcmlx0x26d": true,
+    "127.0.0.1|mv0891czgdmrwd": true,
+    "127.0.0.1|mv0a1944l6z18n": true
   }
 }

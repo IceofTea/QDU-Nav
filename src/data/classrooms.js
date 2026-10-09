@@ -1,3 +1,7 @@
+/**
+ * @模块路径  src/data/classrooms.js
+ * @职责      教室快照数据（生成器产物）
+ */
 // 楼宇与教室数据由 scripts/gen-classrooms.mjs 从教务处真实课程总表生成（2026年春季学期）
 // 楼名对应校区区域参考学校文化标识系统；route 为通用指引，请以校园实地指示为准
 export const buildings = [

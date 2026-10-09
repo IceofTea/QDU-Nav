@@ -3,8 +3,8 @@
  *  参考 leadertest.site 的多维原型比对：回答校园管理场景题 → 9 维画像 → 与
  *  青岛大学历任/现任校领导原型做加权距离匹配。结果仅供娱乐。 */
 import { ref, computed } from 'vue'
-import { DIMS, leaders, questions, shareLine, BIAS } from '../data/leaders'
-import { useI18n } from '../i18n'
+import { DIMS, leaders, questions, shareLine, BIAS } from '../data/leaders.js'
+import { useI18n } from '../i18n/index.js'
 
 const { t, lang } = useI18n()
 

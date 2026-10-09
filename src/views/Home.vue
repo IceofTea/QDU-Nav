@@ -1,15 +1,16 @@
+<!-- @模块：src/views/Home.vue —— 首页（搜索/网格/关于） -->
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { apps, campusStats } from '../data/apps'
-import { searchApps } from '../data/searchIndex'
-import { recognize } from '../agent/intents'
-import { AGENT_PROFILE } from '../agent/config'
-import { campuses } from '../data/campus'
-import { getCourseStats, EMPTY_STATS } from '../api/courseStats'
-import { SITE } from '../config/site'
+import { apps, campusStats } from '../data/apps.js'
+import { searchApps } from '../data/searchIndex.js'
+import { recognize } from '../agent/intents.js'
+import { AGENT_PROFILE } from '../agent/config.js'
+import { campuses } from '../data/campus.js'
+import { getCourseStats, EMPTY_STATS } from '../api/courseStats.js'
+import { SITE } from '../config/site.js'
 import VisitStats from '../components/VisitStats.vue'
-import { fetchLikes, toggleLike, likedByMe } from '../utils/like'
-import { useI18n } from '../i18n'
+import { fetchLikes, toggleLike, likedByMe } from '../utils/like.js'
+import { useI18n } from '../i18n/index.js'
 
 const { t, lang } = useI18n()
 const emit = defineEmits(['open'])

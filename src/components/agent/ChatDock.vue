@@ -5,7 +5,7 @@
  */
 import { ref } from 'vue'
 import AgentChat from './AgentChat.vue'
-import { AGENT_PROFILE } from '../../agent/config'
+import { AGENT_PROFILE } from '../../agent/config.js'
 
 const emit = defineEmits(['open'])
 const open = ref(false)

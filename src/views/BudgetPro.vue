@@ -8,7 +8,7 @@ import PieChart from '../components/PieChart.vue'
 import LineChart from '../components/LineChart.vue'
 import { cleanMerchant } from '../utils/billImport.js'
 import { exportXlsx } from '../utils/xlsxExport.js'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/index.js'
 
 const { t, lang } = useI18n()
 

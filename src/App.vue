@@ -1,15 +1,16 @@
+<!-- @模块：src/App.vue —— 应用根组件组装（欢迎/顶栏/主视图/页脚/底部导航） -->
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import Welcome from './views/Welcome.vue'
 import TourOverlay from './components/TourOverlay.vue'
 import ChatDock from './components/agent/ChatDock.vue'
-import { SITE } from './config/site'
-import { NAV_APPS, useViewState, preloadPopular } from './router'
-import { apps } from './data/apps'
-import { fetchLikes, toggleLike, likedByMe } from './utils/like'
-import { useI18n } from './i18n'
-import { useTour } from './utils/useTour'
-import { getTourSteps } from './data/tourSteps'
+import { SITE } from './config/site.js'
+import { NAV_APPS, useViewState, preloadPopular } from './router.js'
+import { apps } from './data/apps.js'
+import { fetchLikes, toggleLike, likedByMe } from './utils/like.js'
+import { useI18n } from './i18n/index.js'
+import { useTour } from './utils/useTour.js'
+import { getTourSteps } from './data/tourSteps.js'
 
 const { t, lang, toggleLang } = useI18n()
 const { startTour, isTourCompleted, isActive } = useTour()

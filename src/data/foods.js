@@ -1,3 +1,7 @@
+/**
+ * @模块路径  src/data/foods.js
+ * @职责      菜品档口库
+ */
 // 菜品/档口库：由 src/data/canteens.js 的真实档口与招牌菜派生（来源：后勤采购公告、观海新闻等公开报道）
 // 不含价格/热量等未经证实数据。
 import { canteens } from './canteens.js'

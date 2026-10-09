@@ -123,21 +123,31 @@ function checkFile(file) {
   }
 }
 
-/* ── 无扩展名相对 import 审计（.js 全文件） ── */
+/* ── 无扩展名相对 import 审计（.js 全文件 + .vue 的 script 块） ── */
 function walkJs(dir, out = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name)
     if (e.isDirectory()) { if (!/node_modules|dist/.test(p)) walkJs(p, out) }
     else if (/\.m?js$/.test(e.name)) out.push(p)
+    else if (/\.vue$/.test(e.name)) out.push(p + '#script')
   }
   return out
 }
 function checkImports(file) {
-  const raw = fs.readFileSync(file, 'utf8')
+  let raw
+  let label = path.relative(ROOT, file)
+  if (file.endsWith('#script')) {
+    const real = file.slice(0, -7)
+    label = path.relative(ROOT, real)
+    const full = fs.readFileSync(real, 'utf8')
+    raw = (full.match(/<script setup>([\s\S]*)<\/script>/) || [])[1] || ''
+  } else {
+    raw = fs.readFileSync(file, 'utf8')
+  }
   for (const m of raw.matchAll(/(?:import|export)[^'"]*from\s*['"]([^'"]+)['"]/g)) {
     const p = m[1]
     if (p.startsWith('.') && !/\.(js|mjs|vue|json|css)(\?|$)/.test(p)) {
-      warns.push(`${path.relative(ROOT, file)}: 无扩展名相对引用 '${p}'（vite 可跑，node ESM 不可，建议补 .js）`)
+      warns.push(`${label}: 无扩展名相对引用 '${p}'（vite 可跑，node ESM 不可，建议补 .js）`)
     }
   }
 }

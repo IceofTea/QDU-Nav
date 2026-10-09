@@ -5,7 +5,7 @@
  *  - 中心显示合计；数据为空时提示
  *  props: segments [{ name, icon, v }], total, valuePrefix, legendValue, centerValue */
 import { ref, computed } from 'vue'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/index.js'
 const { t, lang } = useI18n()
 
 const props = defineProps({

@@ -12,12 +12,12 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { PARTS } from '../wall/config'
+import { PARTS } from '../wall/config.js'
 import {
   loadPosts, createPost, likePost, replyPost, reportPost, castVote,
   reactPost, searchPosts, getWallet, signInToday, signedToday, streakDays,
   hotTopics, hasVotedLocal, viewPost, favCount
-} from '../wall/api'
+} from '../wall/api.js'
 import WallPostCard from '../wall/components/WallPostCard.vue'
 import WallComposer from '../wall/components/WallComposer.vue'
 import WallSidebar from '../wall/components/WallSidebar.vue'

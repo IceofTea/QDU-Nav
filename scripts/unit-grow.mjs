@@ -26,7 +26,19 @@ const acts = await import('../src/data/activities.js')
 let pass = 0
 let fail = 0
 function ok(name, fn) {
-  try { fn(); pass++; console.log('  PASS  ' + name) }
+  try {
+    const r = fn()
+    if (r && typeof r.then === 'function') {
+      fail++
+      console.log('  FAIL  ' + name + ' → async 函数必须用 okAsync（框架防呆）')
+      r.catch(() => {})
+      return
+    }
+    pass++; console.log('  PASS  ' + name)
+  } catch (e) { fail++; console.log('  FAIL  ' + name + ' → ' + e.message) }
+}
+async function okAsync(name, fn) {
+  try { await fn(); pass++; console.log('  PASS  ' + name) }
   catch (e) { fail++; console.log('  FAIL  ' + name + ' → ' + e.message) }
 }
 
@@ -179,25 +191,25 @@ ok('报名计数+1', () => {
 })
 
 console.log('── workflows可加载 ──')
-ok('三新工作流注册', async () => {
+await okAsync('三新工作流注册', async () => {
   const { WORKFLOWS, workflowMeta } = await import('../src/agent/workflows.js')
   for (const id of ['jobHunt', 'activitySignup', 'fixReport']) {
     assert.ok(WORKFLOWS[id], id + '缺失')
     assert.ok(workflowMeta(id).steps.length >= 2)
   }
 })
-ok('三新意图可识别', async () => {
+await okAsync('三新意图可识别', async () => {
   const { recognize } = await import('../src/agent/intents.js')
-  assert.equal(recognize('找实习').wf, 'jobHunt')
-  assert.equal(recognize('活动报名').wf, 'activitySignup')
-  assert.equal(recognize('宿舍报修').wf, 'fixReport')
+  assert.equal(recognize('找实习').intent.wf, 'jobHunt')
+  assert.equal(recognize('活动报名').intent.wf, 'activitySignup')
+  assert.equal(recognize('宿舍报修').intent.wf, 'fixReport')
 })
-ok('五新应用意图直达', async () => {
+await okAsync('五新应用意图直达', async () => {
   const { recognize } = await import('../src/agent/intents.js')
-  assert.equal(recognize('招聘').app, 'jobs')
-  assert.equal(recognize('为什么选你').app, 'compare')
+  assert.equal(recognize('招聘').intent.app, 'jobs')
+  assert.equal(recognize('为什么选你').intent.app, 'compare')
 })
-ok('工作流总数≥30', async () => {
+await okAsync('工作流总数≥30', async () => {
   const { WORKFLOWS } = await import('../src/agent/workflows.js')
   assert.ok(Object.keys(WORKFLOWS).length >= 30)
 })
@@ -244,6 +256,20 @@ ok('buildGreeting有推送', () => {
 ok('buildGreeting空态', () => {
   const g = converse.buildGreeting({ agentName: '小青', pushes: [] })
   assert.ok(g.card === null && g.chips.includes('今日简报'))
+})
+
+console.log('── 统一出口 ──')
+await okAsync('wall/index 全员可达', async () => {
+  const wall = await import('../src/wall/index.js')
+  for (const k of ['loadPosts', 'createPost', 'searchAdvanced', 'precheck', 'parseMentions', 'saveDraft', 'partDist', 'summarizeThread', 'cloudList', 'apiUrl']) {
+    assert.ok(wall[k], k + ' 缺失')
+  }
+})
+await okAsync('im/index 全员可达', async () => {
+  const im = await import('../src/im/index.js')
+  for (const k of ['listThreads', 'sendMessage', 'useImStore', 'peekUnread']) {
+    assert.ok(im[k], k + ' 缺失')
+  }
 })
 
 console.log(`\n done: pass=${pass} fail=${fail}`)

@@ -15,11 +15,11 @@
 import { ref, onMounted } from 'vue'
 import {
   getApiBase, setApiBase, probeGateway, describeMode, apiFromQuery
-} from '../wall/apiBase'
-import { getCloud, setCloud, probeCloud } from '../wall/cloud'
-import { exportDrafts, importDrafts, draftCount } from '../wall/drafts'
-import { exportThreads, unreadTotal } from '../im/api'
-import { getWallet } from '../wall/api'
+} from '../wall/apiBase.js'
+import { getCloud, setCloud, probeCloud } from '../wall/cloud.js'
+import { exportDrafts, importDrafts, draftCount } from '../wall/drafts.js'
+import { exportThreads, unreadTotal } from '../im/api.js'
+import { getWallet } from '../wall/api.js'
 
 const emit = defineEmits(['back'])
 

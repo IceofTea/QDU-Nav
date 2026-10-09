@@ -11,7 +11,7 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { computed } from 'vue'
-import { partOf, POST_TYPES, ADS, hotScore } from '../config'
+import { partOf, POST_TYPES, ADS, hotScore } from '../config.js'
 
 const props = defineProps({
   post: { type: Object, required: true },

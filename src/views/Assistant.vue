@@ -5,9 +5,9 @@
  */
 import { ref, computed, onMounted } from 'vue'
 import AgentChat from '../components/agent/AgentChat.vue'
-import { AGENT_PROFILE } from '../agent/config'
-import { WORKFLOWS } from '../agent/workflows'
-import { FAQ } from '../agent/faq'
+import { AGENT_PROFILE } from '../agent/config.js'
+import { WORKFLOWS } from '../agent/workflows.js'
+import { FAQ } from '../agent/faq.js'
 
 const emit = defineEmits(['open', 'back'])
 const chatRef = ref(null)

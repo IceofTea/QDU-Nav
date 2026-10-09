@@ -27,7 +27,19 @@ if (typeof localStorage === 'undefined') {
 let pass = 0
 let fail = 0
 function ok(name, fn) {
-  try { fn(); pass++; console.log('  PASS  ' + name) }
+  try {
+    const r = fn()
+    if (r && typeof r.then === 'function') {
+      fail++
+      console.log('  FAIL  ' + name + ' → async 函数必须用 okAsync（框架防呆）')
+      r.catch(() => {})
+      return
+    }
+    pass++; console.log('  PASS  ' + name)
+  } catch (e) { fail++; console.log('  FAIL  ' + name + ' → ' + e.message) }
+}
+async function okAsync(name, fn) {
+  try { await fn(); pass++; console.log('  PASS  ' + name) }
   catch (e) { fail++; console.log('  FAIL  ' + name + ' → ' + e.message) }
 }
 
@@ -224,6 +236,42 @@ ok('migrateLegacy 无旧 key 返回 false', () => {
 ok('scorePost 明细可解释', () => {
   const { score, hits } = scorePost(POSTS[0], ['食堂'])
   assert.ok(score > 0 && hits.length > 0)
+})
+
+console.log('── drafts/composer统一 ──')
+const import_drafts = await import('../src/wall/drafts.js')
+ok('扩展字段透传（voteQ/voteOpts/作者）', () => {
+  const d = import_drafts.saveDraft({ id: 'composer-main', title: 't', content: 'c', voteQ: '几点?', voteOpts: ['A', 'B'], author: '甲' })
+  assert.equal(d.voteQ, '几点?')
+  assert.deepEqual(d.voteOpts, ['A', 'B'])
+  assert.equal(d.author, '甲')
+  import_drafts.deleteDraft('composer-main')
+})
+ok('更新分支保留扩展字段', () => {
+  import_drafts.saveDraft({ id: 'composer-main', title: 't', content: 'c' })
+  const d = import_drafts.saveDraft({ id: 'composer-main', title: 't2', content: 'c2', resUrl: 'http://x' })
+  assert.equal(d.title, 't2')
+  assert.equal(d.resUrl, 'http://x')
+  import_drafts.deleteDraft('composer-main')
+})
+ok('空内容删固定位草稿', () => {
+  import_drafts.saveDraft({ id: 'composer-main', title: 't', content: 'c' })
+  assert.equal(import_drafts.saveDraft({ id: 'composer-main', title: '', content: '  ' }), null)
+  assert.equal(import_drafts.getDraft('composer-main'), null)
+})
+await okAsync('stats聚合与视图口径一致', async () => {
+  const stats = await import('../src/wall/stats.js')
+  const posts = [
+    { id: '1', title: '食堂测评', content: '', tag: 'food', likes: 2, replies: [] },
+    { id: '2', title: '食堂二楼', content: '', tag: 'food', likes: 0, replies: [] },
+    { id: '3', title: '拼车', content: '', tag: 'ride', likes: 0, replies: [] }
+  ]
+  const dist = stats.partDist(posts)
+  assert.equal(dist[0].tag, 'food')
+  assert.equal(dist[0].posts, 2)
+  const { hotTopicsV2 } = await import('../src/wall/search.js')
+  const hot = hotTopicsV2(posts, 8)
+  assert.ok(hot.some((h) => h.word.includes('食堂')))
 })
 
 console.log(`\n done: pass=${pass} fail=${fail}`)

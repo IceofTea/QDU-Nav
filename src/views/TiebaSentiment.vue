@@ -1,11 +1,12 @@
+<!-- @模块：src/views/TiebaSentiment.vue —— 贴吧舆情 -->
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import KpiCard from '../components/KpiCard.vue'
 import InsightPanel from '../components/InsightPanel.vue'
 import BarRow from '../components/BarRow.vue'
 import LineChart from '../components/LineChart.vue'
-import { useI18n } from '../i18n'
-import { setNavContext } from '../stores/navContext'
+import { useI18n } from '../i18n/index.js'
+import { setNavContext } from '../stores/navContext.js'
 
 const { t, lang } = useI18n()
 

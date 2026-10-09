@@ -1,6 +1,7 @@
+<!-- @模块：src/views/StudentId.vue —— 新生学号查询 -->
 <script setup>
 import { ref } from 'vue'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/index.js'
 
 const { t, lang } = useI18n()
 

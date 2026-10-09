@@ -12,7 +12,7 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { ref, computed, onMounted } from 'vue'
-import { buildings } from '../data/classrooms'
+import { buildings } from '../data/classrooms.js'
 
 const emit = defineEmits(['open', 'back'])
 

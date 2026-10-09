@@ -5,10 +5,10 @@
  *  每会话只上报一次 /api/hit（会话内缓存回填），其余会话读 /api/stats 显示，控制计数服务请求量；
  *  服务不可用时降级显示「—」。 */
 import { ref, computed, onMounted } from 'vue'
-import { SITE } from '../config/site'
-import { visitorId } from '../utils/visitor'
-import { getSiteStats, isStaticMode } from '../api/siteStats'
-import { useI18n } from '../i18n'
+import { SITE } from '../config/site.js'
+import { visitorId } from '../utils/visitor.js'
+import { getSiteStats, isStaticMode } from '../api/siteStats.js'
+import { useI18n } from '../i18n/index.js'
 const { t, lang } = useI18n()
 
 const STORAGE_KEY = 'qdu-nav-visit-v1'

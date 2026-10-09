@@ -11,8 +11,8 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { ref, onMounted } from 'vue'
-import { loadPosts } from '../wall/api'
-import { modReport } from '../wall/aiMod'
+import { loadPosts } from '../wall/api.js'
+import { modReport } from '../wall/aiMod.js'
 
 const emit = defineEmits(['back'])
 const token = ref('')

@@ -2,13 +2,13 @@
 /** 课程表：班级/教室/教师课表查询 + 官方课程总表入口
  *  数据来自本地快照（loadSnap），网关可用时用网关补充元信息 */
 import { ref, shallowRef, computed, watch, onMounted } from 'vue'
-import { apiFetch } from '../api/index'
-import { loadSnap } from '../api/localCourse'
-import { loadTimetableMeta, loadTermRows } from '../api/termTimetable'
-import { normRoom, clsSplit, profOf, parseWeeks } from '../utils/course'
-import { fmtTime } from '../utils/format'
-import { useI18n } from '../i18n'
-import { setNavContext } from '../stores/navContext'
+import { apiFetch } from '../api/index.js'
+import { loadSnap } from '../api/localCourse.js'
+import { loadTimetableMeta, loadTermRows } from '../api/termTimetable.js'
+import { normRoom, clsSplit, profOf, parseWeeks } from '../utils/course.js'
+import { fmtTime } from '../utils/format.js'
+import { useI18n } from '../i18n/index.js'
+import { setNavContext } from '../stores/navContext.js'
 
 const { t, lang } = useI18n()
 

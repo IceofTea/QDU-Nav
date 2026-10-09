@@ -15,7 +15,7 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { ref, computed, reactive, onMounted, onBeforeUnmount } from 'vue'
-import { SITE } from '../config/site'
+import { SITE } from '../config/site.js'
 
 const emit = defineEmits(['back'])
 

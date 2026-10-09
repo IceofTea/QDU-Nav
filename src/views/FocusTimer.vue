@@ -15,7 +15,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import {
   Pomodoro, POMO_PRESETS, todayFocusMin, weekFocus, dueReviews,
   doneReviewStep, listReviewCards, addReviewCard
-} from '../utils/studyPlan'
+} from '../utils/studyPlan.js'
 
 const emit = defineEmits(['back', 'goto'])
 

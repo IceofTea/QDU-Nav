@@ -1,8 +1,9 @@
+<!-- @模块：src/views/BuildingMatch.vue —— 教学楼速配游戏 -->
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import CountUp from '../components/CountUp.vue'
-import { useI18n } from '../i18n'
-import { setNavContext } from '../stores/navContext'
+import { useI18n } from '../i18n/index.js'
+import { setNavContext } from '../stores/navContext.js'
 
 const { t, lang } = useI18n()
 

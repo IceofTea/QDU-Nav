@@ -4,14 +4,17 @@
  * @模块路径  src/wall/components/WallComposer.vue
  * @职责      发帖器：5 种帖子类型（普通/投票/悬赏/资源/公示）+ 分区选择 +
  *            匿名开关 + 敏感词前端预检 + 字数统计
+ * @草稿      经 ../drafts.js 多草稿箱统一管理（固定位 composer-main，7 天过期，
+ *            发布清空；旧 wall_draft_v1 单草稿一次性迁移）
  * @props     parts(分区列表) · words(敏感词库) · busy
  * @emits     publish(payload) · cancel
  * @被谁用    CampusWall.vue
  * @校验      提交前本地 precheck 敏感词（服务端仍二次校验，双保险）
  * ════════════════════════════════════════════════════════════════════
  */
-import { ref, computed } from 'vue'
-import { POST_TYPES, PARTS, POINTS } from '../config'
+import { ref, computed, watch, onMounted } from 'vue'
+import { POST_TYPES, PARTS, POINTS } from '../config.js'
+import { saveDraft as saveWallDraft, deleteDraft as deleteWallDraft, listDrafts } from '../drafts.js'
 
 const props = defineProps({
   words: { type: Array, default: () => [] },
@@ -20,7 +23,8 @@ const props = defineProps({
 })
 const emit = defineEmits(['publish', 'cancel'])
 
-const DRAFT_KEY = 'wall_draft_v1'   // 草稿自动保存（Discourse 式：误关不丢）
+const DRAFT_ID = 'composer-main' // 发帖器草稿固定位（多草稿箱 v2 统一管理，7 天过期）
+const LEGACY_DRAFT_KEY = 'wall_draft_v1' // 旧单草稿键（一次性迁移后删除）
 const mode = ref('normal')           // normal | vote | bounty | resource | notice
 const title = ref('')
 const content = ref('')
@@ -47,41 +51,60 @@ const noticeOrg = ref('')
 const err = ref('')
 const draftSaved = ref(false)
 
-/* ── 草稿：输入即存，打开恢复，发布后清空 ── */
+/* ── 草稿：经 drafts.js 多草稿箱统一管理（输入即存，打开恢复，发布后清空） ── */
+function snapshot() {
+  return {
+    id: DRAFT_ID,
+    mode: mode.value, title: title.value, content: content.value, tag: tag.value,
+    type: mode.value, anonymous: anonymous.value, author: author.value,
+    voteQ: voteQ.value, voteOpts: voteOpts.value, bountyNeed: bountyNeed.value,
+    bountyPoints: bountyPoints.value, resTitle: resTitle.value, resUrl: resUrl.value,
+    resCode: resCode.value, noticeOrg: noticeOrg.value
+  }
+}
+function applyDraft(d) {
+  mode.value = d.mode || d.type || 'normal'
+  title.value = d.title || ''
+  content.value = d.content || ''
+  tag.value = d.tag || 'chat'
+  anonymous.value = d.anonymous !== false
+  author.value = d.author || ''
+  voteQ.value = d.voteQ || ''
+  voteOpts.value = Array.isArray(d.voteOpts) && d.voteOpts.length ? d.voteOpts : ['', '']
+  bountyNeed.value = d.bountyNeed || ''
+  if (d.bountyPoints) bountyPoints.value = d.bountyPoints
+  resTitle.value = d.resTitle || ''
+  resUrl.value = d.resUrl || ''
+  resCode.value = d.resCode || ''
+  noticeOrg.value = d.noticeOrg || ''
+}
 function saveDraft() {
-  try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({
-      mode: mode.value, title: title.value, content: content.value, tag: tag.value,
-      voteQ: voteQ.value, voteOpts: voteOpts.value, bountyNeed: bountyNeed.value,
-      resUrl: resUrl.value, resTitle: resTitle.value, resCode: resCode.value, ts: Date.now()
-    }))
-    draftSaved.value = true
-  } catch { /* noop */ }
+  const r = saveWallDraft(snapshot())
+  draftSaved.value = !!r
 }
 function restoreDraft() {
   try {
-    const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null')
-    if (!d || Date.now() - d.ts > 7 * 86400000) return   // 7 天过期
-    if (!d.content && !d.title && !d.voteQ && !d.resUrl) return
-    mode.value = d.mode || 'normal'
-    title.value = d.title || ''
-    content.value = d.content || ''
-    tag.value = d.tag || 'chat'
-    voteQ.value = d.voteQ || ''
-    voteOpts.value = d.voteOpts || ['', '']
-    bountyNeed.value = d.bountyNeed || ''
-    resUrl.value = d.resUrl || ''
-    resTitle.value = d.resTitle || ''
-    resCode.value = d.resCode || ''
-    err.value = '♻️ 已恢复上次未发布的草稿'
-  } catch { /* noop */ }
+    // 旧单草稿一次性迁移
+    const legacy = JSON.parse(localStorage.getItem(LEGACY_DRAFT_KEY) || 'null')
+    if (legacy && (legacy.content || legacy.title)) {
+      applyDraft({ ...legacy, id: DRAFT_ID })
+      saveWallDraft({ ...snapshot(), id: DRAFT_ID })
+      localStorage.removeItem(LEGACY_DRAFT_KEY)
+      err.value = '♻️ 已恢复上次未发布的草稿'
+      return
+    }
+  } catch { /* 无旧草稿 */ }
+  const d = listDrafts({ persist: false }).find((x) => x.id === DRAFT_ID)
+  if (!d) return
+  if (Date.now() - (d.updatedAt || 0) > 7 * 86400000) { deleteWallDraft(DRAFT_ID); return } // 7 天过期
+  if (!d.content && !d.title && !d.voteQ && !d.resUrl) return
+  applyDraft(d)
+  err.value = '♻️ 已恢复上次未发布的草稿'
 }
 function clearDraft() {
-  try { localStorage.removeItem(DRAFT_KEY) } catch { /* noop */ }
+  deleteWallDraft(DRAFT_ID)
   draftSaved.value = false
 }
-import { watch } from 'vue'
-watch([title, content, voteQ], () => { if (title.value || content.value || voteQ.value) saveDraft() })
 const usableParts = computed(() => PARTS.filter((p) => p.id !== 'all'))
 
 function precheck(text) {
@@ -145,7 +168,7 @@ function reset() {
   bountyNeed.value = ''; resUrl.value = ''; resTitle.value = ''; resCode.value = ''
   noticeOrg.value = ''; err.value = ''
 }
-import { onMounted } from 'vue'
+watch([title, content, voteQ], () => { if (title.value || content.value || voteQ.value) saveDraft() })
 onMounted(restoreDraft)
 defineExpose({ reset })
 </script>

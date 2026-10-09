@@ -1,9 +1,10 @@
+<!-- @模块：src/views/Categories.vue —— 应用分类总览 -->
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { apps, appGroups, appGroupsEn, groupColors } from '../data/apps'
-import { searchApps } from '../data/searchIndex'
-import { fetchLikes, toggleLike, likedByMe } from '../utils/like'
-import { useI18n } from '../i18n'
+import { apps, appGroups, appGroupsEn, groupColors } from '../data/apps.js'
+import { searchApps } from '../data/searchIndex.js'
+import { fetchLikes, toggleLike, likedByMe } from '../utils/like.js'
+import { useI18n } from '../i18n/index.js'
 
 const { t, lang } = useI18n()
 const emit = defineEmits(['back', 'open'])

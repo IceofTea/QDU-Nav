@@ -12,8 +12,8 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
-import { useImStore } from '../im/store'
-import { loadPosts } from '../wall/api'
+import { useImStore } from '../im/store.js'
+import { loadPosts } from '../wall/api.js'
 
 const emit = defineEmits(['back'])
 const store = useImStore()

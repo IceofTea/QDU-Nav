@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { officialGroups, colleges, emergency, CAT_MAP } from '../data/official'
-import { useI18n } from '../i18n'
+import { officialGroups, colleges, emergency, CAT_MAP } from '../data/official.js'
+import { useI18n } from '../i18n/index.js'
 
 const { t, lang } = useI18n()
 

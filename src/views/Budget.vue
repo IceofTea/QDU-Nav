@@ -7,7 +7,7 @@ import BudgetPro from './BudgetPro.vue'
 import BarRow from '../components/BarRow.vue'
 import PieChart from '../components/PieChart.vue'
 import { parseBillFile } from '../utils/billImport.js'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/index.js'
 
 const { t, lang } = useI18n()
 

@@ -27,8 +27,16 @@ const apiBase = await import('../src/wall/apiBase.js')
 let pass = 0
 let fail = 0
 function ok(name, fn) {
-  try { fn(); pass++; console.log('  PASS  ' + name) }
-  catch (e) { fail++; console.log('  FAIL  ' + name + ' → ' + e.message) }
+  try {
+    const r = fn()
+    if (r && typeof r.then === 'function') {
+      fail++
+      console.log('  FAIL  ' + name + ' → async 函数必须用 okAsync（框架防呆）')
+      r.catch(() => {})
+      return
+    }
+    pass++; console.log('  PASS  ' + name)
+  } catch (e) { fail++; console.log('  FAIL  ' + name + ' → ' + e.message) }
 }
 async function okAsync(name, fn) {
   try { await fn(); pass++; console.log('  PASS  ' + name) }
@@ -71,7 +79,7 @@ ok('草稿存取', () => {
   im.saveDraft('小李', '没说完的话')
   assert.equal(im.getDraft('小李'), '没说完的话')
 })
-ok('拉黑隐藏会话+发消息拦截', async () => {
+await okAsync('拉黑隐藏会话+发消息拦截', async () => {
   await im.blockUser('骗子')
   assert.ok(im.listBlocks().includes('骗子'))
   await assert.rejects(im.sendMessage('骗子', 'hi'), /拉黑/)
@@ -94,7 +102,7 @@ await okAsync('deleteThread 删除', async () => {
   const l = await im.listThreads()
   assert.ok(!l.threads.some((t) => t.peer === '小李'))
 })
-ok('超长截断 1000', async () => {
+await okAsync('超长截断 1000', async () => {
   localStorage.removeItem('im_msglog_v1')
   const r = await im.sendMessage('小李', 'a'.repeat(5000))
   assert.ok(r.message.text.length <= 1000)
@@ -240,7 +248,7 @@ ok('describeMode 本机文案', () => {
   const d = apiBase.describeMode()
   assert.ok(d.text && d.mode === 'gateway')
 })
-ok('probeGateway 空地址直接失败', async () => {
+await okAsync('probeGateway 空地址直接失败', async () => {
   const r = await apiBase.probeGateway('')
   assert.equal(r.ok, false)
 })
@@ -250,7 +258,7 @@ ok('PUBLIC_API_DEFAULT 为空（部署后填）', () => {
 
 console.log('── wall.cloud ──')
 const cloud = await import('../src/wall/cloud.js')
-ok('未配置关闭且抛错', async () => {
+await okAsync('未配置关闭且抛错', async () => {
   localStorage.removeItem('qdu_supabase')
   assert.equal(cloud.cloudEnabled(), false)
   await assert.rejects(cloud.cloudList(), /未配置/)
@@ -261,7 +269,7 @@ ok('setCloud/getCloud 闭环', () => {
   assert.equal(c.url, 'https://xxx.supabase.co')
   assert.equal(cloud.cloudEnabled(), true)
 })
-ok('mock 行映射：帖子+回复+id 前缀 C', async () => {
+await okAsync('mock 行映射：帖子+回复+id 前缀 C', async () => {
   const realFetch = globalThis.fetch
   globalThis.fetch = async (url) => ({
     ok: true, status: 200,
@@ -280,7 +288,7 @@ ok('mock 行映射：帖子+回复+id 前缀 C', async () => {
     cloud.setCloud('', '')
   }
 })
-ok('probeCloud 未配置直接失败', async () => {
+await okAsync('probeCloud 未配置直接失败', async () => {
   const r = await cloud.probeCloud(null)
   assert.equal(r.ok, false)
 })

@@ -1,9 +1,10 @@
+<!-- @模块：src/views/Canteen.vue —— 食堂空座率 -->
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { canteens, canteenStats, campusMap, areaMap } from '../data/canteens'
-import { apiFetch } from '../api/index'
-import { useI18n } from '../i18n'
-import { setNavContext } from '../stores/navContext'
+import { canteens, canteenStats, campusMap, areaMap } from '../data/canteens.js'
+import { apiFetch } from '../api/index.js'
+import { useI18n } from '../i18n/index.js'
+import { setNavContext } from '../stores/navContext.js'
 
 const { t, lang } = useI18n()
 

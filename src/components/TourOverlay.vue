@@ -5,7 +5,7 @@
  * 使用 fixed 定位确保弹窗始终在视口内可见。
  */
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { useTour } from '../utils/useTour'
+import { useTour } from '../utils/useTour.js'
 
 const { isActive, currentStep, currentStepData, totalSteps, isFirstStep, isLastStep, nextStep, prevStep, completeTour, skipTour } = useTour()
 

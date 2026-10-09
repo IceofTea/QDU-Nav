@@ -1,7 +1,8 @@
+<!-- @模块：src/views/Welcome.vue —— 欢迎页 -->
 <script setup>
-import { SITE } from '../config/site'
-import { campusStats } from '../data/apps'
-import { useI18n } from '../i18n'
+import { SITE } from '../config/site.js'
+import { campusStats } from '../data/apps.js'
+import { useI18n } from '../i18n/index.js'
 
 const { t, lang } = useI18n()
 const emit = defineEmits(['enter'])

@@ -1,3 +1,7 @@
+/**
+ * @模块路径  src/i18n/index.js
+ * @职责      i18n 入口与 useI18n
+ */
 import { ref, computed } from 'vue'
 
 import zh from './zh.js'

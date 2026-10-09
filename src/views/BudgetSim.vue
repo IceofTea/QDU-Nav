@@ -7,7 +7,7 @@
  *  全部计算在浏览器本地完成，不上传任何数据。 */
 import { ref, computed, watch, onMounted } from 'vue'
 import BarRow from '../components/BarRow.vue'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/index.js'
 
 const { t, lang } = useI18n()
 

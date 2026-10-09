@@ -12,6 +12,9 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { ref, computed, onMounted } from 'vue'
+import { apiUrl } from '../wall/apiBase.js'
+import { partDist as partDistAgg } from '../wall/stats.js'
+import { hotTopicsV2 } from '../wall/search.js'
 
 const emit = defineEmits(['back'])
 const stats = ref(null)
@@ -23,13 +26,13 @@ const loading = ref(true)
 async function load() {
   try {
     const [s, w] = await Promise.all([
-      fetch('/api/comments?stats=1').then((r) => r.json()),
-      fetch('/api/wall?sort=new').then((r) => r.json())
+      fetch(apiUrl('/api/comments?stats=1')).then((r) => r.json()),
+      fetch(apiUrl('/api/wall?sort=new')).then((r) => r.json())
     ])
     stats.value = s
     posts.value = w.posts || []
     // 全部评论（用于趋势；仅取公开 ok 的）
-    const all = await fetch('/api/comments?path=').then((r) => r.json()).catch(() => ({ comments: [] }))
+    const all = await fetch(apiUrl('/api/comments?path=')).then((r) => r.json()).catch(() => ({ comments: [] }))
     comments.value = all.comments || []
     offline.value = false
   } catch {
@@ -57,16 +60,13 @@ const trend = computed(() => {
 const trendMax = computed(() => Math.max(1, ...trend.value.map((d) => d.n)))
 const trendTotal = computed(() => trend.value.reduce((a, b) => a + b.n, 0))
 
-/* ── 墙分区占比（SVG 环） ── */
+/* ── 墙分区占比（SVG 环；计数经 wall/stats.js 聚合，展示格式与旧版一致） ── */
 const partDist = computed(() => {
-  const freq = {}
-  for (const p of posts.value) freq[p.tag || '闲聊'] = (freq[p.tag || '闲聊'] || 0) + 1
-  const total = posts.value.length || 1
   const colors = ['#1b66c9', '#e11d48', '#d97706', '#0f766e', '#7c3aed', '#ea580c', '#0891b2', '#65a30d', '#be123c', '#4f46e5']
-  return Object.entries(freq)
-    .sort((a, b) => b[1] - a[1])
+  const total = posts.value.length || 1
+  return partDistAgg(posts.value)
     .slice(0, 10)
-    .map(([tag, n], i) => ({ tag, n, pct: Math.round((n / total) * 100), color: colors[i % colors.length] }))
+    .map((r, i) => ({ tag: r.tag, n: r.posts, pct: Math.round((r.posts / total) * 100), color: colors[i % colors.length] }))
 })
 function ringDash(pct, offset) {
   const c = 2 * Math.PI * 40
@@ -84,15 +84,10 @@ const kpis = computed(() => [
   { v: stats.value && stats.value.reported ? stats.value.reported : 0, l: '待处理举报' }
 ])
 
-/* ── 反馈热词（简单二元组） ── */
-const feedbackHot = computed(() => {
-  const freq = {}
-  for (const p of posts.value) {
-    const words = (p.title || '').match(/[一-龥]{2,4}/g) || []
-    for (const w of words) freq[w] = (freq[w] || 0) + 1
-  }
-  return Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([w, n]) => ({ w, n }))
-})
+/* ── 帖子标题热词（经 wall/stats.js 加权聚合；取整保持旧展示格式） ── */
+const feedbackHot = computed(() =>
+  hotTopicsV2(posts.value, 8).map(({ word, n }) => ({ w: word, n: Math.round(n) }))
+)
 
 onMounted(load)
 </script>

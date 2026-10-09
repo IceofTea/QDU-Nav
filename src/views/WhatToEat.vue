@@ -1,9 +1,10 @@
+<!-- @模块：src/views/WhatToEat.vue —— 今天吃什么 -->
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { foods, halls } from '../data/foods'
+import { foods, halls } from '../data/foods.js'
 import CountUp from '../components/CountUp.vue'
-import { useI18n } from '../i18n'
-import { setNavContext } from '../stores/navContext'
+import { useI18n } from '../i18n/index.js'
+import { setNavContext } from '../stores/navContext.js'
 
 const { t, lang } = useI18n()
 

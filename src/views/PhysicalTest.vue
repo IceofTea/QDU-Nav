@@ -1,8 +1,9 @@
+<!-- @模块：src/views/PhysicalTest.vue —— 体测成绩计算器 -->
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
-import { standards, itemWeights, itemLabels, bmiScore, itemScore, gradeOf } from '../data/physical'
-import { useI18n } from '../i18n'
-import { setNavContext } from '../stores/navContext'
+import { standards, itemWeights, itemLabels, bmiScore, itemScore, gradeOf } from '../data/physical.js'
+import { useI18n } from '../i18n/index.js'
+import { setNavContext } from '../stores/navContext.js'
 
 const { t, lang } = useI18n()
 

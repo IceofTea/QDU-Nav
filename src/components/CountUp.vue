@@ -1,3 +1,4 @@
+<!-- @模块：src/components/CountUp.vue —— 数字滚动小组件 -->
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 

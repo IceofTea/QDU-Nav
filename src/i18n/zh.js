@@ -1,3 +1,7 @@
+/**
+ * @模块路径  src/i18n/zh.js
+ * @职责      中文语言包
+ */
 export default {
   site: {
     brand: 'QDU-Nav',

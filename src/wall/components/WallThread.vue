@@ -11,8 +11,8 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { ref, computed, watch } from 'vue'
-import { partOf, POINTS } from '../config'
-import { isFav, toggleFav } from '../api'
+import { partOf, POINTS } from '../config.js'
+import { isFav, toggleFav } from '../api.js'
 import WallPostCard from './WallPostCard.vue'
 
 const props = defineProps({

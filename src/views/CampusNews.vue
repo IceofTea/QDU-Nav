@@ -1,9 +1,10 @@
+<!-- @模块：src/views/CampusNews.vue —— 校园动态（教务通知） -->
 <script setup>
 import { ref, onMounted } from 'vue'
-import { apiFetch } from '../api'
-import { fallbackNotices, fallbackNews } from '../data/news'
+import { apiFetch } from '../api/index.js'
+import { fallbackNotices, fallbackNews } from '../data/news.js'
 import NoticeDetail from './NoticeDetail.vue'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/index.js'
 
 const { t, lang } = useI18n()
 

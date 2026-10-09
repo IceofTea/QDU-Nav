@@ -1,9 +1,10 @@
+<!-- @模块：src/views/ClassroomNav.vue —— 教室导航与空教室 -->
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { buildings, campusFilters, campusFiltersEn, searchRooms } from '../data/classrooms'
-import { apiFetch } from '../api/index'
-import { useI18n } from '../i18n'
-import { navCtx } from '../stores/navContext'
+import { buildings, campusFilters, campusFiltersEn, searchRooms } from '../data/classrooms.js'
+import { apiFetch } from '../api/index.js'
+import { useI18n } from '../i18n/index.js'
+import { navCtx } from '../stores/navContext.js'
 
 const { t, lang } = useI18n()
 

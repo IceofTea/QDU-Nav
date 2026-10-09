@@ -1,7 +1,8 @@
+<!-- @模块：src/views/NoticeDetail.vue —— 通知详情 -->
 <script setup>
 import { ref, onMounted } from 'vue'
-import { apiFetch } from '../api'
-import { useI18n } from '../i18n'
+import { apiFetch } from '../api/index.js'
+import { useI18n } from '../i18n/index.js'
 
 const { t, lang } = useI18n()
 

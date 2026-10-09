@@ -11,10 +11,10 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { ref, computed } from 'vue'
-import { WORKFLOWS } from '../agent/workflows'
-import { FAQ } from '../agent/faq'
-import { AGENT_PROFILE } from '../agent/config'
-import { kbStats } from '../agent/navAnswer'
+import { WORKFLOWS } from '../agent/workflows.js'
+import { FAQ } from '../agent/faq.js'
+import { AGENT_PROFILE } from '../agent/config.js'
+import { kbStats } from '../agent/navAnswer.js'
 
 const emit = defineEmits(['open'])
 

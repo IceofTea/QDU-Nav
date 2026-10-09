@@ -3,14 +3,14 @@
  *  数据来自自建计数服务（Deno Deploy + KV），纯自动化采集（访问/打开应用自动上报）。
  *  默认展示与经典版一致的柱状/条形图（含金色序号），另增「一眼看懂」洞察与折线/圆饼切换。 */
 import { ref, computed, onMounted } from 'vue'
-import { getSiteStats, EMPTY_STATS, isStaticMode } from '../api/siteStats'
-import { apps } from '../data/apps'
+import { getSiteStats, EMPTY_STATS, isStaticMode } from '../api/siteStats.js'
+import { apps } from '../data/apps.js'
 import KpiCard from '../components/KpiCard.vue'
 import LineChart from '../components/LineChart.vue'
 import PieChart from '../components/PieChart.vue'
 import BarRow from '../components/BarRow.vue'
 import InsightPanel from '../components/InsightPanel.vue'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/index.js'
 
 const { t, lang } = useI18n()
 

@@ -2,8 +2,8 @@
 /** 贡献者墙：词云式展示项目贡献者，点击跳转 GitHub 主页
  *  社区代码贡献（含已合入的 Pull Request）都会在此致谢。 */
 import { reactive } from 'vue'
-import { contributors } from '../data/contributors'
-import { useI18n } from '../i18n'
+import { contributors } from '../data/contributors.js'
+import { useI18n } from '../i18n/index.js'
 
 const { t, lang } = useI18n()
 

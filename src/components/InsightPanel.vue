@@ -4,7 +4,7 @@
  * 供数据洞察 / 贴吧舆情 复用（浅蓝底 + 分隔标题条）。
  */
 import { computed } from 'vue'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/index.js'
 const { t, lang } = useI18n()
 const props = defineProps({
   items: { type: Array, default: () => [] },

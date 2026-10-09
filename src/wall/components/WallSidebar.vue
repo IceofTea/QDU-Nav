@@ -10,8 +10,8 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { ADS, PARTS, POINTS, levelOf, nextLevel, BADGES } from '../config'
-import { getWallet, streakDays } from '../api'
+import { ADS, PARTS, POINTS, levelOf, nextLevel, BADGES } from '../config.js'
+import { getWallet, streakDays } from '../api.js'
 
 const props = defineProps({
   hotPosts: { type: Array, default: () => [] },

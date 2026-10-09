@@ -10,7 +10,7 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { ref, onMounted } from 'vue'
-import { WORKFLOWS } from '../agent/workflows'
+import { WORKFLOWS } from '../agent/workflows.js'
 
 const emit = defineEmits(['back', 'open'])
 

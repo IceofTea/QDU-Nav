@@ -40,8 +40,23 @@ function genId() {
 /**
  * 草稿结构：
  * {id, title, content, tag, type, anonymous, vote, updatedAt, createdAt,
- *  scheduledAt?: number|null（定时发布）, fromAuto?: boolean}
+ *  scheduledAt?: number|null（定时发布）, fromAuto?: boolean,
+ *  …extra（Composer 扩展字段透传：voteQ/voteOpts/bountyNeed/bountyPoints/
+ *  resTitle/resUrl/resCode/noticeOrg/author，模块不解读、只存取）}
  */
+
+/* 透传键（发帖器扩展字段，聚合页只读不写） */
+const EXTRA_KEYS = ['voteQ', 'voteOpts', 'bountyNeed', 'bountyPoints', 'resTitle', 'resUrl', 'resCode', 'noticeOrg', 'author']
+function pickExtra(draft) {
+  const out = {}
+  for (const k of EXTRA_KEYS) {
+    if (draft[k] !== undefined) {
+      const v = draft[k]
+      out[k] = typeof v === 'string' ? v.slice(0, 300) : v
+    }
+  }
+  return out
+}
 
 /** 列出有效草稿（默认先清过期；按更新倒序） */
 export function listDrafts(opt = {}) {
@@ -77,7 +92,7 @@ export function saveDraft(draft) {
   if (draft.id) {
     const i = arr.findIndex((d) => d.id === draft.id)
     if (i >= 0) {
-      arr[i] = { ...arr[i], title, content, tag: draft.tag || arr[i].tag || 'chat', type: draft.type || arr[i].type || 'normal', anonymous: !!draft.anonymous, vote: draft.vote ?? arr[i].vote ?? null, scheduledAt: draft.scheduledAt ?? arr[i].scheduledAt ?? null, updatedAt: now }
+      arr[i] = { ...arr[i], title, content, tag: draft.tag || arr[i].tag || 'chat', type: draft.type || arr[i].type || 'normal', anonymous: !!draft.anonymous, vote: draft.vote ?? arr[i].vote ?? null, scheduledAt: draft.scheduledAt ?? arr[i].scheduledAt ?? null, updatedAt: now, ...pickExtra(draft) }
       lsSet(LS_DRAFTS, arr.slice(0, MAX_DRAFTS))
       return arr[i]
     }
@@ -91,7 +106,8 @@ export function saveDraft(draft) {
     vote: draft.vote || null,
     scheduledAt: draft.scheduledAt || null,
     createdAt: now,
-    updatedAt: now
+    updatedAt: now,
+    ...pickExtra(draft)
   }
   arr.unshift(one)
   lsSet(LS_DRAFTS, arr.slice(0, MAX_DRAFTS))

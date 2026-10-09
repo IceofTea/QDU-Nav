@@ -1,3 +1,7 @@
+/**
+ * @模块路径  src/data/official.js
+ * @职责      官网聚合分组数据
+ */
 export const officialGroups = [
   {
     name: '社区与资源',

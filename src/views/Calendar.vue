@@ -1,8 +1,9 @@
+<!-- @模块：src/views/Calendar.vue —— 校历（预览+官方链接） -->
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { apiFetch } from '../api'
-import { previewTerms, defaultTermIdx } from '../data/calendarPreview'
-import { useI18n } from '../i18n'
+import { apiFetch } from '../api/index.js'
+import { previewTerms, defaultTermIdx } from '../data/calendarPreview.js'
+import { useI18n } from '../i18n/index.js'
 
 const { t, lang } = useI18n()
 const emit = defineEmits(['back'])

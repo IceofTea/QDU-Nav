@@ -11,9 +11,9 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { ref, computed, onMounted } from 'vue'
-import { JOBS, matchJobs } from '../data/jobs'
-import { upcoming, signupLocal, signedIds } from '../data/activities'
-import { readProfile } from '../agent/profile'
+import { JOBS, matchJobs } from '../data/jobs.js'
+import { upcoming, signupLocal, signedIds } from '../data/activities.js'
+import { readProfile } from '../agent/profile.js'
 
 const emit = defineEmits(['back', 'open'])
 const tab = ref('jobs') // jobs | activities

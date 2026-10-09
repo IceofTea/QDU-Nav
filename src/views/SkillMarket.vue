@@ -14,8 +14,8 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { ref, computed, onMounted } from 'vue'
-import { WORKFLOWS } from '../agent/workflows'
-import { AGENT_PROFILE } from '../agent/config'
+import { WORKFLOWS } from '../agent/workflows.js'
+import { AGENT_PROFILE } from '../agent/config.js'
 
 const emit = defineEmits(['back'])
 

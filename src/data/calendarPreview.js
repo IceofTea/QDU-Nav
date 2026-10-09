@@ -1,3 +1,7 @@
+/**
+ * @模块路径  src/data/calendarPreview.js
+ * @职责      校历预览图清单与默认学年定位
+ */
 const img = (f) => import.meta.env.BASE_URL + 'data/calendar/' + f
 
 export const previewTerms = [

@@ -1,3 +1,7 @@
+/**
+ * @模块路径  src/data/leaders.js
+ * @职责      校领导测试题库
+ */
 export const DIMS = [
   { key: 'power', label: '决策魄力', labelEn: 'Decisiveness' },
   { key: 'logic', label: '规划理性', labelEn: 'Planning' },

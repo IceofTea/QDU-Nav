@@ -5,7 +5,7 @@
  *  - 鼠标悬浮实时跟随显示「水平辅助线 + 数据点高亮 + 数值提示」
  *  props: series [{ label, color, data }], labels, height, unit, valuePrefix, maxWidth(px, 0=不限) */
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useI18n } from '../i18n'
+import { useI18n } from '../i18n/index.js'
 const { t, lang } = useI18n()
 
 const props = defineProps({

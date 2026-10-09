@@ -12,10 +12,10 @@ import { ref, onMounted } from 'vue'
 import {
   readProfile, setCollege, setGrade, setSkills, clearProfile,
   behaviorStats, inferInterests, pushList, profileSummary
-} from '../agent/profile'
-import { matchJobs } from '../data/jobs'
-import { upcoming } from '../data/activities'
-import { dueReviews } from '../utils/studyPlan'
+} from '../agent/profile.js'
+import { matchJobs } from '../data/jobs.js'
+import { upcoming } from '../data/activities.js'
+import { dueReviews } from '../utils/studyPlan.js'
 
 const emit = defineEmits(['back', 'open'])
 const college = ref('')
