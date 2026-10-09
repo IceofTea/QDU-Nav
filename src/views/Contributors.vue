@@ -75,6 +75,7 @@ function hueOf(i) {
     <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('contributors.community') }}</div>
     <ul class="changelog">
       
+      <li><b>v1.6.3</b> — 管理端线上可用：/admin 跳转垫片进包 + 云端直连模式（看帖删帖）+ console 垫片。</li>
       <li><b>v1.6.2</b> — {{ lang === 'en' ? 'Global render guard: template errors show a message box instead of a blank page.' : '全局渲染保险：模板运行时错误显式报错盒，不再静默白屏。' }}</li>
       <li><b>v1.6.1</b> — {{ lang === 'en' ? 'Smarter agent: context follow-ups, proactive greeting, typewriter replies, per-workflow chips; /admin redirect shim.' : '智能体交互升级：上下文追问、主动问候、打字机回复、专属追问 chips；/admin 跳转垫片。' }}</li>
       <li><b>v1.6.0 大版本</b> — {{ lang === 'en' ? 'National-prize push: 3 new agent workflows, profile push, jobs board, compare/flywheel/transplant/profile apps, AI comment governance.' : '冲奖大版本：找实习/活动报名/报修三工作流、画像推送、招聘板块、对比/飞轮/移植/画像五应用、AI 评论治理。' }}</li>

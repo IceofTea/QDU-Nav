@@ -59,6 +59,7 @@
 
 | 日期 | 版本 | 内容 |
 | --- | --- | --- |
+| 2026-10-08 | v1.6.3 | **管理端线上可用（patch）**。①确认 `dist/admin/index.html` 进包（此前陈旧 dist 漏包致线上 /admin 仍 404）；②管理台云端直连（看帖数/看帖删帖，内嵌 JS 双文件语法校验通过）；③`/console` 垫片；④修 bash 误伤 Contributors.vue 中文字符（回滚重来，教训：CJK 文件禁用 PS 读写）。 |
 | 2026-10-08 | v1.6.2 | **渲染保险（patch）**。main.js 全局 errorHandler + 报错盒；复盘 FJNU 白屏：App.vue 模板调用未定义的 navLabel（i18n 重构遗留），根组件挂载抛错致整站空白，已补定义并真机验证主界面/5 视图。 |
 | 2026-10-08 | v1.6.1 | **智能体交互升级（patch）**。①`agent/converse.js` 纯模块（指代消解/追问 chips/问候文案，可单测）；②engine 上下文记忆 + 强意图让路 + 专属 chips + greeting；③AgentChat 打字机 + 动态问候卡 + 全文存储；④`/admin` 跳转垫片；⑤Wiki 评论提示诚实化 + 存储失败显式警告；⑥Wiki 客服上下文追问（还有呢/那X呢）。验证：grow 44 项/build 全绿。版本纪律：今后只 bump patch。 |
 | 2026-10-08 | **v1.6.0** | **【大版本·冲奖六件套】**①三新工作流 jobHunt/activitySignup/fixReport（画像/报名/工单，30 条）；②画像 profile.js（行为记录接路由 choke 点、可解释、一键清空）+ Profile 页；③Jobs 页（示例岗诚实标注）+ Compare 对比页 + Flywheel 飞轮看板 + Transplant 移植看板；④aiMod AI 治理（摘要/争议/选题/纠错）；⑤意图 8 新增 + playbooks 3 + unit-grow 34 项。验证：build/单测 148 项/scenes 全绿。 |

@@ -116,6 +116,14 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI"
   <input id="tokenInput" type="password" placeholder="管理口令" autocomplete="off">
   <button class="btn primary" onclick="login()">进入</button>
   <div id="loginErr" class="err"></div>
+  <div class="try" style="margin-top:14px;border-top:1px dashed var(--border);padding-top:12px">
+    ☁️ <b>云端直连模式</b>（无网关时用：在数据管家配好的 Supabase 可直接沿用）<br>
+    <input id="sbUrl" placeholder="https://xxx.supabase.co" style="margin-top:8px">
+    <input id="sbKey" type="password" placeholder="anon key" style="margin-top:8px">
+    <button class="btn sm" onclick="cloudConnect()">连接云端</button>
+    <span id="cloudMsg" style="font-size:12px"></span>
+    <div style="font-size:11.5px;margin-top:6px">云端模式可：看帖数/看帖删帖；敏感词·云脑·审计·公告仍需网关。</div>
+  </div>
   <div class="try">💡 隐秘入口：本站亦可通过 <code>/console</code> 或 <code>/.g/9f3a</code> 打开；导航站首页连点 Logo 3 次、百科连点评论标题 5 次亦可跳转至此。口令连续错 5 次将锁定 1 分钟。</div>
 </div>
 
@@ -344,7 +352,7 @@ function login() {
     enter();
   }).catch(function (e) {
     var el = document.getElementById('loginErr');
-    el.textContent = e.message;
+    el.textContent = e.message + '（无网关？直接用下方☁️云端直连模式，无需口令）';
     el.style.display = 'block';
   });
 }
@@ -361,6 +369,85 @@ function enter() {
   loadLlm();
   loadAgentData();
   refreshAnnList();
+}
+
+/* ── 云端直连模式（Supabase：无网关时线上可用；配置与 Nav 数据管家同键 qdu_supabase） ── */
+var CLOUD = null;
+function cloudCfg() {
+  try {
+    var c = JSON.parse(localStorage.getItem('qdu_supabase') || 'null');
+    if (c && c.url && c.key) return { url: String(c.url).replace(/\/+$/, ''), key: c.key };
+  } catch (e) { /* noop */ }
+  return null;
+}
+function cloudApi(table, query, opts) {
+  opts = opts || {};
+  var c = CLOUD || cloudCfg();
+  if (!c) return Promise.reject(new Error('未配置 Supabase'));
+  CLOUD = c;
+  return fetch(c.url + '/rest/v1/' + table + (query || ''), {
+    method: opts.method || 'GET',
+    headers: { apikey: c.key, Authorization: 'Bearer ' + c.key, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  }).then(function (r) {
+    if (!r.ok) throw new Error(r.status === 404 ? '表不存在（先跑 supabase/schema.sql）' : 'HTTP ' + r.status);
+    if (r.status === 204) return null;
+    return r.json().catch(function () { return null; });
+  });
+}
+function cloudConnect() {
+  var u = document.getElementById('sbUrl').value.trim().replace(/\/+$/, '');
+  var k = document.getElementById('sbKey').value.trim();
+  var msg = document.getElementById('cloudMsg');
+  if (!u || !k) { msg.textContent = '请填写地址和 key'; return; }
+  msg.textContent = '连接中…';
+  try { localStorage.setItem('qdu_supabase', JSON.stringify({ url: u, key: k })); } catch (e) { /* noop */ }
+  CLOUD = { url: u, key: k };
+  cloudApi('wall_posts', '?select=id&limit=1').then(function () {
+    msg.textContent = '✅ 已连通';
+    enterCloud();
+  }).catch(function (e) {
+    msg.textContent = '❌ ' + e.message;
+  });
+}
+function enterCloud() {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('mainView').style.display = 'block';
+  toast('☁️ 云端直连模式：帖子可看可删；敏感词/云脑/审计/公告需网关');
+  refreshAllCloud();
+}
+function escH(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function refreshAllCloud() {
+  document.getElementById('stats').innerHTML =
+    '<div class="stat"><div class="v" id="cPosts">…</div><div class="l">云帖子总数</div></div>' +
+    '<div class="stat"><div class="v" id="cReplies">…</div><div class="l">云回复总数</div></div>' +
+    '<div class="stat"><div class="v warn">云端</div><div class="l">直连模式（删帖可用）</div></div>';
+  cloudApi('wall_posts', '?select=id,title,author,created_at,likes&order=created_at.desc&limit=100').then(function (posts) {
+    document.getElementById('cPosts').textContent = (posts || []).length + (posts && posts.length >= 100 ? '+' : '');
+    document.getElementById('nPosts').textContent = (posts || []).length;
+    var html = (posts || []).map(function (p) {
+      return '<div class="item"><div class="body"><div class="meta"><b>#' + p.id + '</b><span>' +
+        escH(p.title || '(无标题)') + '</span><span>' + escH(p.author || '') + '</span><span>' +
+        (p.created_at || '').slice(0, 10) + '</span><span>赞 ' + (p.likes || 0) + '</span></div></div>' +
+        '<div class="ops"><button class="btn sm danger" onclick="cloudDeletePost(' + p.id + ')">删除</button></div></div>';
+    }).join('') || '<div class="empty">云端暂无帖子</div>';
+    document.getElementById('postsList').innerHTML = html;
+    switchTab('posts');
+  }).catch(function (e) {
+    document.getElementById('postsList').innerHTML = '<div class="empty">拉取失败：' + escH(e.message) + '</div>';
+  });
+  cloudApi('wall_replies', '?select=id&limit=1000').then(function (rs) {
+    document.getElementById('cReplies').textContent = (rs || []).length + ((rs || []).length >= 1000 ? '+' : '');
+  }).catch(function () { document.getElementById('cReplies').textContent = '-'; });
+}
+function cloudDeletePost(id) {
+  if (!confirm('删除云端帖子 #' + id + '？（级联删除其回复，不可恢复）')) return;
+  cloudApi('wall_posts', '?id=eq.' + id, { method: 'DELETE', prefer: 'return=minimal' }).then(function () {
+    toast('已删除 #' + id);
+    refreshAllCloud();
+  }).catch(function (e) { toast('删除失败：' + e.message, true); });
 }
 
 /* ── 概览与仪表盘 ── */
@@ -860,6 +947,15 @@ function switchTab(t) {
   if (TOKEN) enter();
 })();
 document.getElementById('tokenInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') login(); });
+// 云端配置回填（数据管家页配过则自动带出）
+try {
+  var _cc = JSON.parse(localStorage.getItem('qdu_supabase') || 'null');
+  if (_cc && _cc.url) {
+    document.getElementById('sbUrl').value = _cc.url;
+    if (_cc.key) document.getElementById('sbKey').value = _cc.key;
+    document.getElementById('cloudMsg').textContent = '检测到数据管家已配云端，可直接连接';
+  }
+} catch (e) { /* noop */ }
 setInterval(function () { if (TOKEN && document.getElementById('mainView').style.display !== 'none') refreshAll(); }, 20000);
 </script>
 </body>
