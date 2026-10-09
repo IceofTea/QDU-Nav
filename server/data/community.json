@@ -178,6 +178,26 @@
   ],
   "audit": [
     {
+      "ts": 1791516522209,
+      "action": "comments:delete",
+      "detail": "场景包评论"
+    },
+    {
+      "ts": 1791516522200,
+      "action": "posts:delete",
+      "detail": "选一个"
+    },
+    {
+      "ts": 1791516522195,
+      "action": "posts:delete",
+      "detail": "E2E 场景包自动发帖，稍后清理"
+    },
+    {
+      "ts": 1791516522149,
+      "action": "login",
+      "detail": "管理台登录成功"
+    },
+    {
       "ts": 1791514870837,
       "action": "comments:delete",
       "detail": "场景包评论"
@@ -498,6 +518,7 @@
     "127.0.0.1|muzlkcmlx0x26d": true,
     "127.0.0.1|mv0891czgdmrwd": true,
     "127.0.0.1|mv0a1944l6z18n": true,
-    "127.0.0.1|mv0dp59lv19gdb": true
+    "127.0.0.1|mv0dp59lv19gdb": true,
+    "127.0.0.1|mv0eojginl0neq": true
   }
 }

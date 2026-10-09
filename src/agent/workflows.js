@@ -1320,7 +1320,8 @@ export const WORKFLOWS = {
             online = r.ok
           } catch { /* 本机模式 */ }
           if (!online) {
-            const arr = JSON.parse(localStorage.getItem('qdu_fix_orders') || '[]')
+            let arr = []
+            try { arr = JSON.parse(localStorage.getItem('qdu_fix_orders') || '[]') } catch { arr = [] }
             arr.unshift({ thing: ctx.state.thing, place: ctx.state.place, ts: Date.now(), status: 'local' })
             try { localStorage.setItem('qdu_fix_orders', JSON.stringify(arr.slice(0, 50))) } catch { /* noop */ }
           }

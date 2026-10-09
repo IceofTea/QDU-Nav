@@ -107,6 +107,28 @@ export function describeMode() {
 }
 
 /**
+ * 校验管理口令（暗门用）：成功 true；口令错/无网关/超时一律 false，
+ * 且调用方必须静默（不提示），避免向普通用户证实入口存在
+ */
+export async function verifyAdminToken(t) {
+  try {
+    const token = String(t || '').trim()
+    if (!token) return false
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 6000)
+    const r = await fetch(apiUrl('/api/admin/login'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+      signal: ctrl.signal
+    })
+    clearTimeout(timer)
+    const d = await r.json().catch(() => ({}))
+    return !!(r.ok && (d.token || d.ok))
+  } catch { return false }
+}
+
+/**
  * 管理台地址（子路径部署安全：?api= 指向网关 /admin；否则同站 admin.html；
  * 旧代码 window.open('/admin') 在 Pages 下会跳到域名根导致 404，禁止再用）
  */

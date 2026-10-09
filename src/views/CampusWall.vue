@@ -152,7 +152,7 @@ function saveLocalPost() {
     const posts = JSON.parse(localStorage.getItem('wall_posts_v1') || '[]')
     const i = posts.findIndex((x) => x.id === detailPost.value.id)
     if (i >= 0) { posts[i] = detailPost.value; localStorage.setItem('wall_posts_v1', JSON.stringify(posts)); showToast('本机帖已保存 ✓') }
-    else showToast('网关帖修改需管理员在管理台操作')
+    else showToast('网关帖修改需管理员处理（可在墙内举报说明情况）')
   } catch { showToast('保存失败', true) }
 }
 
@@ -211,7 +211,7 @@ async function loadWords() {
     <!-- 状态条 -->
     <div class="cw-status" :class="offline ? 'off' : 'on'">
       {{ offline ? '🟡 本机模式：帖子/积分仅本机保存 · 启动社区网关（node server/index.mjs）后自动并轨全员共享'
-                 : '🟢 社区网关已连接 · 20 秒准实时 · 敏感词双端校验 · 管理台实时审核' }}
+                 : '🟢 社区已连接 · 准实时同步 · 敏感词双端校验 · 内容实时审核' }}
       <span v-if="keyword && filtered.length !== posts.length" class="cw-searchhint">搜索「{{ keyword }}」命中 {{ filtered.length }} 条</span>
     </div>
 

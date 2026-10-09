@@ -1,6 +1,6 @@
 <!-- @模块：src/App.vue —— 应用根组件组装（欢迎/顶栏/主视图/页脚/底部导航） -->
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import Welcome from './views/Welcome.vue'
 import TourOverlay from './components/TourOverlay.vue'
 import ChatDock from './components/agent/ChatDock.vue'
@@ -11,7 +11,7 @@ import { fetchLikes, toggleLike, likedByMe } from './utils/like.js'
 import { useI18n } from './i18n/index.js'
 import { useTour } from './utils/useTour.js'
 import { getTourSteps } from './data/tourSteps.js'
-import { adminUrl } from './wall/apiBase.js'
+import { adminUrl, verifyAdminToken } from './wall/apiBase.js'
 
 const { t, lang, toggleLang } = useI18n()
 const { startTour, isTourCompleted, isActive } = useTour()
@@ -87,7 +87,14 @@ async function tapLike(appId) {
 
 const notices = ref([])
 const noticeOpen = ref(false)
-const noticeRead = ref(new Set(JSON.parse(localStorage.getItem('qdu_notice_read') || '[]')))
+/** 本机 JSON 安全读（corrupt 数据回退默认值，绝不在 setup 顶层抛错） */
+function lsJson(key, fallback) {
+  try {
+    const v = JSON.parse(localStorage.getItem(key) || 'null')
+    return v == null ? fallback : v
+  } catch { return fallback }
+}
+const noticeRead = ref(new Set(lsJson('qdu_notice_read', [])))
 const unreadCount = computed(() => notices.value.filter((n) => !noticeRead.value.has(String(n.id))).length)
 async function loadNotices() {
   try {
@@ -114,10 +121,13 @@ function secretPortal() {
   if (logoTaps >= 3) {
     logoTaps = 0
     const t = prompt('🛰️ 社区控制台\n请输入管理口令：')
-    if (t) {
+    if (!t) return
+    // 先验后开：口令错/无网关一律静默，不向普通用户证实入口存在
+    verifyAdminToken(t).then((ok) => {
+      if (!ok) return
       try { localStorage.setItem('pending_admin_token', t) } catch { /* noop */ }
       window.open(adminUrl(), '_blank', 'noopener')
-    }
+    })
   }
 }
 
@@ -133,11 +143,13 @@ function disableMourning() { mourning.value = false; mourningCause.value = ''; d
 onMounted(() => {
   const inMemorial = () => { const n = new Date(); return n.getMonth() === 11 && n.getDate() === 13 }
   if (inMemorial()) enableMourning('memorial')
-  setInterval(() => { if (inMemorial()) enableMourning('memorial'); else if (mourningCause.value === 'memorial') disableMourning() }, 60000)
+  mourningTimer = setInterval(() => { if (inMemorial()) enableMourning('memorial'); else if (mourningCause.value === 'memorial') disableMourning() }, 60000)
   fetch(import.meta.env.BASE_URL + 'mourning').then((r) => { if (r.ok && !(r.headers.get('content-type') || '').includes('text/html')) enableMourning('manual') }).catch(() => {})
   initLikes()
   loadNotices()
 })
+let mourningTimer = null
+onBeforeUnmount(() => { if (mourningTimer) clearInterval(mourningTimer) })
 </script>
 
 <template>
