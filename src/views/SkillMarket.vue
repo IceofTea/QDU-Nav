@@ -36,6 +36,7 @@ const CAT_MAP = {
   addSchedule: 'life', mySchedule: 'life', dailyBriefing: 'life', signIn: 'life', myPoints: 'life',
   wallPost: 'comm', wallView: 'comm', wallSearch: 'comm', lostFound: 'comm', bountyPost: 'comm',
   resourceShare: 'comm', reportFeedback: 'comm',
+  jobHunt: 'life', activitySignup: 'life', fixReport: 'life',
   agentBoard: 'sys', setClass: 'sys'
 }
 
@@ -89,6 +90,20 @@ const stats = computed(() => ({
   favs: Object.values(favs.value).filter(Boolean).length
 }))
 
+/* ── 数据看板：分域用量 + TOP5 + 未探索推荐（全本机计数，不编数） ── */
+const board = computed(() => {
+  const cats = CATS.filter((c) => c.id !== 'all').map((c) => {
+    const ids = Object.keys(WORKFLOWS).filter((id) => (CAT_MAP[id] || 'sys') === c.id)
+    return { ...c, total: ids.length, runs: ids.reduce((a, id) => a + (usage.value[id] || 0), 0) }
+  })
+  const maxRuns = Math.max(1, ...cats.map((c) => c.runs))
+  const top = Object.entries(usage.value).sort((a, b) => b[1] - a[1]).slice(0, 5)
+    .map(([id, n]) => ({ id, n, title: (WORKFLOWS[id] && WORKFLOWS[id].title) || id }))
+  const fresh = Object.keys(WORKFLOWS).filter((id) => !usage.value[id]).slice(0, 3)
+    .map((id) => ({ id, title: WORKFLOWS[id].title }))
+  return { cats, maxRuns, top, fresh }
+})
+
 /** 立即使用：写入智能体收件箱并跳转（与首页对话框同一协议） */
 function run(w) {
   bumpUsage(w.id)
@@ -104,8 +119,23 @@ onMounted(loadLocal)
   <div class="sm">
     <div class="sm-head">
       <button class="sm-back" @click="emit('back')">‹ 返回</button>
-      <div class="sm-title">🧩 技能市场 <span class="sm-sub">27 条工作流 · 分类直达 · 使用统计个性化排序</span></div>
+      <div class="sm-title">🧩 技能市场 <span class="sm-sub">{{ stats.total }} 条工作流 · 分类直达 · 使用统计个性化排序</span></div>
       <span class="sm-stat">已用 {{ stats.used }}/{{ stats.total }} · 累计执行 {{ stats.runs }} 次 · 收藏 {{ stats.favs }}</span>
+    </div>
+
+    <!-- 数据看板 -->
+    <div class="sm-board">
+      <div class="sm-bcats">
+        <div v-for="c in board.cats" :key="c.id" class="sm-bcat" @click="cat = c.id">
+          <span>{{ c.icon }} {{ c.name }} {{ c.total }}</span>
+          <div class="sm-bbar"><i :style="{ width: Math.round((c.runs / board.maxRuns) * 100) + '%' }"></i></div>
+          <em>{{ c.runs }} 次</em>
+        </div>
+      </div>
+      <div v-if="board.top.length" class="sm-btop">🔥 TOP：<span v-for="t in board.top" :key="t.id">{{ t.title }}×{{ t.n }}</span></div>
+      <div v-if="board.fresh.length" class="sm-bfresh">✨ 未探索：
+        <button v-for="f in board.fresh" :key="f.id" @click="run({ id: f.id, title: f.title })">{{ f.title }}</button>
+      </div>
     </div>
 
     <!-- 工具栏 -->
@@ -245,4 +275,15 @@ onMounted(loadLocal)
 .sm-trigger b { color: var(--primary, #1b66c9); }
 .sm-modal-foot { display: flex; gap: 10px; padding: 12px 20px 18px; }
 .sm-modal-foot .sm-run { flex: 1; }
+.sm-board { border: 1px solid var(--border, #e5eaf2); border-radius: 12px; padding: 10px 12px; background: var(--bg, #f7f9fc); display: flex; flex-direction: column; gap: 8px; }
+.sm-bcats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.sm-bcat { background: var(--card, #fff); border-radius: 8px; padding: 6px 8px; font-size: 12px; cursor: pointer; }
+.sm-bcat span { font-weight: 700; }
+.sm-bbar { height: 6px; background: #eee; border-radius: 999px; overflow: hidden; margin: 4px 0 2px; }
+.sm-bbar i { display: block; height: 100%; background: linear-gradient(90deg, #1b66c9, #93c5fd); }
+.sm-bcat em { font-style: normal; color: var(--muted, #8a94a6); font-size: 11px; }
+.sm-btop { font-size: 12px; color: var(--text, #24292f); }
+.sm-btop span { background: #fef3c7; border-radius: 8px; padding: 0 8px; margin-left: 4px; }
+.sm-bfresh { font-size: 12px; color: var(--text, #24292f); }
+.sm-bfresh button { border: 1px solid #dbeafe; background: #eff6ff; color: #1b66c9; border-radius: 12px; padding: 2px 10px; margin-left: 4px; cursor: pointer; }
 </style>

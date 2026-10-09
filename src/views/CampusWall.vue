@@ -18,10 +18,11 @@ import {
   reactPost, searchPosts, getWallet, signInToday, signedToday, streakDays,
   hotTopics, hasVotedLocal, viewPost, favCount
 } from '../wall/api.js'
+import { apiUrl } from '../wall/apiBase.js'
 import WallPostCard from '../wall/components/WallPostCard.vue'
 import WallComposer from '../wall/components/WallComposer.vue'
 import WallSidebar from '../wall/components/WallSidebar.vue'
-import WallThread from '../wall/components/WallThread.vue'
+import WallDetailDrawer from '../wall/components/WallDetailDrawer.vue'
 
 const emit = defineEmits(['back'])
 
@@ -186,7 +187,7 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer); if (es) es.close() })
 
 async function loadWords() {
   try {
-    const r = await fetch('/api/moderation/words')
+    const r = await fetch(apiUrl('/api/moderation/words'))
     const d = await r.json()
     words.value = d.words || []
   } catch { words.value = [] }
@@ -236,9 +237,9 @@ async function loadWords() {
     <!-- 主体：feed + 侧栏 -->
     <div class="cw-grid">
       <section class="cw-feed">
-        <!-- 详情模式 -->
-        <WallThread v-if="detailPost" :post="detailPost" :offline="offline" :words="words"
-          @back="detailId = null" @reply="onReplyInThread" @adopt="onAdopt"
+        <!-- 详情抽屉（feed 保持挂载，返回不断位） -->
+        <WallDetailDrawer v-if="detailPost" :post="detailPost" :offline="offline" :words="words"
+          @close="detailId = null" @back="detailId = null" @reply="onReplyInThread" @adopt="onAdopt"
           @report="onReport" @like="onLike" @react="onReact" @vote="onVote" @edit-local="saveLocalPost" />
 
         <!-- 列表模式 -->
