@@ -14,6 +14,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useImStore } from '../im/store.js'
 import { loadPosts } from '../wall/api.js'
+import RichEditor from '../wall/components/RichEditor.vue'
 
 const emit = defineEmits(['back'])
 const store = useImStore()
@@ -67,6 +68,7 @@ function onInput() {
     if (store.active.value) store.saveDraftOf(store.active.value, input.value)
   }, 800)
 }
+const posts = ref([])
 async function send() {
   const t = input.value.trim()
   if (!t || !store.active.value) return
@@ -92,6 +94,7 @@ async function refreshAll() {
   // 联系人推荐：拉墙作者池（失败则隐藏推荐区，不挡主流程）
   try {
     const r = await loadPosts({ sort: 'new' })
+    posts.value = r.posts || []
     contacts.value = store.contacts(r.posts, 8)
   } catch { contacts.value = [] }
 }
@@ -178,13 +181,13 @@ onBeforeUnmount(() => {
             </div>
           </div>
           <div class="chat-send">
-            <button @click="showEmoji = !showEmoji">😊</button>
-            <input
-              v-model="input" placeholder="输入消息（Enter 发送）"
-              maxlength="1000" @input="onInput"
-              @keyup.enter="send"
+            <RichEditor
+              v-model="input"
+              :posts="posts"
+              :show-suggest="false"
+              @submit="(p) => send(p.content)"
+              @mention="(n) => { input = '@' + n + ' ' + input }"
             />
-            <button class="primary" @click="send">发送</button>
           </div>
           <div v-if="showEmoji" class="emoji-row">
             <button v-for="e in EMOJIS" :key="e" @click="addEmoji(e)">{{ e }}</button>

@@ -164,7 +164,7 @@ export async function likePost(id) {
   }
 }
 
-export async function replyPost(id, content, author) {
+export async function replyPost(id, content, author, parent = null) {
   if (cloudEnabled() && String(id || '').startsWith('C')) {
     try {
       const reply = await cloudReply(Number(String(id).slice(1)), content, author)
@@ -175,7 +175,7 @@ export async function replyPost(id, content, author) {
     }
   }
   try {
-    const d = await http('/api/wall/reply', { method: 'POST', body: { id, content, author } })
+    const d = await http('/api/wall/reply', { method: 'POST', body: { id, content, author, parent: parent || undefined } })
     addPoints(POINTS.reply)
     return { reply: d.reply, offline: false }
   } catch (e) {
@@ -183,7 +183,7 @@ export async function replyPost(id, content, author) {
     const posts = lsGet(LS_POSTS, [])
     const p = posts.find((x) => x.id === id)
     if (!p) throw new Error('帖子不存在（本机模式仅保存你自己的帖）')
-    const reply = { id: genId(), author: author || '匿名同学', content, ts: now(), likes: 0, floor: (p.replies.length + 1) }
+    const reply = { id: genId(), author: author || '匿名同学', content, ts: now(), likes: 0, floor: (p.replies.length + 1), parent: parent || null }
     p.replies.push(reply)
     lsSet(LS_POSTS, posts)
     addPoints(POINTS.reply)

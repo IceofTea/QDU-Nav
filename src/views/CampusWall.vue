@@ -20,6 +20,7 @@ import {
 } from '../wall/api.js'
 import { apiUrl } from '../wall/apiBase.js'
 import { searchAdvanced } from '../wall/search.js'
+import { listDrafts, deleteDraft } from '../wall/drafts.js'
 import WallPostCard from '../wall/components/WallPostCard.vue'
 import WallComposer from '../wall/components/WallComposer.vue'
 import WallSidebar from '../wall/components/WallSidebar.vue'
@@ -35,6 +36,32 @@ const posts = ref([])
 const offline = ref(false)
 const loading = ref(true)
 const composerOpen = ref(false)
+const composer = ref(null)
+
+/* ── 草稿箱（读 drafts.js 多草稿；继续编辑经 Composer 对外接口回填） ── */
+const draftBoxOpen = ref(false)
+const draftList = ref([])
+function refreshDrafts() {
+  try { draftList.value = listDrafts() } catch { draftList.value = [] }
+}
+function toggleDraftBox() {
+  draftBoxOpen.value = !draftBoxOpen.value
+  if (draftBoxOpen.value) refreshDrafts()
+}
+function fmtDraftTime(ts) {
+  if (!ts) return ''
+  const d = new Date(ts)
+  return (d.getMonth() + 1) + '-' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
+}
+function continueDraft(d) {
+  try { composer.value && composer.value.loadDraft && composer.value.loadDraft(d) } catch { /* 旧版 Composer 无接口 */ }
+  composerOpen.value = true
+  draftBoxOpen.value = false
+}
+function removeDraft(id) {
+  try { deleteDraft(id) } catch { /* noop */ }
+  refreshDrafts()
+}
 const busy = ref(false)
 const toast = ref('')
 const toastErr = ref(false)
@@ -129,10 +156,10 @@ async function onReport(p) {
   showToast(ok ? '已收到举报，管理员将尽快处理 ✓' : '举报失败：网关未连接', !ok)
 }
 
-async function onReplyInThread(content, author) {
+async function onReplyInThread(content, author, parent = null) {
   if (!detailPost.value) return
   try {
-    await replyPost(detailPost.value.id, content, author)
+    await replyPost(detailPost.value.id, content, author, parent)
     showToast('回复成功 ✓')
     wallet.value = getWallet()
     await refresh()
@@ -211,6 +238,18 @@ async function loadWords() {
       </div>
       <input v-model="keyword" class="cw-search" placeholder="搜帖子、话题、关键词…" />
       <button class="cw-post" @click="composerOpen = !composerOpen">{{ composerOpen ? '收起' : '✏️ 发帖' }}</button>
+      <button class="cw-post" @click="toggleDraftBox">🗂️ 草稿{{ draftList.length ? '(' + draftList.length + ')' : '' }}</button>
+    </div>
+
+    <!-- 草稿箱（多草稿统一管理：继续编辑/删除/定时状态） -->
+    <div v-if="draftBoxOpen" class="cw-drafts">
+      <div v-if="!draftList.length" class="cw-empty">草稿箱是空的——发帖框里写字会自动存草稿</div>
+      <div v-for="d in draftList" :key="d.id" class="cw-draft">
+        <div class="cw-draft-t">{{ d.title || (d.content || '').slice(0, 18) || '(空)' }}</div>
+        <span class="cw-draft-m">{{ fmtDraftTime(d.updatedAt) }}{{ d.scheduledAt ? ' · ⏰' + fmtDraftTime(d.scheduledAt) : '' }}</span>
+        <button @click="continueDraft(d)">继续编辑</button>
+        <button @click="removeDraft(d.id)">删除</button>
+      </div>
     </div>
 
     <!-- 状态条 -->
@@ -298,6 +337,11 @@ async function loadWords() {
 .cw-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
 .cw-tab { border: 1px solid var(--border, #e5eaf2); background: var(--card, #fff); color: var(--muted, #8a94a6); font-size: 12.5px; padding: 5px 13px; border-radius: 999px; cursor: pointer; font-family: inherit; }
 .cw-tab.on { background: var(--primary, #1b66c9); border-color: var(--primary, #1b66c9); color: #fff; font-weight: 600; }
+.cw-drafts { border: 1px solid var(--border, #e5eaf2); border-radius: 12px; padding: 10px 12px; background: var(--bg, #f7f9fc); margin: 8px 0; display: flex; flex-direction: column; gap: 6px; }
+.cw-draft { display: flex; gap: 10px; align-items: center; font-size: 13px; flex-wrap: wrap; }
+.cw-draft-t { font-weight: 700; flex: 1; min-width: 120px; }
+.cw-draft-m { font-size: 11.5px; color: var(--muted, #8a94a6); }
+.cw-draft button { border: 1px solid var(--border, #e5eaf2); background: var(--card, #fff); border-radius: 10px; padding: 2px 10px; cursor: pointer; font-size: 12px; font-family: inherit; }
 
 .cw-sorts { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 .cw-sort { border: 1px solid var(--border, #e5eaf2); background: var(--card, #fff); color: var(--muted, #8a94a6); font-size: 12.5px; padding: 5px 14px; border-radius: 999px; cursor: pointer; font-family: inherit; }

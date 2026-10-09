@@ -38,10 +38,18 @@ const viewMap = new Map(viewIds.map((m) => [m[1], m[2]]))
 const missingViews = appIds.filter((id) => !viewMap.has(id))
 ok('apps.js id 全部在 router 登记', missingViews.length === 0, '缺失:' + missingViews.join(','))
 const orphanViews = [...viewMap.keys()].filter((id) => !appIds.includes(id) && id !== 'home')
-// 例外：categories 只由首页“查看全部分类”进入（有意不在应用网格重复占位）
 const ORPHAN_OK = new Set(['categories'])
 const badOrphans = orphanViews.filter((id) => !ORPHAN_OK.has(id))
 ok('router 无孤儿视图（无入口）', badOrphans.length === 0, '孤儿:' + badOrphans.join(','))
+// i18n 注册表完整（中英同构；缺词前台回落中文，不断英文模式）
+const missingEn = [...appsSrc.matchAll(/\{ id: '(\w+)',[^}]*?\}/g)]
+  .map((m) => m[0])
+  .filter((entry, i) => {
+    const id = (entry.match(/id: '(\w+)'/) || [])[1]
+    return !(entry.includes('titleEn') && entry.includes('descEn') && entry.includes('groupEn')) ? id : null
+  })
+  .filter(Boolean)
+ok('应用注册表英文字段齐全', missingEn.length === 0, '缺EN:' + missingEn.join(','))
 // 视图文件存在
 const missingFiles = [...viewMap.values()].filter((v) => !fs.existsSync(path.join(SRC, 'views', v + '.vue')))
 ok('登记视图文件全部存在', missingFiles.length === 0, '缺文件:' + missingFiles.join(','))

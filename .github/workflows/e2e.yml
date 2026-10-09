@@ -1,0 +1,26 @@
+name: e2e-browser
+# 真机 E2E（与部署解耦）：手动 / 每日定时跑，不阻塞 Pages 发布
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 0 * * *'
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm i -D playwright --no-save
+      - run: npx playwright install chromium --with-deps
+      - run: npm run build
+      - name: Start gateway + run E2E
+        run: |
+          node server/index.mjs & echo $! > /tmp/gw.pid
+          for i in $(seq 1 30); do curl -sf http://localhost:${PORT:-8787}/api/health && break; sleep 2; done
+          E2E_BASE=http://localhost:${PORT:-8787} node scripts/e2e-browser.mjs
+          kill $(cat /tmp/gw.pid) || true

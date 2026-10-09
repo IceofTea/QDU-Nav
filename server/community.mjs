@@ -355,10 +355,21 @@ async function handleWall(req, urlPath, searchParams, ip) {
     let body = {}
     try { body = JSON.parse((await readBody(req)) || '{}') } catch { return { status: 400, body: { ok: false } } }
     const p = data.posts.find((x) => x.id === body.id)
-    if (!p) return { status: 404, body: { ok: false, error: 'not found' } }
-    p.likes = (p.likes || 0) + 1
-    persist()
-    return { status: 200, body: { ok: true, likes: p.likes } }
+    if (p) {
+      p.likes = (p.likes || 0) + 1
+      persist()
+      return { status: 200, body: { ok: true, likes: p.likes } }
+    }
+    // 楼中楼回复点赞（树形视图/评论树用；主帖找不到时继续找回复）
+    for (const post of data.posts) {
+      const r = (post.replies || []).find((x) => x.id === body.id)
+      if (r) {
+        r.likes = (r.likes || 0) + 1
+        persist()
+        return { status: 200, body: { ok: true, likes: r.likes } }
+      }
+    }
+    return { status: 404, body: { ok: false, error: 'not found' } }
   }
 
   if (action === 'view') {

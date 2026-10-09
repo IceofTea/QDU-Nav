@@ -170,7 +170,7 @@ function reset() {
 }
 watch([title, content, voteQ], () => { if (title.value || content.value || voteQ.value) saveDraft() })
 onMounted(restoreDraft)
-defineExpose({ reset })
+defineExpose({ reset, loadDraft: applyDraft })
 </script>
 
 <template>
