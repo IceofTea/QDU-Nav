@@ -258,16 +258,54 @@ ok('PUBLIC_API_DEFAULT 为空（部署后填）', () => {
 
 console.log('── wall.cloud ──')
 const cloud = await import('../src/wall/cloud.js')
-await okAsync('未配置关闭且抛错', async () => {
-  localStorage.removeItem('qdu_supabase')
+await okAsync('显式关闭后抛错', async () => {
+  cloud.setCloud('', '')
   assert.equal(cloud.cloudEnabled(), false)
   await assert.rejects(cloud.cloudList(), /未配置/)
+  localStorage.removeItem('qdu_supabase') // 回到仓库缺省
+})
+ok('仓库缺省即启用（开箱共享）', () => {
+  assert.equal(cloud.cloudEnabled(), true)
+  assert.ok(cloud.getCloud().url.includes('supabase.co'))
 })
 ok('setCloud/getCloud 闭环', () => {
   cloud.setCloud('https://xxx.supabase.co/', 'anon-key')
   const c = cloud.getCloud()
   assert.equal(c.url, 'https://xxx.supabase.co')
   assert.equal(cloud.cloudEnabled(), true)
+})
+await okAsync('loadPosts 云网并集（不断存量）', async () => {
+  const realFetch = globalThis.fetch
+  globalThis.fetch = async (url) => {
+    const u = String(url)
+    if (u.includes('/rest/v1/')) {
+      if (u.includes('wall_replies')) return { ok: true, status: 200, json: async () => [] }
+      return { ok: true, status: 200, json: async () => [{ id: 1, title: '云帖', content: 'c', tag: 'chat', ptype: 'normal', author: '甲', anonymous: false, vote: null, bounty: null, resource: null, likes: 0, views: 0, reactions: {}, created_at: new Date().toISOString() }] }
+    }
+    if (u.includes('/api/wall')) return { ok: true, status: 200, json: async () => ({ posts: [{ id: 'L9', title: '存量帖', content: 'l', tag: 'chat', ts: Date.now(), likes: 0, replies: [] }] }) }
+    return { ok: false, status: 404, json: async () => ({}) }
+  }
+  try {
+    const wall = await import('../src/wall/api.js')
+    const r = await wall.loadPosts({ sort: 'new' })
+    assert.ok(r.posts.some((p) => p.id === 'C1'), '缺云帖')
+    assert.ok(r.posts.some((p) => p.id === 'L9'), '存量帖被吞')
+    assert.equal(r.cloud, true)
+  } finally { globalThis.fetch = realFetch }
+})
+await okAsync('loadPosts 云挂只走存量', async () => {
+  const realFetch = globalThis.fetch
+  globalThis.fetch = async (url) => {
+    if (String(url).includes('/rest/v1/')) throw new Error('cloud down')
+    if (String(url).includes('/api/wall')) return { ok: true, status: 200, json: async () => ({ posts: [{ id: 'L9', title: '存量', content: '', tag: 'chat', ts: 1, likes: 0, replies: [] }] }) }
+    return { ok: false, status: 404, json: async () => ({}) }
+  }
+  try {
+    const wall = await import('../src/wall/api.js')
+    const r = await wall.loadPosts({ sort: 'new' })
+    assert.ok(r.posts.some((p) => p.id === 'L9'))
+    assert.ok(!r.cloud)
+  } finally { globalThis.fetch = realFetch }
 })
 await okAsync('mock 行映射：帖子+回复+id 前缀 C', async () => {
   const realFetch = globalThis.fetch

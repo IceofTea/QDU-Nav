@@ -53,18 +53,35 @@ function now() { return Date.now() }
 
 /* ──────────────────────── 帖子读写 ──────────────────────── */
 
-/** 拉取帖子列表（tag 过滤 + 排序 hot|new|top） */
+/**
+ * 拉取帖子列表（tag 过滤 + 排序 hot|new|top）
+ * 三轨并集：公有云（全员共享）+ 网关/本机（历史存量），id 天然不重复
+ * （云帖 C 前缀），展示排序统一走现有逻辑；云失败自动只走存量轨
+ */
 export async function loadPosts({ tag = 'all', sort = 'hot' } = {}) {
-  // 第一轨：公有云（配好即全员共享；失败自动往下掉）
   if (cloudEnabled()) {
     try {
-      let posts = await cloudList({ tag, limit: 100 })
-      if (sort === 'top') posts = posts.filter((p) => p.status === 'top' || p.best)
-      if (sort === 'hot') posts = posts.slice().sort((a, b) => hotScore(b) - hotScore(a))
-      if (sort === 'new') posts = posts.slice().sort((a, b) => b.ts - a.ts)
-      return { posts, offline: false, cloud: true }
-    } catch { /* 掉到网关轨 */ }
+      const [cloudPosts, base] = await Promise.all([
+        cloudList({ tag, limit: 100 }),
+        loadBase({ tag, sort: 'new' })
+      ])
+      const seen = new Set()
+      const merged = []
+      for (const p of [...cloudPosts, ...base.posts]) {
+        if (!p || seen.has(p.id)) continue
+        seen.add(p.id)
+        merged.push(p)
+      }
+      if (sort === 'top') return { posts: merged.filter((p) => p.status === 'top' || p.best), offline: base.offline, cloud: true }
+      if (sort === 'hot') return { posts: merged.sort((a, b) => hotScore(b) - hotScore(a)), offline: base.offline, cloud: true }
+      return { posts: merged.sort((a, b) => b.ts - a.ts), offline: base.offline, cloud: true }
+    } catch { /* 掉到存量轨 */ }
   }
+  return loadBase({ tag, sort })
+}
+
+/** 存量轨：网关优先 → 本机兜底（原 loadPosts 本体下沉） */
+async function loadBase({ tag = 'all', sort = 'hot' } = {}) {
   try {
     const q = new URLSearchParams()
     if (tag && tag !== 'all') q.set('tag', tag)

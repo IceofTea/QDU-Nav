@@ -15,16 +15,23 @@
  * ════════════════════════════════════════════════════════════════════
  */
 
-export const CLOUD_VERSION = '1.0.0'
+export const CLOUD_VERSION = '1.1.0'
 
-const LS_KEY = 'qdu_supabase' // {url, key}
+const LS_KEY = 'qdu_supabase' // {url, key} | {off:true}（数据管家关闭用）
 
-/** 读配置（缺任一项即视为关闭） */
+/** 公网缺省配置（仓库内置：开箱即全员共享；数据管家可覆盖，清空即关闭） */
+export const CLOUD_DEFAULT = {
+  url: 'https://ixbodzfubgluzjrqawuw.supabase.co',
+  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4Ym9kemZ1YmdsdXpqcnFhd3V3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE1MDI0NTAsImV4cCI6MjEwNzA3ODQ1MH0.tfHyDfXTTFVeP7F8U0MGgYVyVqGO-NRUu_sn5iGE7M4'
+}
+
+/** 读配置（缺任一项即视为关闭）：localStorage > meta > 仓库缺省 */
 export function getCloud() {
   try {
     const raw = localStorage.getItem(LS_KEY)
     if (raw) {
       const c = JSON.parse(raw)
+      if (c && c.off) return null // 用户在数据管家清空 = 明确关闭
       if (c && c.url && c.key) return { url: String(c.url).replace(/\/+$/, ''), key: String(c.key) }
     }
   } catch { /* noop */ }
@@ -35,19 +42,19 @@ export function getCloud() {
       return { url: mu.content.replace(/\/+$/, ''), key: mk.content }
     }
   } catch { /* noop */ }
-  return null
+  return { ...CLOUD_DEFAULT }
 }
 /** 是否启用（调用方热路径只调它，localStorage 同步读无开销问题） */
 export function cloudEnabled() {
   return !!getCloud()
 }
-/** 保存/清除（数据管家页调用） */
+/** 保存/清除（数据管家页调用；清空两格 = 明确关闭，不再回落缺省） */
 export function setCloud(url, key) {
   const u = String(url || '').trim().replace(/\/+$/, '')
   const k = String(key || '').trim()
   try {
     if (u && k) localStorage.setItem(LS_KEY, JSON.stringify({ url: u, key: k }))
-    else localStorage.removeItem(LS_KEY)
+    else localStorage.setItem(LS_KEY, JSON.stringify({ off: true }))
   } catch { /* noop */ }
   return !!(u && k)
 }
