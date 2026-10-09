@@ -9,39 +9,16 @@
  */
 import assert from 'node:assert/strict'
 
-/* node 侧 localStorage mock（im/api + studyPlan 用） */
-if (typeof localStorage === 'undefined') {
-  const store = new Map()
-  globalThis.localStorage = {
-    getItem: (k) => (store.has(k) ? store.get(k) : null),
-    setItem: (k, v) => store.set(k, String(v)),
-    removeItem: (k) => store.delete(k)
-  }
-}
+import { installStorage, createKit } from './harness.mjs'
+
+/* 脚手架（mock + 计数器统一来源，见 harness.mjs） */
+installStorage()
+const { ok, okAsync, done } = createKit()
 
 const im = await import('../src/im/api.js')
 const stats = await import('../src/wall/stats.js')
 const study = await import('../src/utils/studyPlan.js')
 const apiBase = await import('../src/wall/apiBase.js')
-
-let pass = 0
-let fail = 0
-function ok(name, fn) {
-  try {
-    const r = fn()
-    if (r && typeof r.then === 'function') {
-      fail++
-      console.log('  FAIL  ' + name + ' → async 函数必须用 okAsync（框架防呆）')
-      r.catch(() => {})
-      return
-    }
-    pass++; console.log('  PASS  ' + name)
-  } catch (e) { fail++; console.log('  FAIL  ' + name + ' → ' + e.message) }
-}
-async function okAsync(name, fn) {
-  try { await fn(); pass++; console.log('  PASS  ' + name) }
-  catch (e) { fail++; console.log('  FAIL  ' + name + ' → ' + e.message) }
-}
 
 const POSTS = [
   { id: 'p1', title: '食堂测评', content: '好吃', tag: 'food', author: '阿珍', likes: 12, views: 200, ts: Date.now() - 3600000, replies: [{ author: '小李', content: '同去', ts: Date.now(), likes: 1 }] },
@@ -277,6 +254,18 @@ ok('setCloud/getCloud 闭环', () => {
   assert.equal(c.url, 'https://xxx.supabase.co')
   assert.equal(cloud.cloudEnabled(), true)
 })
+await okAsync('applySort 三态语义', async () => {
+  const wall = await import('../src/wall/api.js')
+  const posts = [
+    { id: 'a', ts: 100, likes: 0, replies: [] },
+    { id: 'b', ts: 300, likes: 0, replies: [], best: true },
+    { id: 'c', ts: 200, likes: 50, replies: [{}, {}, {}, {}, {}] }
+  ]
+  assert.deepEqual(wall.applySort(posts, 'new').map((p) => p.id), ['b', 'c', 'a'])
+  assert.deepEqual(wall.applySort(posts, 'top').map((p) => p.id), ['b'])
+  assert.equal(wall.applySort(posts, 'hot')[0].id, 'c')
+  assert.deepEqual(wall.applySort(null, 'new'), [])
+})
 await okAsync('loadPosts 云网并集（不断存量）', async () => {
   const realFetch = globalThis.fetch
   globalThis.fetch = async (url) => {
@@ -334,5 +323,4 @@ await okAsync('probeCloud 未配置直接失败', async () => {
   assert.equal(r.ok, false)
 })
 
-console.log(`\n done: pass=${pass} fail=${fail}`)
-process.exit(fail ? 1 : 0)
+done()

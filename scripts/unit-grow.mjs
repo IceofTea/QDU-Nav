@@ -8,39 +8,17 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import assert from 'node:assert/strict'
+import { installStorage, createKit } from './harness.mjs'
 
-if (typeof localStorage === 'undefined') {
-  const store = new Map()
-  globalThis.localStorage = {
-    getItem: (k) => (store.has(k) ? store.get(k) : null),
-    setItem: (k, v) => store.set(k, String(v)),
-    removeItem: (k) => store.delete(k)
-  }
-}
+/* 脚手架（mock + 计数器统一来源，见 harness.mjs） */
+installStorage()
+const { ok, okAsync, done } = createKit()
 
 const profile = await import('../src/agent/profile.js')
 const aiMod = await import('../src/wall/aiMod.js')
 const jobs = await import('../src/data/jobs.js')
 const acts = await import('../src/data/activities.js')
 
-let pass = 0
-let fail = 0
-function ok(name, fn) {
-  try {
-    const r = fn()
-    if (r && typeof r.then === 'function') {
-      fail++
-      console.log('  FAIL  ' + name + ' → async 函数必须用 okAsync（框架防呆）')
-      r.catch(() => {})
-      return
-    }
-    pass++; console.log('  PASS  ' + name)
-  } catch (e) { fail++; console.log('  FAIL  ' + name + ' → ' + e.message) }
-}
-async function okAsync(name, fn) {
-  try { await fn(); pass++; console.log('  PASS  ' + name) }
-  catch (e) { fail++; console.log('  FAIL  ' + name + ' → ' + e.message) }
-}
 
 console.log('── profile ──')
 ok('空画像总结白纸', () => {
@@ -272,5 +250,4 @@ await okAsync('im/index 全员可达', async () => {
   }
 })
 
-console.log(`\n done: pass=${pass} fail=${fail}`)
-process.exit(fail ? 1 : 0)
+done()

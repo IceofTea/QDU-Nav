@@ -13,35 +13,11 @@ import { tokenize, normalize, parseQuery, scorePost, searchAdvanced, buildIndex,
 import { sanitizeInput, isFlooding, isMeaningless, precheck, canPublish, canReply, reasonOf, buildReport, shouldFold, levelGate, publishGate, setServerWords } from '../src/wall/moderation.js'
 import { parseMentions, extractRelated, mergeInbox, loadInbox, unreadCount, markRead, clearInbox, formatNotify } from '../src/wall/notify.js'
 import { saveDraft, listDrafts, getDraft, deleteDraft, clearExpired, timeToPublish, dueDrafts, migrateLegacy, exportDrafts, importDrafts } from '../src/wall/drafts.js'
+import { installStorage, createKit } from './harness.mjs'
 
-/* node 侧 localStorage mock（notify/drafts 用） */
-if (typeof localStorage === 'undefined') {
-  const store = new Map()
-  globalThis.localStorage = {
-    getItem: (k) => (store.has(k) ? store.get(k) : null),
-    setItem: (k, v) => store.set(k, String(v)),
-    removeItem: (k) => store.delete(k)
-  }
-}
-
-let pass = 0
-let fail = 0
-function ok(name, fn) {
-  try {
-    const r = fn()
-    if (r && typeof r.then === 'function') {
-      fail++
-      console.log('  FAIL  ' + name + ' → async 函数必须用 okAsync（框架防呆）')
-      r.catch(() => {})
-      return
-    }
-    pass++; console.log('  PASS  ' + name)
-  } catch (e) { fail++; console.log('  FAIL  ' + name + ' → ' + e.message) }
-}
-async function okAsync(name, fn) {
-  try { await fn(); pass++; console.log('  PASS  ' + name) }
-  catch (e) { fail++; console.log('  FAIL  ' + name + ' → ' + e.message) }
-}
+/* 脚手架（mock + 计数器统一来源，见 harness.mjs） */
+installStorage()
+const { ok, okAsync, done } = createKit()
 
 const POSTS = [
   { id: 'p1', title: '食堂二楼麻辣香锅测评', content: '人均15，味道不错', tag: 'food', author: '阿珍', likes: 10, views: 200, ts: Date.now() - 3600000, replies: [{ id: 'r1', author: '小李', content: '同去同去', ts: Date.now() - 1000, likes: 2 }] },
@@ -274,5 +250,4 @@ await okAsync('stats聚合与视图口径一致', async () => {
   assert.ok(hot.some((h) => h.word.includes('食堂')))
 })
 
-console.log(`\n done: pass=${pass} fail=${fail}`)
-process.exit(fail ? 1 : 0)
+done()

@@ -14,13 +14,11 @@ import assert from 'node:assert/strict'
 import { extractTime, extractPeriod, extractPlace, extractKeyword, extractScheduleSlots } from '../src/agent/slots.js'
 import { FAQ, matchFaq } from '../src/agent/faq.js'
 import { PARTS, hotScore, partOf, POINTS } from '../src/wall/config.js'
+import { installStorage, createKit } from './harness.mjs'
 
-let pass = 0
-let fail = 0
-function ok(name, fn) {
-  try { fn(); pass++ ; console.log('  PASS  ' + name) }
-  catch (e) { fail++; console.log('  FAIL  ' + name + ' → ' + e.message) }
-}
+/* 脚手架（mock + 计数器统一来源，见 harness.mjs） */
+installStorage()
+const { ok, okAsync, done } = createKit()
 
 console.log('── slots.extractTime ──')
 ok('明天 → day 为明天(今天+1)', () => {
@@ -136,6 +134,4 @@ ok('积分规则齐全且为正整数', () => {
   }
 })
 
-console.log('')
-console.log('结果：' + pass + ' PASS / ' + fail + ' FAIL')
-process.exit(fail ? 1 : 0)
+done()

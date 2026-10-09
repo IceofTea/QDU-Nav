@@ -75,6 +75,7 @@ function hueOf(i) {
     <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('contributors.community') }}</div>
     <ul class="changelog">
       
+      <li><b>v1.6.8</b> — 代码治理：草稿统一/洞察去重/统一出口/测试脚手架统一/审计零告警。</li>
       <li><b>v1.6.7</b> — 暗门口令先验后开 + 用户面去管理字样 + 裸解析加固 + 定时器清理。</li>
       <li><b>v1.6.6</b> — 管理端入口鉴权修复（/admin 绝对路径改 adminUrl）+ 评论区整容由 Wiki 侧承接。</li>
       <li><b>v1.6.5</b> — Supabase 开箱共享：仓库缺省配置 + 云网并集不断存量 + loadPosts 重构。</li>

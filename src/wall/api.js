@@ -54,6 +54,17 @@ function now() { return Date.now() }
 /* ──────────────────────── 帖子读写 ──────────────────────── */
 
 /**
+ * 统一展示排序（top 只过滤不过排，保持各轨原有顺序语义；
+ * hot 按热度，new/默认按时间倒序；调用方三处原来各写一遍，现收敛）
+ */
+export function applySort(posts, sort) {
+  const list = posts || []
+  if (sort === 'top') return list.filter((p) => p.status === 'top' || p.best)
+  if (sort === 'hot') return list.slice().sort((a, b) => hotScore(b) - hotScore(a))
+  return list.slice().sort((a, b) => b.ts - a.ts)
+}
+
+/**
  * 拉取帖子列表（tag 过滤 + 排序 hot|new|top）
  * 三轨并集：公有云（全员共享）+ 网关/本机（历史存量），id 天然不重复
  * （云帖 C 前缀），展示排序统一走现有逻辑；云失败自动只走存量轨
@@ -72,9 +83,7 @@ export async function loadPosts({ tag = 'all', sort = 'hot' } = {}) {
         seen.add(p.id)
         merged.push(p)
       }
-      if (sort === 'top') return { posts: merged.filter((p) => p.status === 'top' || p.best), offline: base.offline, cloud: true }
-      if (sort === 'hot') return { posts: merged.sort((a, b) => hotScore(b) - hotScore(a)), offline: base.offline, cloud: true }
-      return { posts: merged.sort((a, b) => b.ts - a.ts), offline: base.offline, cloud: true }
+      return { posts: applySort(merged, sort), offline: base.offline, cloud: true }
     } catch { /* 掉到存量轨 */ }
   }
   return loadBase({ tag, sort })
@@ -87,17 +96,12 @@ async function loadBase({ tag = 'all', sort = 'hot' } = {}) {
     if (tag && tag !== 'all') q.set('tag', tag)
     q.set('sort', sort === 'top' ? 'new' : sort)
     const d = await http('/api/wall?' + q.toString())
-    let posts = d.posts || []
-    if (sort === 'top') posts = posts.filter((p) => p.status === 'top' || p.best)
-    if (sort === 'hot') posts = posts.slice().sort((a, b) => hotScore(b) - hotScore(a))
-    return { posts, offline: false }
+    return { posts: applySort(d.posts || [], sort), offline: false }
   } catch (e) {
     // 网关不可达 → 本机帖子 + 网关缓存并集
     let posts = lsGet(LS_POSTS, [])
-    posts = posts.slice().sort((a, b) => (sort === 'new' ? b.ts - a.ts : hotScore(b) - hotScore(a)))
     if (tag && tag !== 'all') posts = posts.filter((p) => p.tag === tag)
-    if (sort === 'top') posts = posts.filter((p) => p.status === 'top' || p.best)
-    return { posts, offline: true }
+    return { posts: applySort(posts, sort), offline: true }
   }
 }
 
