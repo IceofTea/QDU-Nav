@@ -7,8 +7,8 @@
  *   ③ 应用检索 searchApps（兜底直达应用）
  * 每条意图带 kind：workflow（办事）/ app（直达）/ faq（问答）/ meta（元能力）。
  */
-import { matchFaq } from './faq'
-import { searchApps } from '../data/searchIndex'
+import { matchFaq } from './faq.js'
+import { searchApps } from '../data/searchIndex.js'
 
 export const INTENTS = [
   // ── 元能力 ──────────────────────────────────────────────

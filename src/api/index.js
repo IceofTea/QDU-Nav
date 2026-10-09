@@ -15,7 +15,7 @@ import {
   staticEmptyRooms,
   staticRoomSchedule,
   staticCourseQuery
-} from './localCourse'
+} from './localCourse.js'
 
 const TIMEOUT = 10000
 

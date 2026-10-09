@@ -4,7 +4,7 @@
  * 一键换校脚本 customize.py 会同步改写本文件的 AGENT_PROFILE 字段——
  * 校名、品牌、示例话术随配置切换，"换校不换大脑，大脑跟着配置走"。
  */
-import { SITE } from '../config/site'
+import { SITE } from '../config/site.js'
 
 export const AGENT_PROFILE = {
   /** 智能体名称（换校落点） */

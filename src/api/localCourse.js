@@ -4,7 +4,7 @@
  * GitHub Pages 等纯静态托管没有网关，apiFetch 失败时用 /data/snapshot.json
  * 在浏览器本地完成同样的查询，保证站点在任何静态托管上功能完整。
  */
-import { normRoom, clsSplit } from '../utils/course'
+import { normRoom, clsSplit } from '../utils/course.js'
 
 let snap = null
 let loading = null

@@ -9,9 +9,9 @@
  * 新增一个应用页面的完整流程见 README「二次开发：新增应用」。
  */
 import { ref, computed, markRaw } from 'vue'
-import { SITE } from './config/site'
-import { visitorId } from './utils/visitor'
-import { recordAppOpen } from './agent/profile'
+import { SITE } from './config/site.js'
+import { visitorId } from './utils/visitor.js'
+import { recordAppOpen } from './agent/profile.js'
 import Home from './views/Home.vue'
 
 /** 首页同步加载，其他页面懒加载（手机弱网首屏只下 ~200KB，应用页按需再下） */

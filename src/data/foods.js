@@ -1,6 +1,6 @@
 // 菜品/档口库：由 src/data/canteens.js 的真实档口与招牌菜派生（来源：后勤采购公告、观海新闻等公开报道）
 // 不含价格/热量等未经证实数据。
-import { canteens } from './canteens'
+import { canteens } from './canteens.js'
 
 export const halls = canteens.map((c) => ({ name: c.name, nameEn: c.nameEn, campus: c.campus, zone: c.area }))
 

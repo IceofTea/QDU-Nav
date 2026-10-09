@@ -7,18 +7,18 @@
  *
  * ctx = { text, slots:{time,period,place,keyword,thing}, state:{}, lang }
  */
-import { apiFetch } from '../api/index'
-import { pickFoods } from '../data/foods'
-import { canteenStats, canteens } from '../data/canteens'
-import { officialGroups } from '../data/official'
-import { campuses } from '../data/campus'
-import { SITE } from '../config/site'
-import { extractTime, extractPeriod, extractPlace, extractKeyword, extractScheduleSlots } from './slots'
+import { apiFetch } from '../api/index.js'
+import { pickFoods } from '../data/foods.js'
+import { canteenStats, canteens } from '../data/canteens.js'
+import { officialGroups } from '../data/official.js'
+import { campuses } from '../data/campus.js'
+import { SITE } from '../config/site.js'
+import { extractTime, extractPeriod, extractPlace, extractKeyword, extractScheduleSlots } from './slots.js'
 import {
   loadPosts, createPost, getWallet, signInToday, signedToday, streakDays,
   hotTopics, searchPosts, hasVotedLocal
-} from '../wall/api'
-import { PARTS, POINTS } from '../wall/config'
+} from '../wall/api.js'
+import { PARTS, POINTS } from '../wall/config.js'
 
 const SCHED_KEY = 'qdu_agent_schedule'
 const CLASS_KEY = 'qdu_agent_class'

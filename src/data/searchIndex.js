@@ -8,7 +8,7 @@
  * 匹配按权重求和排序：标题3 > 别名全等2.5/包含2 > 简介1.5 > 功能点1，
  * 多关键词空格拆分、全部命中才保留（AND），返回 { app, score, hits }。
  */
-import { apps } from './apps'
+import { apps } from './apps.js'
 
 const EXTRA = {
   officialSites: {

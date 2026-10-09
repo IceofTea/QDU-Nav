@@ -6,16 +6,16 @@
  * 状态机：澄清（补槽位）→ 确认（写操作）→ 执行（工作流）→ 卡片（可执行动作）
  * 本地推理零依赖；配置 AGENT_PROFILE.cloudApi 后复杂问题升级云端，失败自动回退。
  */
-import { recognize } from './intents'
-import { navAnswer } from './navAnswer'
-import { AGENT_PROFILE, agentText } from './config'
-import { runWorkflow, workflowMeta, CLARIFY } from './workflows'
-import { extractKeyword, extractScheduleSlots } from './slots'
-import { detectContinue, mergeContinue, followupsFor, buildGreeting } from './converse'
-import { pushList, readProfile } from './profile'
-import { dueReviews } from '../utils/studyPlan'
-import { upcoming } from '../data/activities'
-import { matchJobs } from '../data/jobs'
+import { recognize } from './intents.js'
+import { navAnswer } from './navAnswer.js'
+import { AGENT_PROFILE, agentText } from './config.js'
+import { runWorkflow, workflowMeta, CLARIFY } from './workflows.js'
+import { extractKeyword, extractScheduleSlots } from './slots.js'
+import { detectContinue, mergeContinue, followupsFor, buildGreeting } from './converse.js'
+import { pushList, readProfile } from './profile.js'
+import { dueReviews } from '../utils/studyPlan.js'
+import { upcoming } from '../data/activities.js'
+import { matchJobs } from '../data/jobs.js'
 
 const ASK = {
   time: '什么时间的日程？（例如：明天下午三点）',

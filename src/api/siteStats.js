@@ -4,7 +4,7 @@
  * 计数服务额度超限期间（site.js counter.staticMode = true）改读静态快照，
  * 动态接口逻辑完整保留，额度恢复后把开关改回 false 即可。
  */
-import { SITE } from '../config/site'
+import { SITE } from '../config/site.js'
 
 const api = (SITE.counter && SITE.counter.api) || ''
 const STATIC_MODE = !!(SITE.counter && SITE.counter.staticMode)

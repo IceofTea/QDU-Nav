@@ -4,8 +4,8 @@
  *  - 点赞身份用匿名访客 ID（visitorId），服务端按 vid 去重，本地 localStorage 记忆点赞状态
  *  - counter 不可达时：本地状态仍生效（点赞态保留），计数降级为「未知」由调用方处理
  */
-import { SITE } from '../config/site'
-import { visitorId } from './visitor'
+import { SITE } from '../config/site.js'
+import { visitorId } from './visitor.js'
 
 const api = (SITE.counter && SITE.counter.api) || ''
 const STATIC_MODE = !!(SITE.counter && SITE.counter.staticMode)
