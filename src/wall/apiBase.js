@@ -107,6 +107,19 @@ export function describeMode() {
 }
 
 /**
+ * 管理台地址（子路径部署安全：?api= 指向网关 /admin；否则同站 admin.html；
+ * 旧代码 window.open('/admin') 在 Pages 下会跳到域名根导致 404，禁止再用）
+ */
+export function adminUrl() {
+  try {
+    const base = getApiBase()
+    if (base) return base.replace(/\/+$/, '') + '/admin'
+    const noHash = location.href.split('#')[0]
+    return new URL('admin.html', noHash).href
+  } catch { return 'admin.html' }
+}
+
+/**
  * 探测网关是否可达（设置地址后“测试连接”按钮用，8s 超时）
  * @param {string} base 缺省用当前解析值
  * @returns {Promise<{ok:boolean, ms:number, error?:string}>}

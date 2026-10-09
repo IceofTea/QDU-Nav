@@ -59,6 +59,7 @@
 
 | 日期 | 版本 | 内容 |
 | --- | --- | --- |
+| 2026-10-09 | v1.6.6 | **入口修复（patch）**。双站 App 暗门 `window.open('/admin')` 改 `adminUrl()`；Wiki 徽章暗门无网关改跳 Nav admin.html。 |
 | 2026-10-09 | v1.6.5 | **公有云开箱共享（patch）**。CLOUD_DEFAULT 进仓库 + loadBase 下沉 + 并集/降级单测；修退出码假阳性（管道后 $LASTEXITCODE 无效，改裸查）+ 测试框架防呆捉出 3 个错测试。 |
 | 2026-10-09 | v1.6.4 | **体验与门禁（patch）**。技能看板/详情抽屉/完整性门禁进 CI/postbuild；Wiki 死链清零。 |
 | 2026-10-08 | v1.6.3 | **管理端线上可用（patch）**。①确认 `dist/admin/index.html` 进包（此前陈旧 dist 漏包致线上 /admin 仍 404）；②管理台云端直连（看帖数/看帖删帖，内嵌 JS 双文件语法校验通过）；③`/console` 垫片；④修 bash 误伤 Contributors.vue 中文字符（回滚重来，教训：CJK 文件禁用 PS 读写）。 |

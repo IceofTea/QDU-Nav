@@ -255,6 +255,9 @@ await okAsync('probeGateway 空地址直接失败', async () => {
 ok('PUBLIC_API_DEFAULT 为空（部署后填）', () => {
   assert.equal(apiBase.PUBLIC_API_DEFAULT, '')
 })
+ok('adminUrl node 兜底相对路径（禁跳域名根）', () => {
+  assert.equal(apiBase.adminUrl(), 'admin.html')
+})
 
 console.log('── wall.cloud ──')
 const cloud = await import('../src/wall/cloud.js')

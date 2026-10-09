@@ -11,6 +11,7 @@ import { fetchLikes, toggleLike, likedByMe } from './utils/like.js'
 import { useI18n } from './i18n/index.js'
 import { useTour } from './utils/useTour.js'
 import { getTourSteps } from './data/tourSteps.js'
+import { adminUrl } from './wall/apiBase.js'
 
 const { t, lang, toggleLang } = useI18n()
 const { startTour, isTourCompleted, isActive } = useTour()
@@ -115,7 +116,7 @@ function secretPortal() {
     const t = prompt('🛰️ 社区控制台\n请输入管理口令：')
     if (t) {
       try { localStorage.setItem('pending_admin_token', t) } catch { /* noop */ }
-      window.open('/admin', '_blank', 'noopener')
+      window.open(adminUrl(), '_blank', 'noopener')
     }
   }
 }
