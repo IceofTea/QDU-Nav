@@ -8,6 +8,7 @@ import AgentChat from '../components/agent/AgentChat.vue'
 import { AGENT_PROFILE } from '../agent/config.js'
 import { WORKFLOWS } from '../agent/workflows.js'
 import { FAQ } from '../agent/faq.js'
+import { profileSummary } from '../agent/profile.js'
 
 const emit = defineEmits(['open', 'back'])
 const chatRef = ref(null)
@@ -71,10 +72,16 @@ const wfList = computed(() => {
 })
 
 const memory = ref({ class: '' })
-try { memory.value.class = localStorage.getItem('qdu_agent_class') || '' } catch { /* noop */ }
+const memSummary = ref('')
+function refreshMem() {
+  try { memory.value.class = localStorage.getItem('qdu_agent_class') || '' } catch { memory.value.class = '' }
+  try { memSummary.value = profileSummary() } catch { memSummary.value = '' }
+}
+refreshMem()
 function clearMemory() {
   try { localStorage.removeItem('qdu_agent_class') } catch { /* noop */ }
   memory.value.class = ''
+  refreshMem()
 }
 
 function trySay(s) { chatRef.value?.send(s) }
@@ -134,11 +141,16 @@ function onPickWf(id) { recordUsage(id) }
             <span>班级：</span>
             <b>{{ memory.class || '未设置' }}</b>
           </div>
+          <div class="mem-row">
+            <span>画像：</span>
+            <b>{{ memSummary }}</b>
+          </div>
           <div class="mem-actions">
             <button class="mini" @click="trySay('设置班级 2025级计算机科学1班')">{{ memory.class ? '重新设置' : '设置班级' }}</button>
+            <button class="mini" @click="emit('open', 'profile')">🧬 画像页</button>
             <button v-if="memory.class" class="mini ghost" @click="clearMemory">清除</button>
           </div>
-          <div class="layer-note">设置后"明天上什么课"可直接查询；记忆仅存于你的浏览器。</div>
+          <div class="layer-note">设置后"明天上什么课"可直接查询；画像（技能/兴趣）会提升找实习匹配度；记忆仅存于你的浏览器。</div>
         </div>
 
         <div class="panel">

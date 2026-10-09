@@ -6,6 +6,8 @@
  */
 import { ref, reactive, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { createEngine } from '../../agent/engine.js'
+import { mdLite } from '../../agent/converse.js'
+import { toICS } from '../../utils/studyPlan.js'
 import { AGENT_PROFILE, agentText } from '../../agent/config.js'
 import { WORKFLOWS } from '../../agent/workflows.js'
 
@@ -95,8 +97,13 @@ async function send(text) {
   saveSession()
 
   const msg = newAgentMsg({ text: '', thinking: true, done: false, steps: [], stepsOpen: true })
-  // 执行计数（协作看板数据源之一）
+  // 执行计数 + 时间戳（协作看板/成长曲线数据源之一，上限 200 条防膨胀）
   try { localStorage.setItem('qdu_agent_exec', String(Number(localStorage.getItem('qdu_agent_exec') || 0) + 1)) } catch { /* noop */ }
+  try {
+    const arr = JSON.parse(localStorage.getItem('qdu_agent_exec_ts') || '[]')
+    arr.push(Date.now())
+    localStorage.setItem('qdu_agent_exec_ts', JSON.stringify(arr.slice(-200)))
+  } catch { /* noop */ }
   const startedAt = Date.now()
   msg.elapsed = 0
   tick = setInterval(() => { nowMs.value = Date.now(); msg.elapsed = (Date.now() - startedAt) / 1000 }, 100)
@@ -167,12 +174,44 @@ function stop() {
   stopped.value = true
 }
 
+/* ── TTS 语音播报（浏览器原生，无 key；再点停止） ── */
+const speaking = ref(null)
+function ttsOk() {
+  try { return typeof window !== 'undefined' && 'speechSynthesis' in window } catch { return false }
+}
+function speak(m) {
+  try {
+    if (!ttsOk() || !m) return
+    const synth = window.speechSynthesis
+    if (speaking.value === m) { synth.cancel(); speaking.value = null; return }
+    synth.cancel()
+    const u = new SpeechSynthesisUtterance((m.fullText || m.text || '').slice(0, 500))
+    u.lang = 'zh-CN'
+    u.rate = 1.05
+    u.onend = () => { if (speaking.value === m) speaking.value = null }
+    u.onerror = () => { if (speaking.value === m) speaking.value = null }
+    speaking.value = m
+    synth.speak(u)
+  } catch { /* noop */ }
+}
+
 function runAction(a) {
   if (!a) return
   if (a.type === 'openApp') { emit('open', a.value); return }
   if (a.type === 'url') { window.open(a.value, '_blank', 'noopener'); return }
   if (a.type === 'agent') { send(a.value); return }
-  if (a.type === 'reask') { input.value = a.value || ''; inputEl.value?.focus() }
+  if (a.type === 'reask') { input.value = a.value || ''; inputEl.value?.focus(); return }
+  if (a.type === 'ics') {
+    try {
+      const text = toICS(a.value || {})
+      const blob = new Blob([text], { type: 'text/calendar;charset=utf-8' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = 'campus-schedule.ics'
+      link.click()
+      setTimeout(() => URL.revokeObjectURL(link.href), 5000)
+    } catch { /* noop */ }
+  }
 }
 
 function confirmYes() { send('确认') }
@@ -320,6 +359,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (tick) clearInterval(tick)
   try { messages.forEach((m) => { if (m._tw) { clearTimeout(m._tw); m._tw = null; m.text = m.fullText || m.text } }) } catch { /* noop */ }
+  try { if ('speechSynthesis' in window) window.speechSynthesis.cancel() } catch { /* noop */ }
 })
 
 defineExpose({ send, restoreSession })
@@ -358,7 +398,7 @@ defineExpose({ send, restoreSession })
           </div>
 
           <template v-else>
-            <div class="ac-text" title="点击立即显示全文" @click="finishReveal(m)">{{ m.text }}<span v-if="m._tw" class="ac-caret">▍</span></div>
+            <div class="ac-text" title="点击立即显示全文" @click="finishReveal(m)"><template v-if="m._tw">{{ m.text }}<span class="ac-caret">▍</span></template><span v-else v-html="mdLite(m.text)"></span></div>
 
             <div v-if="m.res && m.res.layer && m.res.confidence" class="ac-meta">
               <span class="ac-badge">{{ layerLabel(m.res.layer) }}</span>
@@ -421,6 +461,7 @@ defineExpose({ send, restoreSession })
             <div class="ac-msgops">
               <button class="ac-msgop" title="复制" @click="copyMsg(m)">{{ m.copied ? '✓ 已复制' : '⧉ 复制' }}</button>
               <button class="ac-msgop" title="重试" @click="retryMsg(i)">↻ 重试</button>
+              <button class="ac-msgop" :title="speaking === m ? '停止播报' : '语音播报'" @click="speak(m)">{{ speaking === m ? '⏹️ 播报中' : '🔊' }}</button>
               <button class="ac-msgop" :class="{ bad: m.disliked }" title="反馈（回流维护）" @click="dislike(m)">👎{{ m.disliked ? ' 已反馈' : '' }}</button>
             </div>
 
@@ -474,13 +515,21 @@ defineExpose({ send, restoreSession })
 .ac-history { display: flex; gap: 7px; padding: 4px 12px; }
 
 .ac-list { flex: 1; overflow-y: auto; padding: 10px 12px 6px; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
-.ac-msg { display: flex; }
+.ac-msg { display: flex; animation: acSlideIn 0.25s ease-out; }
+@keyframes acSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ac-msg { animation: none; } }
+.ac-voice.on { animation: acPulse 1.2s infinite; border-color: #e11d48 !important; }
+@keyframes acPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.45); } 50% { box-shadow: 0 0 0 7px rgba(225, 29, 72, 0); } }
+@media (prefers-reduced-motion: reduce) { .ac-voice.on { animation: none; } }
 .ac-msg.role-user { justify-content: flex-end; }
 .ac-msg.role-agent { justify-content: flex-start; }
 .ac-bubble { max-width: 92%; border-radius: 14px; padding: 9px 12px; font-size: 13.5px; line-height: 1.6; }
 .ac-bubble.user { background: var(--primary, #1b66c9); color: #fff; border-bottom-right-radius: 4px; }
 .ac-bubble.agent { background: var(--card, #f7f9fc); border: 1px solid var(--border, #e5eaf2); border-bottom-left-radius: 4px; width: 96%; }
 .ac-text { white-space: pre-wrap; word-break: break-word; cursor: pointer; }
+.ac-text b { font-weight: 700; }
+.ac-text code { background: rgba(127, 127, 127, 0.14); border-radius: 5px; padding: 0 5px; font-family: ui-monospace, monospace; font-size: 0.92em; }
+.ac-text blockquote { border-left: 3px solid var(--primary, #1b66c9); margin: 6px 0; padding: 4px 10px; color: var(--muted, #666); background: rgba(127, 127, 127, 0.07); border-radius: 0 8px 8px 0; }
 .ac-caret { color: #1b66c9; animation: acBlink 0.8s infinite; font-weight: 400; }
 @keyframes acBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .ac-caret { animation: none; } }

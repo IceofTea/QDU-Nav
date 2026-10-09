@@ -19,6 +19,7 @@ import {
   hotTopics, hasVotedLocal, viewPost, favCount
 } from '../wall/api.js'
 import { apiUrl } from '../wall/apiBase.js'
+import { searchAdvanced } from '../wall/search.js'
 import WallPostCard from '../wall/components/WallPostCard.vue'
 import WallComposer from '../wall/components/WallComposer.vue'
 import WallSidebar from '../wall/components/WallSidebar.vue'
@@ -47,9 +48,13 @@ const signed = ref(signedToday())
 const streak = ref(streakDays())
 
 const detailPost = computed(() => posts.value.find((p) => p.id === detailId.value) || null)
+/* 站内搜索走 search.js 高级引擎（二元分词 + 标签意图 + 相关度排序） */
 const filtered = computed(() => {
-  let list = keyword.value.trim() ? searchPosts(posts.value, keyword.value) : posts.value
-  return list
+  const kw = keyword.value.trim()
+  if (!kw) return posts.value
+  try {
+    return searchAdvanced(posts.value, kw, { sort: 'relevance', limit: 200 })
+  } catch { return searchPosts(posts.value, kw) }
 })
 const hotPosts = computed(() =>
   posts.value.slice().sort((a, b) => hotScoreSafe(b) - hotScoreSafe(a)).slice(0, 6)

@@ -18,6 +18,21 @@ const emit = defineEmits(['back'])
 const token = ref('')
 const authed = ref(false)
 const stats = ref({ runs: 0, posts: 0, replies: 0, feedback: 0, reports: 0 })
+const weekExec = ref([])
+
+/** 近 7 天执行柱（qdu_agent_exec_ts 本机记录，无记录即空态） */
+function execWeek() {
+  let arr = []
+  try { arr = JSON.parse(localStorage.getItem('qdu_agent_exec_ts') || '[]') } catch { arr = [] }
+  const out = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000)
+    const ds = d.toDateString()
+    const n = arr.filter((ts) => new Date(ts).toDateString() === ds).length
+    out.push({ label: (d.getMonth() + 1) + '/' + d.getDate(), n })
+  }
+  return out
+}
 const report = ref(null)
 const disputes = ref([])
 const questions = ref([])
@@ -42,6 +57,7 @@ async function load() {
   let feedback = 0
   try { feedback = (JSON.parse(localStorage.getItem('qdu_agent_fb') || '[]') || []).length } catch { /* noop */ }
   stats.value = { runs: wfRuns(), posts: posts.length, replies, feedback, reports: 0 }
+  weekExec.value = execWeek()
   const rep = modReport(posts, [])
   report.value = rep.summary
   disputes.value = rep.disputes.slice(0, 5)
@@ -77,6 +93,16 @@ onMounted(load)
       <div class="fw-stat"><b>{{ stats.replies }}</b><span>回复</span></div>
       <div class="fw-stat"><b>{{ stats.feedback }}</b><span>反馈</span></div>
       <div class="fw-stat"><b>{{ stats.reports }}</b><span>待处举报</span></div>
+    </div>
+    <div class="fw-card">
+      <b>📈 近 7 天执行</b>
+      <div v-if="!weekExec.reduce((a, d) => a + d.n, 0)" class="fw-empty">暂无执行记录，多用智能体办事即可点亮</div>
+      <div v-else class="fw-week">
+        <div v-for="d in weekExec" :key="d.label" class="fw-wk">
+          <div class="fw-wkbar" :style="{ height: Math.min(64, d.n * 8 + 2) + 'px' }"></div>
+          <span>{{ d.label }}</span><em>{{ d.n }}</em>
+        </div>
+      </div>
     </div>
     <div class="fw-card">
       <b>🤖 AI 治理日报</b>
@@ -126,4 +152,9 @@ onMounted(load)
 .fw-row2 button { border: 1px solid #1b66c9; background: #1b66c9; color: #fff; border-radius: 10px; padding: 7px 16px; cursor: pointer; }
 .fw-err { font-size: 12px; color: #b91c1c; margin-top: 6px; }
 .fw-ok { font-size: 12px; color: #166534; margin-top: 6px; }
+.fw-empty { color: #999; font-size: 13px; padding: 8px 0; }
+.fw-week { display: flex; gap: 8px; align-items: flex-end; margin-top: 8px; }
+.fw-wk { flex: 1; text-align: center; font-size: 11px; color: #888; display: flex; flex-direction: column; gap: 2px; align-items: center; }
+.fw-wkbar { width: 70%; background: linear-gradient(180deg, #7c3aed, #c4b5fd); border-radius: 4px 4px 0 0; min-height: 3px; }
+.fw-wk em { font-style: normal; color: #333; font-weight: 700; }
 </style>

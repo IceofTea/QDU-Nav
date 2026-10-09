@@ -235,6 +235,39 @@ export function weeklyReport() {
   }
 }
 
+// ──────────────────────── 6. ICS 日历导出 ─────────────────────────
+// 把站内日程导出为系统日历可订阅的 ICS（RFC 5545 最小子集，无依赖）
+
+/** ICS 文本转义（反斜杠/逗号/分号/换行） */
+function icsEsc(s) {
+  return String(s ?? '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n').slice(0, 200)
+}
+function icsDate(d) {
+  const p = (n) => String(n).padStart(2, '0')
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + 'T' + p(d.getHours()) + p(d.getMinutes()) + '00'
+}
+
+/**
+ * 生成单事件 ICS（day: 1-7 周一到周日；hour: 0-23，缺省 9 点；durMin 默认 60）
+ * @param {object} ev {title, desc, day, hour, durMin}
+ */
+export function toICS(ev = {}) {
+  const now = new Date()
+  const cur = now.getDay() || 7
+  const day = ev.day >= 1 && ev.day <= 7 ? ev.day : cur
+  const hour = ev.hour >= 0 && ev.hour <= 23 ? ev.hour : 9
+  const target = new Date(now)
+  target.setDate(now.getDate() + ((day - cur + 7) % 7))
+  target.setHours(hour, 0, 0, 0)
+  if (target <= now) target.setDate(target.getDate() + 7)
+  const uid = Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + '@campus-nav'
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//campus-nav//schedule//CN',
+    'BEGIN:VEVENT', 'UID:' + uid, 'DTSTAMP:' + icsDate(now), 'DTSTART:' + icsDate(target),
+    'DURATION:PT' + (ev.durMin || 60) + 'M',
+    'SUMMARY:' + icsEsc(ev.title || '校园日程'), 'DESCRIPTION:' + icsEsc(ev.desc || ''),
+    'END:VEVENT', 'END:VCALENDAR'].join('\r\n')
+}
+
 // ──────────────────────── 5. 任务链扩展 ─────────────────────────
 
 /**

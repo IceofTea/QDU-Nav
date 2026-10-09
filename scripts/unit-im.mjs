@@ -195,6 +195,12 @@ ok('weeklyReport 有总结', () => {
   const w = study.weeklyReport()
   assert.ok(typeof w.totalMin === 'number' && w.summary)
 })
+ok('toICS 结构与转义', () => {
+  const ics = study.toICS({ title: '开会，讨论;议题', desc: 'A\nB', day: 8, hour: 99 })
+  assert.ok(ics.includes('BEGIN:VCALENDAR') && ics.includes('END:VEVENT'))
+  assert.ok(ics.includes('开会，讨论\\;议题') && ics.includes('A\\nB'))
+  assert.ok(/DTSTART:\d{8}T090000/.test(ics))
+})
 ok('taskChainExpand study 3步', () => {
   const ch = study.taskChainExpand('study', { emptyRooms: ['A101'], reviews: [] })
   assert.equal(ch.length, 3)

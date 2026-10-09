@@ -182,14 +182,37 @@ await okAsync('三新意图可识别', async () => {
   assert.equal(recognize('活动报名').intent.wf, 'activitySignup')
   assert.equal(recognize('宿舍报修').intent.wf, 'fixReport')
 })
+await okAsync('八新工作流注册', async () => {
+  const { WORKFLOWS, workflowMeta } = await import('../src/agent/workflows.js')
+  for (const id of ['weather', 'shuttle', 'library', 'express', 'studyGroup', 'courseReview', 'lostStats', 'canteenRank']) {
+    assert.ok(WORKFLOWS[id], id + '缺失')
+    assert.ok(workflowMeta(id).steps.length >= 1)
+  }
+})
+await okAsync('八新意图可识别', async () => {
+  const { recognize } = await import('../src/agent/intents.js')
+  assert.equal(recognize('今天天气怎么样').intent.wf, 'weather')
+  assert.equal(recognize('校车时刻表').intent.wf, 'shuttle')
+  assert.equal(recognize('图书馆开门吗').intent.wf, 'library')
+  assert.equal(recognize('取快递去哪').intent.wf, 'express')
+  assert.equal(recognize('食堂红黑榜').intent.wf, 'canteenRank')
+})
+await okAsync('校园生活纯函数', async () => {
+  const cl = await import('../src/data/campusLife.js')
+  assert.equal(cl.nextBus(['08:00', '10:00'], '07:00'), '08:00')
+  assert.equal(cl.nextBus(['08:00'], '09:00'), null)
+  assert.equal(cl.openNow('08:00', '22:00', 12, 0), true)
+  assert.equal(cl.openNow('08:00', '22:00', 23, 0), false)
+  assert.ok(cl.SHUTTLE.every((l) => l.demo === true))
+})
 await okAsync('五新应用意图直达', async () => {
   const { recognize } = await import('../src/agent/intents.js')
   assert.equal(recognize('招聘').intent.app, 'jobs')
   assert.equal(recognize('为什么选你').intent.app, 'compare')
 })
-await okAsync('工作流总数≥30', async () => {
+await okAsync('工作流总数≥38', async () => {
   const { WORKFLOWS } = await import('../src/agent/workflows.js')
-  assert.ok(Object.keys(WORKFLOWS).length >= 30)
+  assert.ok(Object.keys(WORKFLOWS).length >= 38)
 })
 
 console.log('── converse ──')
@@ -234,6 +257,14 @@ ok('buildGreeting有推送', () => {
 ok('buildGreeting空态', () => {
   const g = converse.buildGreeting({ agentName: '小青', pushes: [] })
   assert.ok(g.card === null && g.chips.includes('今日简报'))
+})
+ok('mdLite转义优先', () => {
+  const h = converse.mdLite('<script>alert(1)</script> **好** `码`')
+  assert.ok(!h.includes('<script>') && h.includes('<b>好</b>') && h.includes('<code>码</code>'))
+})
+ok('mdLite引用与换行', () => {
+  const h = converse.mdLite('> 引用\n第二行')
+  assert.ok(h.includes('<blockquote>引用</blockquote>') && h.includes('<br/>'))
 })
 
 console.log('── 统一出口 ──')

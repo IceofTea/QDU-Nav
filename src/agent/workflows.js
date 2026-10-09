@@ -111,6 +111,7 @@ export const WORKFLOWS = {
           : [{ icon: '😢', label: '该时段教室全满', value: '换个节次试试' }],
         actions: [
           { label: '打开教室导航（查占用/路线）', type: 'openApp', value: 'classroomNav' },
+          { label: '⏰ 去提醒中心', type: 'openApp', value: 'reminder' },
           { label: '改查其他时段', type: 'reask', value: '换个时间查空教室，比如"下午第7节有空教室吗"' }
         ],
         note: r.static ? '实时网关未启动，已自动回退本地快照（永不白屏）' : ''
@@ -208,6 +209,7 @@ export const WORKFLOWS = {
           : [{ icon: '🎉', label: '今天没有课', value: '享受空闲的一天' }],
         actions: [
           { label: '打开课程表（整周视图）', type: 'openApp', value: 'timetable' },
+          { label: '🍅 为今天开番茄', type: 'openApp', value: 'focus' },
           { label: rows.length ? '把这些课加入日程' : '查看我的日程', type: 'agent', value: rows.length ? `把我${ctx.state.dateLabel}的课加入日程` : '我的日程' }
         ]
       }
@@ -309,7 +311,8 @@ export const WORKFLOWS = {
         rows: [{ icon: '✅', label: ctx.state.item.thing, value: ctx.state.item.label }],
         actions: [
           { label: '查看我的日程', type: 'agent', value: '我的日程' },
-          { label: '打开校历', type: 'openApp', value: 'calendar' }
+          { label: '打开校历', type: 'openApp', value: 'calendar' },
+          { label: '⬇ 下载日历(ICS)', type: 'ics', value: { title: ctx.state.item.thing, desc: ctx.state.item.label, day: ctx.state.item.day, hour: ctx.state.item.hour } }
         ],
         note: '日程保存在本机浏览器，隐私不出设备；接入提醒推送后将自动响铃'
       }
@@ -1344,6 +1347,308 @@ export const WORKFLOWS = {
           { label: '🧱 去墙里问问有没有人同坏', type: 'reask', value: '搜墙 宿舍报修' }
         ],
         note: '紧急情况（停电/漏水）请直接打后勤电话，线上工单只做记录流转'
+      }
+    }
+  },
+  /* ── 31. 天气预报（Open-Meteo 免 key 直连，失败降级提示） ── */
+  weather: {
+    id: 'weather', title: '天气预报', icon: '🌤️',
+    steps: [
+      {
+        label: '拉取青岛逐小时预报',
+        run: async (ctx) => {
+          // 青岛市北（浮山校区）：后勤无接口前用开放数据，北京市 time 自动处理
+          const url = 'https://api.open-meteo.com/v1/forecast?latitude=36.07&longitude=120.38&hourly=temperature_2m,precipitation_probability,weathercode&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FShanghai&forecast_days=2'
+          const ctrl = new AbortController()
+          const timer = setTimeout(() => ctrl.abort(), 8000)
+          let d
+          try {
+            const r = await fetch(url, { signal: ctrl.signal })
+            if (!r.ok) throw new Error('HTTP ' + r.status)
+            d = await r.json()
+          } finally { clearTimeout(timer) }
+          if (!d || !d.daily) throw new Error('天气数据暂不可用')
+          ctx.state.today = {
+            max: Math.round(d.daily.temperature_2m_max[0]),
+            min: Math.round(d.daily.temperature_2m_min[0]),
+            pop: d.daily.precipitation_probability_max[0],
+            code: d.daily.weathercode ? d.daily.weathercode[0] : 0
+          }
+          const t = ctx.state.today
+          return `今日 ${t.min}~${t.max}℃，降水概率 ${t.pop ?? '-'}%`
+        }
+      },
+      {
+        label: '生成出行建议',
+        run: async (ctx) => {
+          const t = ctx.state.today
+          const tips = []
+          if ((t.pop ?? 0) >= 40) tips.push('带伞')
+          if (t.max <= 5) tips.push('穿羽绒')
+          else if (t.max <= 12) tips.push('加外套')
+          if (t.max >= 28) tips.push('防晒补水')
+          ctx.state.tips = tips.length ? tips.join('、') : '体感舒适'
+          return '建议：' + ctx.state.tips
+        }
+      }
+    ],
+    buildCard(ctx) {
+      const t = ctx.state.today
+      return {
+        title: `🌤️ 青岛今日 ${t.min}~${t.max}℃`,
+        subtitle: `降水概率 ${t.pop ?? '-'}% · ${ctx.state.tips}（Open-Meteo 开放数据）`,
+        rows: [
+          { icon: '🌡️', label: '最高 / 最低', value: `${t.max}℃ / ${t.min}℃` },
+          { icon: '☔', label: '出行建议', value: ctx.state.tips }
+        ],
+        actions: [
+          { label: '🧭 出门查空教室', type: 'reask', value: '哪里有空教室自习' },
+          { label: '🚌 校车时刻', type: 'reask', value: '校车时刻表' }
+        ],
+        note: '跨校移植改经纬度一行即可（换校插槽：数据源）'
+      }
+    }
+  },
+
+  /* ── 32. 校车时刻（静态示例 + 后勤接口预留） ── */
+  shuttle: {
+    id: 'shuttle', title: '校车时刻', icon: '🚌',
+    steps: [
+      {
+        label: '查下一班车',
+        run: async (ctx) => {
+          const { SHUTTLE, nextBus } = await import('../data/campusLife.js')
+          const now = new Date()
+          const cur = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0')
+          ctx.state.rows = SHUTTLE.map((l) => ({ line: l.line, next: nextBus(l.times, cur), times: l.times }))
+          ctx.state.cur = cur
+          return `当前 ${cur}，${ctx.state.rows.filter((r) => r.next).length}/${ctx.state.rows.length} 条线路还有车`
+        }
+      }
+    ],
+    buildCard(ctx) {
+      return {
+        title: `🚌 校车时刻（当前 ${ctx.state.cur}）`,
+        subtitle: '示例时刻（格式示范，出行以官方最新通知为准）',
+        rows: ctx.state.rows.map((r) => ({ icon: r.next ? '✅' : '🌙', label: r.line, value: r.next ? '下一班 ' + r.next : '已收车' })),
+        actions: [{ label: '🌤️ 先看天气', type: 'reask', value: '今天天气怎么样' }],
+        note: '对接后勤实时接口后替换（见 campusLife.js API_CONTRACT）'
+      }
+    }
+  },
+
+  /* ── 33. 图书馆（开闭馆状态 + 分区时间） ── */
+  library: {
+    id: 'library', title: '图书馆', icon: '📚',
+    steps: [
+      {
+        label: '算开闭馆状态',
+        run: async (ctx) => {
+          const { LIBRARY, openNow } = await import('../data/campusLife.js')
+          ctx.state.lib = LIBRARY
+          ctx.state.open = openNow(LIBRARY.open, LIBRARY.close)
+          ctx.state.rooms = LIBRARY.rooms.map((r) => ({ ...r, open: openNow(r.open, r.close) }))
+          return LIBRARY.name + (ctx.state.open ? '开馆中' : '已闭馆')
+        }
+      }
+    ],
+    buildCard(ctx) {
+      const l = ctx.state.lib
+      return {
+        title: `📚 ${l.name} · ${ctx.state.open ? '开馆中 🟢' : '已闭馆 🌙'}`,
+        subtitle: `总馆 ${l.open}-${l.close}（示例时间，节假日以馆方通知为准）`,
+        rows: ctx.state.rooms.map((r) => ({ icon: r.open ? '🟢' : '🌙', label: r.name, value: `${r.open}-${r.close}` })),
+        actions: [
+          { label: '🧭 找空教室自习', type: 'reask', value: '哪里有空教室自习' },
+          { label: '🍅 开个番茄', type: 'openApp', value: 'focus' }
+        ],
+        note: '对接图书馆门禁数据后显示实时在馆人数'
+      }
+    }
+  },
+
+  /* ── 34. 快递点（静态 + 关键词过滤） ── */
+  express: {
+    id: 'express', title: '快递点', icon: '📦',
+    steps: [
+      {
+        label: '按关键词过滤',
+        run: async (ctx) => {
+          const { EXPRESS } = await import('../data/campusLife.js')
+          const kw = (extractKeyword(ctx.text) || '').toLowerCase()
+          ctx.state.list = EXPRESS.filter((e) => !kw || (e.name + e.place).toLowerCase().includes(kw))
+          if (!ctx.state.list.length) throw new Error('没找到相关快递点，换个词试试（顺丰/菜鸟/东区）')
+          return `找到 ${ctx.state.list.length} 个：${ctx.state.list.map((e) => e.name).join('、')}`
+        }
+      }
+    ],
+    buildCard(ctx) {
+      return {
+        title: `📦 快递点 · ${ctx.state.list.length} 个`,
+        subtitle: '示例点位（格式示范，以驿站门口公示为准）',
+        rows: ctx.state.list.map((e) => ({ icon: '📍', label: `${e.name} · ${e.place}`, value: e.hours })),
+        actions: [{ label: '🧱 墙里问问丢件', type: 'reask', value: '搜墙 快递' }],
+        note: '丢件先去墙失物区看看，再去驿站问'
+      }
+    }
+  },
+
+  /* ── 35. 组队自习（拼模板发帖，写操作需确认） ── */
+  studyGroup: {
+    id: 'studyGroup', title: '组队自习', icon: '👥', needConfirm: true,
+    steps: [
+      {
+        label: '解析科目与时间',
+        run: async (ctx) => {
+          const kw = extractKeyword(ctx.text, ['组队', '自习', '拼', '约', '一起'])
+          if (!kw) throw new CLARIFY('keyword')
+          const time = extractTime(ctx.text)
+          ctx.state.subject = kw
+          ctx.state.when = time ? (time.dateLabel || '') : '本周'
+          return `组队学${kw}（${ctx.state.when}）`
+        }
+      },
+      {
+        label: '发布组队帖',
+        run: async (ctx) => {
+          const post = await createPost({
+            title: `【组队自习】${ctx.state.subject}（${ctx.state.when}）`,
+            content: `求${ctx.state.subject}自习搭子，时间${ctx.state.when}，有意请回复本帖！（智能体代发）`,
+            tag: 'study', type: 'normal', author: '自习搭子'
+          })
+          ctx.state.post = post.post || post
+          return '组队帖已发布到校园墙学习区'
+        }
+      }
+    ],
+    clarify: { field: 'keyword', ask: '组队学哪门？比如“高数”“四级”' },
+    buildCard(ctx) {
+      return {
+        title: `👥 组队帖已发布 · ${ctx.state.subject}`,
+        subtitle: '校园墙学习区可见，等搭子回复',
+        rows: [
+          { icon: '📖', label: '科目', value: ctx.state.subject },
+          { icon: '🕘', label: '时间', value: ctx.state.when }
+        ],
+        actions: [{ label: '🧱 去看看帖子', type: 'reask', value: '看校园墙' }],
+        note: '有人回复会在私信/通知里看到（配网关后实时）'
+      }
+    }
+  },
+
+  /* ── 36. 课程评价（发起投票帖，写操作需确认） ── */
+  courseReview: {
+    id: 'courseReview', title: '课程评价', icon: '⭐', needConfirm: true,
+    steps: [
+      {
+        label: '确定评价课程',
+        run: async (ctx) => {
+          const kw = ctx.slots.keyword || extractKeyword(ctx.text, ['评价', '怎么样', '如何', '课'])
+          if (!kw) throw new CLARIFY('keyword')
+          ctx.state.course = kw
+          return `评价《${kw}》`
+        }
+      },
+      {
+        label: '发起评价投票',
+        run: async (ctx) => {
+          const post = await createPost({
+            title: `【课程评价】${ctx.state.course}怎么样？`,
+            content: '来给这门课打个分（智能体代发，欢迎补充上课体验）',
+            tag: 'study', type: 'vote', author: '课代表',
+            vote: { question: `${ctx.state.course}值得选吗？`, options: ['5星闭眼入', '4星不错', '3星一般', '避雷'] }
+          })
+          ctx.state.post = post.post || post
+          return '评价投票已发布'
+        }
+      }
+    ],
+    clarify: { field: 'keyword', ask: '评价哪门课？比如“数据结构”' },
+    buildCard(ctx) {
+      return {
+        title: `⭐ 评价帖已发布 · ${ctx.state.course}`,
+        subtitle: '投票帖：5星闭眼入 / 4星不错 / 3星一般 / 避雷',
+        rows: [{ icon: '🗳️', label: '课程', value: ctx.state.course }],
+        actions: [{ label: '🧱 去投票', type: 'reask', value: '看校园墙' }],
+        note: '评价数据沉淀为选课参考（UGC 自造血）'
+      }
+    }
+  },
+
+  /* ── 37. 失物统计（读墙失物区聚合） ── */
+  lostStats: {
+    id: 'lostStats', title: '失物统计', icon: '🔍',
+    steps: [
+      {
+        label: '聚合失物区帖子',
+        run: async (ctx) => {
+          const r = await loadPosts({ tag: 'lost', sort: 'new' })
+          const posts = r.posts || []
+          const find = posts.filter((p) => /丢|寻|找|不见/.test(p.title + p.content)).length
+          const give = posts.filter((p) => /捡|拾|招领|失主/.test(p.title + p.content)).length
+          ctx.state.total = posts.length
+          ctx.state.find = find
+          ctx.state.give = give
+          ctx.state.top = posts.slice(0, 3)
+          return `失物区共 ${posts.length} 帖：寻物 ${find} · 招领 ${give}`
+        }
+      }
+    ],
+    buildCard(ctx) {
+      return {
+        title: `🔍 失物统计 · ${ctx.state.total} 帖`,
+        subtitle: `寻物 ${ctx.state.find} · 招领 ${ctx.state.give}（墙数据实时聚合）`,
+        rows: ctx.state.top.map((p) => ({ icon: '📌', label: (p.title || '(无标题)').slice(0, 20), value: `${(p.replies || []).length} 回复` })),
+        actions: [
+          { label: '🔍 去失物区', type: 'reask', value: '看校园墙' },
+          { label: '📮 我丢了东西', type: 'reask', value: '我丢了校园卡' }
+        ],
+        note: '丢东西先看招领，再发帖；贵重物品请联系保卫处'
+      }
+    }
+  },
+
+  /* ── 38. 食堂红黑榜（读墙美食区情感聚合） ── */
+  canteenRank: {
+    id: 'canteenRank', title: '食堂红黑榜', icon: '🍜',
+    steps: [
+      {
+        label: '聚合美食区褒贬',
+        run: async (ctx) => {
+          const r = await loadPosts({ tag: 'food', sort: 'new' })
+          const posts = (r.posts || []).slice(0, 30)
+          const score = {}
+          const ev = {}
+          for (const p of posts) {
+            const text = (p.title || '') + ' ' + (p.content || '')
+            const good = /好吃|推荐|赞|绝|香/.test(text)
+            const bad = /难吃|避雷|坑|差|贵/.test(text)
+            if (!good && !bad) continue
+            const key = (p.title || '').slice(0, 12) || '某帖'
+            score[key] = (score[key] || 0) + (p.likes || 0) + (p.replies || []).length + (good ? 2 : -2)
+            ev[key] = p
+          }
+          const ranked = Object.entries(score).sort((a, b) => b[1] - a[1])
+          ctx.state.red = ranked.filter(([, s]) => s > 0).slice(0, 3)
+          ctx.state.black = ranked.filter(([, s]) => s < 0).slice(-3).reverse()
+          ctx.state.n = posts.length
+          return `分析 ${posts.length} 帖：红榜 ${ctx.state.red.length} · 黑榜 ${ctx.state.black.length}`
+        }
+      }
+    ],
+    buildCard(ctx) {
+      return {
+        title: `🍜 食堂红黑榜（近 ${ctx.state.n} 帖聚合）`,
+        subtitle: '点赞+回复加权，褒贬关键词打分（UGC 真实口碑）',
+        rows: [
+          ...ctx.state.red.map(([t, s]) => ({ icon: '❤️', label: t, value: `+${s}` })),
+          ...ctx.state.black.map(([t, s]) => ({ icon: '⚡', label: t, value: `${s}` }))
+        ],
+        actions: [
+          { label: '今天吃什么', type: 'reask', value: '今天吃什么' },
+          { label: '发帖评价', type: 'reask', value: '发帖' }
+        ],
+        note: '样本少时仅供参考；多发美食帖让榜单更准'
       }
     }
   }

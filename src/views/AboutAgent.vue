@@ -15,6 +15,7 @@ import { WORKFLOWS } from '../agent/workflows.js'
 import { FAQ } from '../agent/faq.js'
 import { AGENT_PROFILE } from '../agent/config.js'
 import { kbStats } from '../agent/navAnswer.js'
+import { recognize } from '../agent/intents.js'
 
 const emit = defineEmits(['open'])
 
@@ -60,6 +61,33 @@ const demoSteps = [
 function askDemo(q) {
   try { localStorage.setItem('qdu_agent_inbox', q) } catch { /* noop */ }
   emit('open', 'assistant')
+}
+
+/* ── 浏览器内自检：意图抽样断言（与 scripts 单测同口径，评委可点） ── */
+const SELFTESTS = [
+  ['今日简报', 'wf', 'dailyBriefing'], ['哪里有空教室', 'wf', 'findRoom'],
+  ['明天有什么课', 'wf', 'dayClass'], ['今天吃什么', 'wf', 'whatEat'],
+  ['找实习', 'wf', 'jobHunt'], ['活动报名', 'wf', 'activitySignup'],
+  ['明天呢', 'none', null], ['食堂红黑榜', 'wf', 'canteenRank'],
+  ['招聘', 'app', 'jobs'], ['为什么选你', 'app', 'compare'],
+  ['你能做什么', 'meta', null], ['随机的无意义输入xyz', 'none', null]
+]
+const selftest = ref({ ran: false, pass: 0, total: 0, rows: [] })
+function runSelftest() {
+  const rows = SELFTESTS.map(([q, kind, want]) => {
+    let got = null
+    let okMark = false
+    try {
+      const r = recognize(q)
+      if (kind === 'none') okMark = r.layer === 'none' || r.layer === 'faq' || r.layer === 'app'
+      else if (kind === 'meta') okMark = r.layer === 'intent' && r.intent && r.intent.kind === 'meta'
+      else if (want) okMark = r.layer === 'intent' && r.intent && (r.intent.wf === want || r.intent.app === want)
+      else okMark = r.layer !== 'none'
+      got = r.layer + (r.intent ? ':' + (r.intent.wf || r.intent.app || r.intent.kind) : '')
+    } catch (e) { got = '异常:' + e.message }
+    return { q, want: want || kind, got, ok: okMark }
+  })
+  selftest.value = { ran: true, pass: rows.filter((r) => r.ok).length, total: rows.length, rows }
 }
 </script>
 
@@ -134,6 +162,23 @@ function askDemo(q) {
       <div class="aa-note">完整十组剧本见仓库 <code>src/agent/DIALOGUES.md</code>；技能全集见「🧩 技能市场」。</div>
     </div>
 
+    <!-- 浏览器内自检 -->
+    <div class="aa-card">
+      <div class="aa-card-t">🧪 识别自检（浏览器内实跑，与单测同口径）</div>
+      <div class="aa-selftest-bar">
+        <button class="aa-btn primary" @click="runSelftest">跑一遍自检</button>
+        <span v-if="selftest.ran" class="aa-selftest-score">通过 {{ selftest.pass }}/{{ selftest.total }}</span>
+      </div>
+      <div v-if="selftest.ran" class="aa-selftest-rows">
+        <div v-for="(r, i) in selftest.rows" :key="i" class="aa-selftest-row">
+          <span>{{ r.ok ? '✅' : '❌' }}</span>
+          <span class="aa-st-q">{{ r.q }}</span>
+          <span class="aa-st-got">{{ r.got }}</span>
+        </div>
+      </div>
+      <div v-else class="aa-note">抽样 12 条：意图直达/应用直达/元能力/兜底，现场可验证识别质量。</div>
+    </div>
+
     <!-- 底部行动 -->
     <div class="aa-actions">
       <button class="aa-btn primary" @click="emit('open', 'assistant')">打开智能助手</button>
@@ -192,4 +237,10 @@ function askDemo(q) {
 .aa-btn { border: 1px solid var(--border, #e5eaf2); background: var(--card, #fff); color: var(--text, #24292f); padding: 11px 22px; border-radius: 999px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 600; }
 .aa-btn.primary { background: var(--primary, #1b66c9); border-color: var(--primary, #1b66c9); color: #fff; }
 .aa-btn:hover { transform: translateY(-2px); }
+.aa-selftest-bar { display: flex; gap: 10px; align-items: center; margin: 8px 0; }
+.aa-selftest-score { font-weight: 800; color: var(--primary, #1b66c9); }
+.aa-selftest-rows { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; }
+.aa-selftest-row { display: flex; gap: 8px; align-items: baseline; }
+.aa-st-q { font-weight: 600; }
+.aa-st-got { color: var(--muted, #8a94a6); font-family: ui-monospace, monospace; font-size: 11.5px; }
 </style>

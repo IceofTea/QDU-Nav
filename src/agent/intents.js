@@ -114,6 +114,14 @@ export const INTENTS = [
   { id: 'wf.jobHunt', kind: 'workflow', wf: 'jobHunt', title: '找实习', patterns: ['找实习', '实习', '找工作', '勤工俭学', '兼职', '投简历', '岗位推荐', '有什么兼职', '想打工'] },
   { id: 'wf.activitySignup', kind: 'workflow', wf: 'activitySignup', title: '活动报名', patterns: ['活动报名', '报名活动', '有什么活动', '讲座', '比赛报名', '招新', '志愿者报名', '参加活动'] },
   { id: 'wf.fixReport', kind: 'workflow', wf: 'fixReport', title: '宿舍报修', patterns: ['报修', '宿舍坏了', '灯坏了', '水龙头', '修东西', '找人修', '空调坏了', '门锁坏了', '报修宿舍'] },
+  { id: 'wf.weather', kind: 'workflow', wf: 'weather', title: '天气预报', patterns: ['天气', '今天天气', '明天天气', '气温', '下雨吗', '带伞吗', '穿什么', '冷不冷', '热不热'] },
+  { id: 'wf.shuttle', kind: 'workflow', wf: 'shuttle', title: '校车时刻', patterns: ['校车', '班车', '校车时刻', '校车几点', '坐校车', '校车表'] },
+  { id: 'wf.library', kind: 'workflow', wf: 'library', title: '图书馆', patterns: ['图书馆', '图书馆开门吗', '借书', '自习室', '图书馆几点'] },
+  { id: 'wf.express', kind: 'workflow', wf: 'express', title: '快递点', patterns: ['快递', '快递点', '取快递', '菜鸟', '驿站', '快递在哪'] },
+  { id: 'wf.studyGroup', kind: 'workflow', wf: 'studyGroup', title: '组队自习', patterns: ['组队自习', '找搭子', '约自习', '拼自习', '学习搭子', '组队学习'] },
+  { id: 'wf.courseReview', kind: 'workflow', wf: 'courseReview', title: '课程评价', patterns: ['课程评价', '评价课程', '这门课怎么样', '选课避雷', '老师怎么样', '水课'] },
+  { id: 'wf.lostStats', kind: 'workflow', wf: 'lostStats', title: '失物统计', patterns: ['失物统计', '丢东西多吗', '招领统计', '失物多吗'] },
+  { id: 'wf.canteenRank', kind: 'workflow', wf: 'canteenRank', title: '食堂红黑榜', patterns: ['红黑榜', '食堂排行', '食堂推荐榜', '哪个食堂好吃', '食堂避雷榜'] },
 
   // ── 应用直达 ───────────────────────────────────────────
   { id: 'app.reminder', kind: 'app', app: 'reminder', title: '提醒中心', patterns: ['提醒中心', '定时提醒', '看提醒', '闹钟', '提醒列表'] },

@@ -105,6 +105,32 @@ export function followupsFor(wfId) {
   return FOLLOWUPS[wfId] || ['还有其他需求吗？', '最新通知', '今天吃什么']
 }
 
+/* ──────────────────────── 富文本 ──────────────────────── */
+
+/** HTML 转义（mdLite 前置，保证 v-html 安全） */
+export function escapeHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+/**
+ * 轻量 Markdown 渲染（只支持 **加粗** / `代码` / 换行 / > 引用，
+ * 不支持表格嵌套——够对话用，且零依赖；先转义后套标签，v-html 可直接用）
+ */
+export function mdLite(text) {
+  const lines = escapeHtml(text).split('\n').map((ln) => {
+    let s = ln
+    s = s.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    s = s.replace(/`([^`]+?)`/g, '<code>$1</code>')
+    if (s.startsWith('&gt; ')) s = '<blockquote>' + s.slice(5) + '</blockquote>'
+    return s
+  })
+  return lines.join('<br/>')
+}
+
 /* ──────────────────────── 主动问候 ──────────────────────── */
 
 /** 时段问候 */
