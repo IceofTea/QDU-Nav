@@ -12,3 +12,6 @@ counter/.seed3
 
 # 本机账单样例（含个人隐私）与参考 apk，禁止入库
 example/
+
+# 本地测试网关数据副本（COMMUNITY_DATA 指向它，勿污染正式 community.json）
+server/data/community.test.json

@@ -101,7 +101,9 @@ const index = {
   docs
 }
 
-const out = path.join(AGENT, 'kb-nav.json')
+const out = process.env.KB_NAV_OUT
+  ? path.resolve(process.env.KB_NAV_OUT)
+  : path.join(AGENT, 'kb-nav.json')
 fs.writeFileSync(out, JSON.stringify(index, null, 1), 'utf8')
 console.log(`kb-nav.json 已生成：${N} docs · 词表 ${vocab.length} · ${path.relative(process.cwd(), out)}`)
 console.log('提醒：同步修改分词规则时必须同时更新 navAnswer.js 的 tokenize()')

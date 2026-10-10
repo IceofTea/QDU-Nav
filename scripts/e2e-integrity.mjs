@@ -9,13 +9,17 @@
  *            ③ CHAINS steps ⊆ WORKFLOWS
  *            ④ dist 含各视图分包 + admin.html + admin/index.html +
  *               console/index.html + 404.html（mobile/standalone 有源码即要求产物）
+ *            ⑤ kb-nav.json 与 faq/workflows/apps 源同步（gen 重生成比对，防陈旧）
+ *            ⑥ i18n zh/en 键对等（双向同构；en 缺键英文模式回落中文）
  * @设计      全用正则/文件系统解析，不 import 源码（node ESM 无扩展名限制），
  *            哪里都能跑；只报 ERROR（缺东西），不拦 WARNING
  * ════════════════════════════════════════════════════════════════════
  */
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { execFileSync } from 'node:child_process'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const SRC = path.join(ROOT, 'src')
@@ -86,6 +90,45 @@ if (distExists) {
   if (fs.existsSync(path.join(SRC, '..', 'mobile.html'))) {
     ok('dist/mobile.html 存在（多入口）', fs.existsSync(path.join(DIST, 'mobile.html')))
   }
+}
+
+/* ── 5. kb-nav 新鲜度（改 faq/workflows/apps 后必须重跑 gen_kb_nav） ── */
+{
+  const tmp = path.join(os.tmpdir(), 'kb-nav-fresh-' + process.pid + '.json')
+  let same = false
+  let errMsg = ''
+  try {
+    execFileSync(process.execPath, [path.join(ROOT, 'scripts', 'gen_kb_nav.mjs')], {
+      env: { ...process.env, KB_NAV_OUT: tmp }, stdio: 'pipe'
+    })
+    const norm = (s) => s.replace(/\r\n/g, '\n').trim()
+    same = norm(fs.readFileSync(tmp, 'utf8')) === norm(read(path.join(SRC, 'agent', 'kb-nav.json')))
+  } catch (e) { errMsg = String(e.message || e).slice(0, 140) }
+  fs.rmSync(tmp, { force: true })
+  ok('kb-nav.json 与 faq/workflows/apps 源同步', same, errMsg || '陈旧：重跑 node scripts/gen_kb_nav.mjs 并提交')
+}
+
+/* ── 6. i18n 键对等（zh/en 双向同构） ── */
+{
+  let missEn = null
+  let missZh = null
+  let errMsg = ''
+  try {
+    const zh = (await import(pathToFileURL(path.join(SRC, 'i18n', 'zh.js')).href)).default
+    const en = (await import(pathToFileURL(path.join(SRC, 'i18n', 'en.js')).href)).default
+    const flat = (o, p = '', acc = new Set()) => {
+      if (o && typeof o === 'object' && !Array.isArray(o)) {
+        for (const k of Object.keys(o)) flat(o[k], p ? p + '.' + k : k, acc)
+      } else acc.add(p)
+      return acc
+    }
+    const z = flat(zh)
+    const e = flat(en)
+    missEn = [...z].filter((k) => !e.has(k))
+    missZh = [...e].filter((k) => !z.has(k))
+  } catch (e2) { errMsg = String(e2.message || e2).slice(0, 140) }
+  ok('i18n 键对等：zh⊆en（en 缺键会回落中文）', missEn !== null && missEn.length === 0, errMsg || 'en 缺:' + (missEn || []).slice(0, 8).join(','))
+  ok('i18n 键对等：en⊆zh（无幽灵键）', missZh !== null && missZh.length === 0, errMsg || 'zh 缺:' + (missZh || []).slice(0, 8).join(','))
 }
 
 console.log(`\n done: pass=${pass} fail=${fail}`)

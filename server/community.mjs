@@ -51,7 +51,10 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = path.join(__dirname, 'data')
-const FILE = path.join(DATA_DIR, 'community.json')
+// 测试隔离：COMMUNITY_DATA=server/data/community.test.json 时读写副本，不污染正式库
+const FILE = process.env.COMMUNITY_DATA
+  ? path.resolve(process.env.COMMUNITY_DATA)
+  : path.join(DATA_DIR, 'community.json')
 const LEGACY_FILE = path.join(DATA_DIR, 'comments.json')
 
 const MAX_LEN = 1000
@@ -116,7 +119,8 @@ function load() {
 
 function persist() {
   try {
-    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true })
+    const dir = path.dirname(FILE)
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
     const tmp = FILE + '.tmp'
     fs.writeFileSync(tmp, JSON.stringify(db, null, 2), 'utf8')
     fs.renameSync(tmp, FILE)

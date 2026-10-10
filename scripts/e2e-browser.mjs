@@ -141,6 +141,26 @@ try {
       await page.locator('#agent-fab, #app').first().waitFor({ timeout: 20000 })
     })
   }
+  // 11. 375 全应用横向溢出扫描（防手机端撑破；E2E_SKIP_375=1 跳过）
+  if (process.env.E2E_SKIP_375 !== '1') {
+    await ok(page, '375 全应用无横向溢出', async () => {
+      const appsSrc = fs.readFileSync(path.join(ROOT, 'src', 'data', 'apps.js'), 'utf8')
+      const ids = [...appsSrc.matchAll(/\{ id: '(\w+)',/g)].map((m) => m[1])
+      assert(ids.length >= 10, '应用过少: ' + ids.length)
+      await page.setViewportSize({ width: 375, height: 740 })
+      const bad = []
+      for (const id of ids) {
+        await page.goto(BASE + '/#/app/' + id, { waitUntil: 'domcontentloaded', timeout: 30000 })
+        await page.waitForTimeout(450)
+        const over = await page.evaluate(() => {
+          const d = document.scrollingElement || document.documentElement
+          return d.scrollWidth - d.clientWidth
+        })
+        if (over > 2) bad.push(id + ' +' + over + 'px')
+      }
+      assert(bad.length === 0, '溢出: ' + bad.join(', '))
+    })
+  }
 } finally {
   await browser.close().catch(() => {})
 }

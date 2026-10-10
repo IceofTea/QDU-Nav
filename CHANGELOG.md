@@ -2,6 +2,12 @@
 
 > 面向使用者的版本摘要。逐条工程日志见 `AGENTS.md`「六、更新日志」。
 
+## v1.6.13 (2026-10-10) · 防复发门禁与工程体检（patch 小版本）
+- 🚧 integrity 新增两道硬门禁：⑤ kb-nav 与 faq/workflows/apps 源同步（确定性重生成比对，根治「改源忘重跑」）；⑥ i18n zh/en 键对等双向同构（补齐 3 个缺英文键后硬拦）
+- 🧪 网关支持 `COMMUNITY_DATA` 环境变量——本地测试写数据副本（已 gitignore），不再污染正式 community.json；snapshot 降频 4 次/天 → 1 次/天
+- 🛠 新增 `crosscheck-kbnav.mjs`（出处交叉审计固化）与 `sync-diff.mjs`（QDU↔FJNU 漏同步盘点）；e2e-browser 新增 11 号检查「375 全应用无横向溢出」
+- ✅ 验证：build / integrity（含新门禁）/ unit×4 / audit / scenes / Python 单测 18/18 / 本地网关 E2E 全绿
+
 ## v1.6.12 (2026-10-10) · kb-nav 知识库重生成与交叉审计（patch 小版本）
 - 🧠 智能体 BM25 知识库 `kb-nav.json` 自 v1.4.0 后首次重生成：80 → 104 条（+12 工作流 +12 应用），旧 80 条零删减
 - 🔗 交叉审计零失效：35 应用出处全部存在于 apps.js/router、39 工作流出处全部存在于 workflows.js、4 条 QDU-Wiki 百科出处对 Wiki kb（943 chunk）全命中

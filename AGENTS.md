@@ -52,6 +52,10 @@
 - 不编造数据：抓不到就如实降级（空态 + 提示），绝不捏造课程/食堂/舆情数据。
 - 版权与隐私：贴吧帖子等第三方内容只做轻量聚合，页面需注明来源。
 - 版本号只在 `site.js` 维护，不要在页面模板里硬编码。
+- **改 `faq.js`/`workflows.js`/`apps.js` 后必须重跑 `node scripts/gen_kb_nav.mjs` 并提交**（integrity 门禁拦陈旧）；出处交叉审计 `node scripts/crosscheck-kbnav.mjs`（可加 `WIKI_KB=<wiki>/site/assets/kb.json`）。
+- **push 前必 `git fetch`**（snapshot.yml 每天自动提交，防抢推）；直推 https URL 后再 fetch 刷新跟踪引用。
+- **本地测试网关用 `COMMUNITY_DATA=server/data/community.test.json node server/index.mjs`**（测试写数据副本；正式 community.json 勿被场景/冒烟测试写脏）。
+- 本机默认 `python` 可能过旧（3.6 跑不动单测）→ QDU 单测用 **`py -3.13 -m unittest discover -s tests`**（18/18）。
 
 ---
 
@@ -59,6 +63,7 @@
 
 | 日期 | 版本 | 内容 |
 | --- | --- | --- |
+| 2026-10-10 | v1.6.13 | **防复发门禁与工程体检（patch）**。体检结论：TODO 残留 0、FJNU 工具链与本仓完全对齐；补五短板——① integrity ⑤ kb-nav 新鲜度门禁（`KB_NAV_OUT` 临时重生成 + 规范化比对，根治 v1.4.0 式陈旧复发）；② integrity ⑥ i18n zh/en 键对等双向硬门禁（先修 en.js 3 个缺键 classroomNav.periodOption/roomsUnit、timetable.searchHint2）；③ `server/community.mjs` 支持 `COMMUNITY_DATA` 环境变量（测试写副本 + persist 按实际路径建目录 + 副本入 gitignore）；④ snapshot cron 4 次/天→1 次/天（23 3 * * *）；⑤ 新增 `scripts/crosscheck-kbnav.mjs`（出处审计固化，WIKI_KB 可选）与 `scripts/sync-diff.mjs`（校本漏同步盘点）；⑥ e2e-browser 11 号检查「375 全应用无横向溢出」（E2E_SKIP_375 可跳）；⑦ AGENTS 红线补 4 条纪律（gen_kb_nav/推前 fetch/COMMUNITY_DATA/py -3.13）。**验证**：build/integrity（8→12 项 PASS）/unit×4/audit/scenes/单测 18/18/本地网关 E2E 全绿。 |
 | 2026-10-10 | v1.6.12 | **kb-nav 重生与交叉审计（patch，第四棒接力）**。智能体 BM25 知识库 `kb-nav.json` 自 v1.4.0 后首次重生成（80→104 条：+12 工作流 +12 应用，旧 80 条零删减，`scripts/gen_kb_nav.mjs` 确定性产出）；交叉审计：35 应用出处全部 ∈ apps.js/router viewMap、39 工作流出处全部 ∈ workflows.js、4 条 QDU-Wiki 百科出处对 Wiki kb（943 chunk）全命中——修 faq.js 两处俗称页名为正式页名（生活指南/宿舍→住宿、医院→医疗）；验证：npm build 通过、unit grow/wall/im/agent 全过、e2e-integrity 全过、audit-refs 0/0、scenes-community 过、Python 单测 18/18（需 `py -3.13`，本机默认 python3.6 过旧）。背景：接力任务文档 §0 三-2b，与另一台设备工作对齐。 |
 | 2026-10-09 | v1.6.11 | **不蒜子第三方实时统计 + 应用排序 + 手机端收尾（patch）**。首页「关于本站」访问统计卡 `VisitStats.vue` 接入 busuanzi.ibruce.info 实时行（首页浏览/站点浏览/站点访客），i18n zh/en 同步；实现收敛为共享模块 `src/utils/busuanzi.js`（**串行队列**防路由快速切换竞态 + **常驻隐藏 span** 不随组件卸载丢失 + 注入前清空 span 防旧值误判），`router.parseHash` 每次导航注入一次 JSONP（site_pv +1），组件只读共享状态。**为什么**：自建计数服务免费额度超限处于静态快照模式，引入独立第三方实时计数作互补。**apps.js 应用排序**：35 应用按「老前新后」**组内**重排（`appGroups` 组间顺序不变），冲奖六件套 jobs/compare/flywheel/transplant/profile 与 skills 等新应用后置。**手机端**：RebrandPreview 375px 横向溢出修复（`sp-row3` 三列数字输入 content-box 撑破 grid 轨道 → `minmax(0,1fr)` + `width:100%;box-sizing:border-box`）。**验证**：Python 单测 18/18、unit grow/agent/wall/im 175 项全过、audit-refs 0/0、npm build 通过；CDP（Chrome 151）冒烟 **ALL PASS**——首页三指标回填、路由切换 site_pv 实测递增、返回首页 host 仍在且数据更新、375 首页/应用页无横向溢出、零业务 JS 错误；35 个应用页 375px 全量扫描 **0 溢出**。**注意**：`site_pv/site_uv` 为 `iceoftea.github.io` 域名级口径（与同域 Wiki 站共享统计桶，仅接入脚本的页面计数）；hash 路由下 Referer 不含 `#hash`，各页共享站点根 `page_pv` 计数，前端按前端路由 path 缓存展示。 |
 | 2026-10-09 | v1.6.10 | **i18n/E2E/收尾（patch）**。FJNU 注册表 EN 字段/网格/分类/底部导航跟进/门禁检查；E2E 脚本+workflow；树形视图切换/多草稿箱UI/RichEditor 进私信。 |
