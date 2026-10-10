@@ -12,6 +12,7 @@ import { ref, computed, markRaw } from 'vue'
 import { SITE } from './config/site.js'
 import { visitorId } from './utils/visitor.js'
 import { recordAppOpen } from './agent/profile.js'
+import { hitBusuanzi } from './utils/busuanzi.js'
 import Home from './views/Home.vue'
 
 /** 首页同步加载，其他页面懒加载（手机弱网首屏只下 ~200KB，应用页按需再下） */
@@ -118,6 +119,9 @@ export function useViewState() {
     const id = m && VIEWS[m[1]] ? m[1] : 'home'
     current.value = id
     setView(id)
+    // 不蒜子计数：每次导航（hashchange + 初始）注入一次 JSONP → site_pv +1，
+    // page_pv 按 path 缓存进共享模块（VisitStats 读此状态展示）
+    hitBusuanzi(id === 'home' ? '/' : '/app/' + id)
   }
   window.addEventListener('hashchange', parseHash)
   parseHash()

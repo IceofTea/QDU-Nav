@@ -753,6 +753,12 @@ export default {
     todayPv: '今日访问',
     staticNote: '本站累计 · 快照数据',
     liveNote: '本站累计 · 自建独立计数',
+    bszTag: '不蒜子实时',
+    bszHome: '首页浏览',
+    bszSitePv: '站点浏览',
+    bszSiteUv: '站点访客',
+    bszLoading: '不蒜子统计加载中…',
+    bszFail: '不蒜子统计暂不可用（第三方服务）',
   },
   insightPanel: {
     defaultTitle: '一眼看懂这些数据',

@@ -398,4 +398,11 @@ onMounted(() => { /* 初值不动站点样式 */ })
 .sp-note code { background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 4px; }
 
 @media (max-width: 940px) { .sp-grid { grid-template-columns: 1fr; } }
+/* 手机端：sp-row3 三列数字输入（校区/学院/专业数）的 input 为 content-box 默认宽，
+   会撑破 grid 轨道导致横向溢出（375px 实测 scrollW=581）→ 轨道可收缩 + 输入框贴满 */
+@media (max-width: 560px) {
+  .sp-row3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .sp-input { width: 100%; box-sizing: border-box; }
+  .sp-title { min-width: 0; }
+}
 </style>

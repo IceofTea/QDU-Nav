@@ -67,6 +67,12 @@ export default {
     todayPv: 'Today Visits',
     staticNote: 'Total · Snapshot data',
     liveNote: 'Total · Self-built counter',
+    bszTag: 'Busuanzi live',
+    bszHome: 'Home views',
+    bszSitePv: 'Site views',
+    bszSiteUv: 'Site visitors',
+    bszLoading: 'Busuanzi loading…',
+    bszFail: 'Busuanzi unavailable (third-party)',
   },
   insightPanel: {
     defaultTitle: 'Insights at a glance',

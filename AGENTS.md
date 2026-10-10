@@ -59,6 +59,7 @@
 
 | 日期 | 版本 | 内容 |
 | --- | --- | --- |
+| 2026-10-09 | v1.6.11 | **不蒜子第三方实时统计 + 应用排序 + 手机端收尾（patch）**。首页「关于本站」访问统计卡 `VisitStats.vue` 接入 busuanzi.ibruce.info 实时行（首页浏览/站点浏览/站点访客），i18n zh/en 同步；实现收敛为共享模块 `src/utils/busuanzi.js`（**串行队列**防路由快速切换竞态 + **常驻隐藏 span** 不随组件卸载丢失 + 注入前清空 span 防旧值误判），`router.parseHash` 每次导航注入一次 JSONP（site_pv +1），组件只读共享状态。**为什么**：自建计数服务免费额度超限处于静态快照模式，引入独立第三方实时计数作互补。**apps.js 应用排序**：35 应用按「老前新后」**组内**重排（`appGroups` 组间顺序不变），冲奖六件套 jobs/compare/flywheel/transplant/profile 与 skills 等新应用后置。**手机端**：RebrandPreview 375px 横向溢出修复（`sp-row3` 三列数字输入 content-box 撑破 grid 轨道 → `minmax(0,1fr)` + `width:100%;box-sizing:border-box`）。**验证**：Python 单测 18/18、unit grow/agent/wall/im 175 项全过、audit-refs 0/0、npm build 通过；CDP（Chrome 151）冒烟 **ALL PASS**——首页三指标回填、路由切换 site_pv 实测递增、返回首页 host 仍在且数据更新、375 首页/应用页无横向溢出、零业务 JS 错误；35 个应用页 375px 全量扫描 **0 溢出**。**注意**：`site_pv/site_uv` 为 `iceoftea.github.io` 域名级口径（与同域 Wiki 站共享统计桶，仅接入脚本的页面计数）；hash 路由下 Referer 不含 `#hash`，各页共享站点根 `page_pv` 计数，前端按前端路由 path 缓存展示。 |
 | 2026-10-09 | v1.6.10 | **i18n/E2E/收尾（patch）**。FJNU 注册表 EN 字段/网格/分类/底部导航跟进/门禁检查；E2E 脚本+workflow；树形视图切换/多草稿箱UI/RichEditor 进私信。 |
 | 2026-10-09 | v1.6.9 | **高级感与新工作流（patch）**。mdLite/TTS/ICS/组合动作/8工作流/记忆面板/成长曲线/自检台/高级检索接线；Wiki图谱/纠错看板/阅读包/PWA/kb单测。 |
 | 2026-10-09 | v1.6.8 | **代码治理（patch）**。草稿统一/洞察去重/统一出口/脚手架统一/审计0/0；修退出码假阳性；防呆捉出错测试3个；37 文件模块头；版本文档去重整理。 |
