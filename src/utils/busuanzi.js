@@ -28,16 +28,26 @@ export const bsz = reactive({
 })
 
 function ensureHost() {
-  if (document.getElementById('busuanzi_value_site_pv')) return
-  const host = document.createElement('div')
-  host.id = 'busuanzi-bsz-host'
-  host.setAttribute('aria-hidden', 'true')
-  host.style.cssText = 'display:none'
-  host.innerHTML =
-    '<span id="busuanzi_value_site_pv"></span>' +
-    '<span id="busuanzi_value_site_uv"></span>' +
-    '<span id="busuanzi_value_page_pv"></span>'
-  document.body.appendChild(host)
+  // 逐个补齐缺失的 span：FJNU 站的 Vercount 会自建 site_pv/site_uv 两个 span，
+  // 若按「已存在就不建」的整体判断会漏掉 page_pv → collect 永远等不齐 → 卡 loading
+  const ids = ['busuanzi_value_site_pv', 'busuanzi_value_site_uv', 'busuanzi_value_page_pv']
+  let host = null
+  for (const id of ids) {
+    if (document.getElementById(id)) continue
+    if (!host) {
+      host = document.getElementById('busuanzi-bsz-host')
+      if (!host) {
+        host = document.createElement('div')
+        host.id = 'busuanzi-bsz-host'
+        host.setAttribute('aria-hidden', 'true')
+        host.style.cssText = 'display:none'
+        document.body.appendChild(host)
+      }
+    }
+    const s = document.createElement('span')
+    s.id = id
+    host.appendChild(s)
+  }
 }
 
 function clearSpans() {
