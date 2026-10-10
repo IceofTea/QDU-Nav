@@ -75,6 +75,7 @@ function hueOf(i) {
     <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('contributors.community') }}</div>
     <ul class="changelog">
       
+      <li><b>v1.6.12</b> — 智能体知识库重生成（80→104 条）+ QDU-Wiki kb 交叉审计零失效 + faq 出处页名修正。</li>
       <li><b>v1.6.11</b> — 不蒜子第三方实时统计：首页「关于本站」访问统计卡新增 busuanzi 实时行（首页浏览/站点浏览/站点访客），按页面路径独立计数，失败优雅降级。</li>
       <li><b>v1.6.10</b> — i18n/E2E/收尾：FJNU 全应用注册表英文字段 + 浏览器 E2E 脚本 + 树形回复视图切换 + 多草稿箱 UI + RichEditor 进私信。</li>
       <li><b>v1.6.9</b> — 智能体高级感：富文本渲染/语音播报/ICS日历+8新工作流；Wiki知识图谱/纠错看板/阅读包/PWA。</li>
