@@ -75,6 +75,7 @@ function hueOf(i) {
     <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('contributors.community') }}</div>
     <ul class="changelog">
       
+      <li><b>v1.6.17</b> — 评论网关：管理员删除评论多级子孙收敛加固（孙级楼中楼不再悬空）。</li>
       <li><b>v1.6.16</b> — 评论网关：删除自己的评论 owner 鉴权 API + GET 防盗删过滤（配套 Wiki 评论增强）。</li>
       <li><b>v1.6.15</b> — 视觉走查：私信空态一行/洞察柱防挤出/Wiki 卡按钮一行/顶栏短名（真机截图 22 张肉眼审查）。</li>
       <li><b>v1.6.14</b> — 复盘修复：gen_kb_nav 逐行解析加固 + 单测周日边界公式修正（24/0）。</li>

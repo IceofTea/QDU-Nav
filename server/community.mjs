@@ -663,10 +663,21 @@ async function handleAdmin(req, urlPath, searchParams, ip) {
     const item = arr.find((x) => x.id === body.id)
     if (!item) return { status: 404, body: { ok: false, error: 'not found' } }
     if (body.action === 'delete') {
-      const i = arr.indexOf(item)
-      arr.splice(i, 1)
-      // 级联：删除评论时其楼中楼一并删除
-      if (type === 'comments') data.comments = data.comments.filter((c) => c.parent !== item.id)
+      if (type === 'comments') {
+        // 多级收敛：连同全部楼中楼子孙一并删除（旧实现只删一层子级，孙级会悬空）
+        const doomed = new Set([item.id])
+        let grew = true
+        while (grew) {
+          grew = false
+          for (const x of data.comments) {
+            if (x.parent && doomed.has(x.parent) && !doomed.has(x.id)) { doomed.add(x.id); grew = true }
+          }
+        }
+        data.comments = data.comments.filter((x) => !doomed.has(x.id))
+      } else {
+        const i = arr.indexOf(item)
+        arr.splice(i, 1)
+      }
     } else if (body.action === 'approve') {
       item.status = 'ok'
       delete item.reportReason

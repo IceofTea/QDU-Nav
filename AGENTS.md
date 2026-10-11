@@ -63,6 +63,7 @@
 
 | 日期 | 版本 | 内容 |
 | --- | --- | --- |
+| 2026-10-11 | v1.6.17 | **评论网关：管理员删除级联加固（patch）**。`POST /api/admin/moderate {type:'comments', action:'delete'}` 的级联由「只删一层子级」改为**多级子孙收敛**（与自删 API 同算法）——孙级楼中楼不再悬空指向已删父级。Wiki 评论区管理员入口（🛡按钮，x-admin-token 暗门凭证）同批上线。**验证**：curl 实测主+子建楼后 admin 删主→残留 0；页内实测 PASS。 |
 | 2026-10-11 | v1.6.16 | **评论网关：删除鉴权与防盗删（patch）**。配合 Wiki 评论前端增强：① `POST /api/comments/delete` {id, owner}——owner token 鉴权自删，parent 链收敛连删子孙楼中楼，audit 记 `comments:selfdelete`，他人/无凭证 403；② POST 收 `owner` 字段入库；③ **GET/queue 输出 `.map(({owner,...rest})=>rest)` 剔除凭证**（防盗删 token 随列表泄漏）。与 FJNU 网关字节级同源（sync-diff 干净）。**验证**：build/integrity/unit×4/audit 全绿；curl 三连实测（他人删 403/本人删 removed=1/列表无 owner）。 |
 | 2026-10-11 | v1.6.15 | **视觉走查（patch）**。22 张真机截图肉眼审查（手机 390 / 桌面 1280，欢迎/首页×3/分类/墙/私信/EN/图谱/学院/桌面 hero）：① 私信空态「← 选一个会话开始聊天」小屏竖排折行 → @640 会话列表 132px + 空态 nowrap 一行；② 数据洞察卡柱状图被长文字挤出卡片（insight-main min-width:220 撑宽 + bars 无 shrink）→ min-width:0 + flex-shrink:0；③ Wiki 卡 4 按钮 3+1 孤行 → padding/gap 紧凑化一行；④ 顶栏 brand-name 挤压截断 → site.name 短名（'QDU 校园'）+ @640 ellipsis 兜底 + ghost-btn 再缩。**验证**：build/integrity/unit×4/E2E 10 项全绿；EN DOM 断言无中文泄漏。 |
 | 2026-10-11 | v1.6.14 | **复盘修复（patch）**。全面回炉三轮新功能：① kb-nav 词条逐条比对 apps.js 源——**零错位**；② 发现 `gen_kb_nav` 应用语料用三数组下标对齐（desc 含撇号即错位且门禁抓不到）→ 改逐行解析，重生成 byte 一致纯防患；③ 发现 `unit-agent`「明天」用例期望公式写错（`(today%7)+1===8` 永假，周日必走 `today+1=8` 错误分支）——实现正确、单测 bug，修正后 24/0（该 bug 逢周日才爆，昨天 10-10 周六恰过）；④ 确认 integrity 门禁已在 `deploy.yml` 实跑拦部署、`roomsUnit/periodOption` 为无害死键。**验证**：build/integrity 17 项/unit×4/audit/本地网关 E2E 10 项全绿。 |
