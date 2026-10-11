@@ -243,10 +243,38 @@ async function handleComments(req, urlPath, searchParams, ip) {
     return { status: 200, body: { ok: true, msg: '已收到举报，管理员将尽快处理' } }
   }
 
+  // 删除自己的评论：owner token 鉴权（发评时携带并入库；GET 输出过滤 owner 防盗删）。
+  // 连同其楼中楼子孙一并删除；旧数据无 owner 不可自删（可举报走管理员）。
+  if (action === 'delete') {
+    if (req.method !== 'POST') return { status: 405, body: { ok: false } }
+    let body = {}
+    try { body = JSON.parse((await readBody(req)) || '{}') } catch { return { status: 400, body: { ok: false, error: 'bad json' } } }
+    const owner = body.owner ? sanitize(String(body.owner), 40) : ''
+    if (!owner) return { status: 403, body: { ok: false, error: '缺少作者凭证' } }
+    const c = data.comments.find((x) => x.id === body.id)
+    if (!c) return { status: 404, body: { ok: false, error: 'not found' } }
+    if (!c.owner || c.owner !== owner) return { status: 403, body: { ok: false, error: '只能删除自己的评论' } }
+    // 连子孙楼中楼一并移除（parent 链向下收敛）
+    const doomed = new Set([c.id])
+    let grew = true
+    while (grew) {
+      grew = false
+      for (const x of data.comments) {
+        if (x.parent && doomed.has(x.parent) && !doomed.has(x.id)) { doomed.add(x.id); grew = true }
+      }
+    }
+    data.comments = data.comments.filter((x) => !doomed.has(x.id))
+    data.audit.push({ ts: Date.now(), action: 'comments:selfdelete', detail: c.author + ' 删除 ' + doomed.size + ' 条' })
+    if (data.audit.length > 500) data.audit = data.audit.slice(-500)
+    persist()
+    bus.emit('comment')
+    return { status: 200, body: { ok: true, removed: doomed.size } }
+  }
+
   if (action === 'queue') {
     const since = Number(searchParams.get('since') || 0)
     const all = data.comments.filter((c) => c.status === 'ok').sort((a, b) => b.ts - a.ts)
-    const fresh = since ? all.filter((c) => c.ts > since) : []
+    const fresh = (since ? all.filter((c) => c.ts > since) : []).map(({ owner, ...rest }) => rest)
     return { status: 200, body: { ok: true, latestTs: all[0] ? all[0].ts : 0, fresh, count: all.length } }
   }
 
@@ -273,6 +301,8 @@ async function handleComments(req, urlPath, searchParams, ip) {
       .filter((c) => c.status === 'ok' && (p ? c.path === p : true))
       .sort((a, b) => b.ts - a.ts)
       .slice(0, 300)
+      // GET 输出剔除 owner 凭证（防盗删），其余字段原样
+      .map(({ owner, ...rest }) => rest)
     return { status: 200, body: { ok: true, comments: list, latestTs: list[0] ? list[0].ts : 0 } }
   }
 
@@ -299,6 +329,7 @@ async function handleComments(req, urlPath, searchParams, ip) {
       quote: sanitize(body.quote, 300),
       parent, // 楼中楼：非空即为某条评论的回复
       replyTo: body.replyTo ? sanitize(String(body.replyTo), MAX_AUTHOR) : '',
+      owner: body.owner ? sanitize(String(body.owner), 40) : null, // 作者凭证（仅入库，GET 不回传）
       status: 'ok',
       ts: Date.now(),
       likes: 0,
