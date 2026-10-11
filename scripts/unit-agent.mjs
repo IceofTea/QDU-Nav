@@ -25,7 +25,7 @@ ok('明天 → day 为明天(今天+1)', () => {
   const t = extractTime('明天下午开会')
   assert.ok(t, '应识别到时间')
   const today = new Date().getDay() || 7
-  assert.equal(t.day, (today % 7) + 1 === 8 ? 1 : today + 1)
+  assert.equal(t.day, (today % 7) + 1)  // 1=Mon..7=Sun; Sun getDay()=0 -> 7, tomorrow=1
   assert.equal(t.dateLabel, '明天')
 })
 ok('周三 → dateLabel 为周三', () => {

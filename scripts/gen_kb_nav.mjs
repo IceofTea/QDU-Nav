@@ -72,14 +72,13 @@ try {
   }
 } catch (e) { console.warn('workflows.js 读取失败:', e.message) }
 
-// 3) 应用语料
+// 3) 应用语料（逐行解析 id/title/desc——同字段同行对齐，防三数组下标错位）
 try {
   const apps = fs.readFileSync(APPS, 'utf8')
-  const ids = extractQuoted(apps, 'id')
-  const titles = extractQuoted(apps, 'title')
-  const descs = extractQuoted(apps, 'desc')
-  for (let i = 0; i < titles.length; i++) {
-    chunks.push({ t: titles[i] + ' 功能介绍', s: descs[i] || '', src: '应用 ' + (ids[i] || ''), kind: 'app' })
+  for (const line of apps.split('\n')) {
+    const m = line.match(/\{ id: '(\w+)', title: '([^']*)'[\s\S]*?desc: '([^']*)'/)
+    if (!m) continue
+    chunks.push({ t: m[2] + ' 功能介绍', s: m[3] || '', src: '应用 ' + m[1], kind: 'app' })
   }
 } catch (e) { console.warn('apps.js 读取失败:', e.message) }
 

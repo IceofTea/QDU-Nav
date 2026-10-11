@@ -2,6 +2,11 @@
 
 > 面向使用者的版本摘要。逐条工程日志见 `AGENTS.md`「六、更新日志」。
 
+## v1.6.14 (2026-10-11) · 复盘修复（patch 小版本）
+- 🛠 `gen_kb_nav.mjs` 应用语料改逐行解析 id/title/desc（同字段同行对齐，防三数组下标错位——重生成 byte 一致，纯防患）
+- 🐛 `unit-agent`「明天→day」期望公式修正：`(today%7)+1===8` 永假致周日必挂（实现正确、单测错），改 `(today%7)+1`；24/0 全绿
+- 🔍 全面复盘结论：kb-nav 词条零错位、integrity 门禁已在 deploy.yml 拦部署、roomsUnit/periodOption 为无害死键（保留）
+
 ## v1.6.13 (2026-10-10) · 防复发门禁与工程体检（patch 小版本）
 - 🚧 integrity 新增两道硬门禁：⑤ kb-nav 与 faq/workflows/apps 源同步（确定性重生成比对，根治「改源忘重跑」）；⑥ i18n zh/en 键对等双向同构（补齐 3 个缺英文键后硬拦）
 - 🧪 网关支持 `COMMUNITY_DATA` 环境变量——本地测试写数据副本（已 gitignore），不再污染正式 community.json；snapshot 降频 4 次/天 → 1 次/天
