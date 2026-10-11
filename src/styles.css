@@ -327,15 +327,15 @@ body {
 .wiki-emoji { font-size: 34px; }
 .wiki-title { font-size: 17px; font-weight: 800; }
 .wiki-desc { font-size: 12px; opacity: 0.85; margin-top: 3px; line-height: 1.6; }
-.wiki-links { display: flex; flex-wrap: wrap; gap: 10px; }
+.wiki-links { display: flex; flex-wrap: wrap; gap: 8px; }
 .wiki-link {
   background: rgba(255, 255, 255, 0.16);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: #fff;
   text-decoration: none;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
-  padding: 9px 16px;
+  padding: 7px 12px;
   border-radius: 10px;
   transition: 0.2s;
   white-space: nowrap;
@@ -516,7 +516,7 @@ body {
   color: #fff;
   box-shadow: 0 10px 26px rgba(15, 102, 94, 0.25);
 }
-.insight-main { flex: 1; min-width: 220px; }
+.insight-main { flex: 1; min-width: 0; }
 .insight-title { font-size: 16px; font-weight: 800; }
 .insight-desc { font-size: 12px; opacity: 0.9; margin-top: 6px; line-height: 1.7; }
 .insight-desc b { color: #7ee2c4; }
@@ -526,6 +526,7 @@ body {
   gap: 6px;
   height: 64px;
   padding: 0 4px;
+  flex-shrink: 0;
 }
 .insight-bar {
   width: 16px;
@@ -1004,9 +1005,9 @@ table.data th { background: var(--primary-soft); color: var(--primary-dark); fon
   .brand { gap: 8px; min-width: 0; }
   .brand-logo { height: 36px; padding: 0 10px; }
   .brand-logo span { font-size: 13px; }
-  .brand-name { font-size: 15px; }
+  .brand-name { font-size: 15px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .header-right { gap: 6px; }
-  .ghost-btn { padding: 7px 10px; font-size: 12px; }
+  .ghost-btn { padding: 6px 8px; font-size: 12px; }
   .desktop-only { display: none !important; }
   .lang-btn { padding: 6px 8px; }
   .lang-label { font-size: 11px; }

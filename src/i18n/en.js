@@ -5,7 +5,7 @@
 export default {
   site: {
     brand: 'QDU-Nav',
-    name: 'QDU Campus Navigator',
+    name: 'QDU Campus',
     tagline: 'Qingdao University · Campus Services Hub',
     motto: 'Virtue · Knowledge · Integrity · Innovation',
     welcomeTip: 'Unofficial campus service demo · Data for learning purposes only',

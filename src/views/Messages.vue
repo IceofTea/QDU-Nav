@@ -239,4 +239,8 @@ onBeforeUnmount(() => {
 .chat-send button.primary { background: #1b66c9; color: #fff; border-color: #1b66c9; }
 .emoji-row { display: flex; gap: 4px; padding: 0 14px 10px; }
 .emoji-row button { border: none; background: none; font-size: 20px; cursor: pointer; }
+@media (max-width: 640px) {
+  .msg-left { width: 132px; }
+  .msg-none { white-space: nowrap; font-size: 12px; }
+}
 </style>

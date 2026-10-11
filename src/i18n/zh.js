@@ -5,7 +5,7 @@
 export default {
   site: {
     brand: 'QDU-Nav',
-    name: 'QDU 校园导航',
+    name: 'QDU 校园',
     tagline: '青岛大学 · 校园服务聚合入口',
     motto: '明德 · 博学 · 守正 · 出奇',
     welcomeTip: '非官方校园服务聚合演示站 · 数据仅供学习交流',
