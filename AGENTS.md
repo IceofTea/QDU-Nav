@@ -63,6 +63,7 @@
 
 | 日期 | 版本 | 内容 |
 | --- | --- | --- |
+| 2026-10-12 | v1.6.20 | **冗余精简：徽章计数单一化（patch）**。审查三类"该删/该留"：① 删 `gh-count` 端点 + `ghCountCache` + `refreshGhBadge` 网关分支（线上无网关永远走不到=死路径，本地也用直连——两套路只剩一套真在跑）；② 留 `gh-comments` 巡检（唯一批量发现手段，词表在网关库、只读免 PAT）；③ 留「🗑 管理（GitHub）」直达、FJNU 的 gh 端点（字节级同源纪律）、多暗门入口（防御性冗余）。**验证**：语法×3、build/integrity、Wiki strict+0 死链、线上模拟徽章 `💬 5` 回归 PASS。 |
 | 2026-10-12 | v1.6.19 | **全网评论计数端点（patch）**。`GET /api/comments/gh-count`（handleComments，公开只读）：REST 拉 `GH_WATCH_REPO`（默认 IceofTea/QDU-Wiki）近 100 帖 Discussion 求 `comments` 字段和（实测 4 帖 5 条），60s 内存缓存 `ghCountCache`，8s 超时。**动机**：本地社区评论未上线，Wiki 徽章显示本地 0 无意义 → 徽章改显 GitHub 全网数；配套 Wiki 暗门改长按 1.2s（旧连点 5 次被单击滚动打断）。**验证**：curl `total=5`；浏览器三连 PASS（徽章 `💬 5`/单击滚动/长按弹口令框）。 |
 | 2026-10-12 | v1.6.18 | **GitHub 评论敏感词巡检（patch）**。`GET /api/admin/gh-comments`（adminOk 鉴权）：REST 拉 `GH_WATCH_REPO`（默认 IceofTea/QDU-Wiki）最近 10 主帖+各帖 10 评论 → `hitWords` 站内词表事后匹配 → 返回命中/原文/Discussion 直达链接；60s 内存缓存（匿名 60 次/时限频兜底）、可选 `env GITHUB_TOKEN` 提额、12s 超时与限频优雅报错。**背景**：Giscus 提交在 giscus.app iframe 内完成无法发送前拦截，此为事后巡检链路。**验证**：curl 实测 checked=9/flagged=0 + 无 token 401；浏览器巡检面板 PASS（非管理员不可见）。 |
 | 2026-10-11 | v1.6.17 | **评论网关：管理员删除级联加固（patch）**。`POST /api/admin/moderate {type:'comments', action:'delete'}` 的级联由「只删一层子级」改为**多级子孙收敛**（与自删 API 同算法）——孙级楼中楼不再悬空指向已删父级。Wiki 评论区管理员入口（🛡按钮，x-admin-token 暗门凭证）同批上线。**验证**：curl 实测主+子建楼后 admin 删主→残留 0；页内实测 PASS。 |

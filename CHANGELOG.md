@@ -2,6 +2,10 @@
 
 > 面向使用者的版本摘要。逐条工程日志见 `AGENTS.md`「六、更新日志」。
 
+## v1.6.20 (2026-10-12) · 冗余精简：徽章计数单一化（patch 小版本）
+- 🧹 删除网关 `GET /api/comments/gh-count` 端点与 `ghCountCache`；`refreshGhBadge` 删"优先走网关"分支——**线上无网关该分支永远走不到（死路径）**，两套路维护一套无意义
+- ✅ 徽章统一为前端直连 GitHub（sessionStorage 30min 缓存 + 限频回退），线上模拟回归 `💬 5` PASS；巡检 `gh-comments`、管理直达、FJNU 同源等保留项经审查维持
+
 ## v1.6.19 (2026-10-12) · 全网评论计数端点（patch 小版本）
 - 🏅 新增公开只读 `GET /api/comments/gh-count`：拉 `GH_WATCH_REPO` 近 100 帖 Discussion 求 `comments` 和（当前 5 条/4 帖），60s 缓存——Wiki 标题徽章由本地 0（未上线）改为显示 **GitHub 全网评论数**
 - 配套 Wiki 侧：徽章暗门由「连点 5 次」（被单击自动滚动打断）改为**长按 1.2 秒**，单击跳转评论区行为保留
