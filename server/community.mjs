@@ -82,6 +82,7 @@ export const bus = {
   on(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn) }
 }
 const loginFails = new Map() // ip -> {t, n}
+let ghCache = null // GitHub 评论巡检结果缓存 {t, body}（匿名 REST 限频兜底，60s）
 
 /* ──────────────────────── 存储层 ──────────────────────── */
 
@@ -611,6 +612,59 @@ async function handleAdmin(req, urlPath, searchParams, ip) {
   }
 
   if (!adminOk(req)) return { status: 401, body: { ok: false, error: '未授权：需要管理员口令' } }
+
+  // GitHub 评论巡检：拉本仓库 Discussions 最新内容，用站内敏感词表事后匹配。
+  // Giscus 的提交在 giscus.app iframe 内完成、无法发送前拦截——本接口做事后巡检，
+  // 命中项由管理员跳 GitHub Discussion 删除（owner 有删除权）。只读公开数据，无需 token；
+  // 可配 env GITHUB_TOKEN 提额（匿名 REST 60 次/小时/IP，60s 内存缓存兜底）。
+  if (action === 'gh-comments' && req.method === 'GET') {
+    if (ghCache && Date.now() - ghCache.t < 60000) return { status: 200, body: ghCache.body }
+    const repo = process.env.GH_WATCH_REPO || 'IceofTea/QDU-Wiki'
+    const hdr = { 'User-Agent': 'wiki-comment-sentinel', Accept: 'application/vnd.github+json' }
+    if (process.env.GITHUB_TOKEN) hdr.Authorization = 'Bearer ' + process.env.GITHUB_TOKEN
+    const ghGet = async (url) => {
+      const ctrl = new AbortController()
+      const timer = setTimeout(() => ctrl.abort(), 8000)
+      try {
+        const r = await fetch(url, { headers: hdr, signal: ctrl.signal })
+        clearTimeout(timer)
+        if (r.status === 403 || r.status === 429) throw new Error('rate')
+        if (!r.ok) throw new Error('HTTP ' + r.status)
+        return await r.json()
+      } catch (e) { clearTimeout(timer); throw e }
+    }
+    try {
+      const base = 'https://api.github.com/repos/' + repo
+      const discs = await ghGet(base + '/discussions?per_page=10&sort=updated')
+      const items = []
+      // 首帖本体也算一条待巡检内容
+      for (const d of discs) {
+        items.push({ section: '主帖', discussion: d.title, author: (d.user && d.user.login) || '?', body: String(d.body || ''), url: d.html_url, ts: d.created_at })
+      }
+      // 逐讨论拉评论（并发；匿名限频由缓存+可选 token 兜）
+      const subLists = await Promise.allSettled(
+        discs.map((d) => ghGet(base + '/discussions/' + d.number + '/comments?per_page=10'))
+      )
+      subLists.forEach((res, i) => {
+        if (res.status !== 'fulfilled') return
+        for (const c of res.value) {
+          items.push({ section: '评论', discussion: discs[i].title, author: (c.user && c.user.login) || '?', body: String(c.body || ''), url: c.html_url, ts: c.created_at })
+        }
+      })
+      const out = items
+        .sort((a, b) => String(b.ts).localeCompare(String(a.ts)))
+        .slice(0, 40)
+        .map((it) => ({ ...it, hits: hitWords(it.body + ' ' + it.discussion), body: it.body.slice(0, 300) }))
+      const body = { ok: true, repo, checked: out.length, flagged: out.filter((x) => x.hits.length).length, items: out }
+      ghCache = { t: Date.now(), body }
+      return { status: 200, body }
+    } catch (e) {
+      const msg = String(e.message || e) === 'rate'
+        ? 'GitHub 限频：稍后再试（网关可配 env GITHUB_TOKEN 提额）'
+        : 'GitHub 不可达：' + String(e.message || e)
+      return { status: 502, body: { ok: false, error: msg } }
+    }
+  }
 
   if (action === 'overview' && req.method === 'GET') {
     const cs = data.comments

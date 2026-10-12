@@ -2,6 +2,11 @@
 
 > 面向使用者的版本摘要。逐条工程日志见 `AGENTS.md`「六、更新日志」。
 
+## v1.6.18 (2026-10-12) · GitHub 评论敏感词巡检（patch 小版本）
+- 🔍 新增 `GET /api/admin/gh-comments`（仅管理员）：拉 QDU-Wiki Discussions 最近 10 主帖+评论，用站内敏感词表事后匹配——Giscus 发送前无法拦截（iframe 跨域），此为事后巡检链路
+- 🛡 60s 内存缓存（匿名 REST 60 次/小时限频兜底）；可配 env `GITHUB_TOKEN` 提额、`GH_WATCH_REPO` 换仓；命中项携带原文与 Discussion 直达链接
+- 前端（Wiki giscus.js 管理员态）：「🔍 敏感词巡检」按钮 → 面板展示命中/干净结论
+
 ## v1.6.17 (2026-10-11) · 评论网关：管理员删除级联加固（patch 小版本）
 - 🛡 `admin/moderate {action:'delete'}` 删除评论改为**多级子孙收敛**（旧实现只删一层子级，孙级楼中楼会悬空指向已删父级）
 - 与自删 API 的收敛逻辑对齐；curl 实测：主+子建楼后 admin 删主 → 该页残留 0
