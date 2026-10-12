@@ -63,6 +63,7 @@
 
 | 日期 | 版本 | 内容 |
 | --- | --- | --- |
+| 2026-10-12 | v1.6.19 | **全网评论计数端点（patch）**。`GET /api/comments/gh-count`（handleComments，公开只读）：REST 拉 `GH_WATCH_REPO`（默认 IceofTea/QDU-Wiki）近 100 帖 Discussion 求 `comments` 字段和（实测 4 帖 5 条），60s 内存缓存 `ghCountCache`，8s 超时。**动机**：本地社区评论未上线，Wiki 徽章显示本地 0 无意义 → 徽章改显 GitHub 全网数；配套 Wiki 暗门改长按 1.2s（旧连点 5 次被单击滚动打断）。**验证**：curl `total=5`；浏览器三连 PASS（徽章 `💬 5`/单击滚动/长按弹口令框）。 |
 | 2026-10-12 | v1.6.18 | **GitHub 评论敏感词巡检（patch）**。`GET /api/admin/gh-comments`（adminOk 鉴权）：REST 拉 `GH_WATCH_REPO`（默认 IceofTea/QDU-Wiki）最近 10 主帖+各帖 10 评论 → `hitWords` 站内词表事后匹配 → 返回命中/原文/Discussion 直达链接；60s 内存缓存（匿名 60 次/时限频兜底）、可选 `env GITHUB_TOKEN` 提额、12s 超时与限频优雅报错。**背景**：Giscus 提交在 giscus.app iframe 内完成无法发送前拦截，此为事后巡检链路。**验证**：curl 实测 checked=9/flagged=0 + 无 token 401；浏览器巡检面板 PASS（非管理员不可见）。 |
 | 2026-10-11 | v1.6.17 | **评论网关：管理员删除级联加固（patch）**。`POST /api/admin/moderate {type:'comments', action:'delete'}` 的级联由「只删一层子级」改为**多级子孙收敛**（与自删 API 同算法）——孙级楼中楼不再悬空指向已删父级。Wiki 评论区管理员入口（🛡按钮，x-admin-token 暗门凭证）同批上线。**验证**：curl 实测主+子建楼后 admin 删主→残留 0；页内实测 PASS。 |
 | 2026-10-11 | v1.6.16 | **评论网关：删除鉴权与防盗删（patch）**。配合 Wiki 评论前端增强：① `POST /api/comments/delete` {id, owner}——owner token 鉴权自删，parent 链收敛连删子孙楼中楼，audit 记 `comments:selfdelete`，他人/无凭证 403；② POST 收 `owner` 字段入库；③ **GET/queue 输出 `.map(({owner,...rest})=>rest)` 剔除凭证**（防盗删 token 随列表泄漏）。与 FJNU 网关字节级同源（sync-diff 干净）。**验证**：build/integrity/unit×4/audit 全绿；curl 三连实测（他人删 403/本人删 removed=1/列表无 owner）。 |

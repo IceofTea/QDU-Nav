@@ -75,6 +75,7 @@ function hueOf(i) {
     <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('contributors.community') }}</div>
     <ul class="changelog">
       
+      <li><b>v1.6.19</b> — gh-count 全网评论计数端点：Wiki 徽章显示 GitHub 评论数（本地评论未上线不再显 0）。</li>
       <li><b>v1.6.18</b> — GitHub 评论敏感词巡检：管理员一键扫 Discussions 最新内容命中站内词表，直达处置。</li>
       <li><b>v1.6.17</b> — 评论网关：管理员删除评论多级子孙收敛加固（孙级楼中楼不再悬空）。</li>
       <li><b>v1.6.16</b> — 评论网关：删除自己的评论 owner 鉴权 API + GET 防盗删过滤（配套 Wiki 评论增强）。</li>

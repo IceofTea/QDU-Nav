@@ -83,6 +83,7 @@ export const bus = {
 }
 const loginFails = new Map() // ip -> {t, n}
 let ghCache = null // GitHub 评论巡检结果缓存 {t, body}（匿名 REST 限频兜底，60s）
+let ghCountCache = null // GitHub（Giscus）评论总数缓存 {t, body}（徽章计数，60s）
 
 /* ──────────────────────── 存储层 ──────────────────────── */
 
@@ -277,6 +278,30 @@ async function handleComments(req, urlPath, searchParams, ip) {
     const all = data.comments.filter((c) => c.status === 'ok').sort((a, b) => b.ts - a.ts)
     const fresh = (since ? all.filter((c) => c.ts > since) : []).map(({ owner, ...rest }) => rest)
     return { status: 200, body: { ok: true, latestTs: all[0] ? all[0].ts : 0, fresh, count: all.length } }
+  }
+
+  // GitHub（Giscus）评论总数：供 Wiki 标题徽章显示全网评论数（本地社区评论未上线，
+  // 徽章显示本地 0 无意义）。公开只读；sum 近 100 帖 discussion 的 comments 字段。
+  if (action === 'gh-count') {
+    if (ghCountCache && Date.now() - ghCountCache.t < 60000) return { status: 200, body: ghCountCache.body }
+    const repo = process.env.GH_WATCH_REPO || 'IceofTea/QDU-Wiki'
+    try {
+      const ctrl = new AbortController()
+      const timer = setTimeout(() => ctrl.abort(), 8000)
+      const r = await fetch('https://api.github.com/repos/' + repo + '/discussions?per_page=100', {
+        headers: { 'User-Agent': 'wiki-comment-counter', Accept: 'application/vnd.github+json' },
+        signal: ctrl.signal
+      })
+      clearTimeout(timer)
+      if (!r.ok) return { status: 502, body: { ok: false, error: 'GitHub HTTP ' + r.status } }
+      const discs = await r.json()
+      const total = (Array.isArray(discs) ? discs : []).reduce((s, d) => s + (Number(d.comments) || 0), 0)
+      const body = { ok: true, repo, total, discussions: Array.isArray(discs) ? discs.length : 0, ts: Date.now() }
+      ghCountCache = { t: Date.now(), body }
+      return { status: 200, body }
+    } catch (e) {
+      return { status: 502, body: { ok: false, error: 'GitHub 不可达' } }
+    }
   }
 
   if (req.method === 'GET') {
