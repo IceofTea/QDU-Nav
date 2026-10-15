@@ -151,6 +151,19 @@
 
 > 汇总 v1.3.20–v1.3.24。站内公告已发布；详见下方各小版本明细。
 
+## v1.7.5 (2026-10-15) · 健壮性收尾：全面扫描 + 存储写入兜底（patch）
+对 src/ 做了一次跨仓机器扫描（JSON.parse 有无 try 兜底 / localStorage 写入有无保护 / innerHTML 与 v-html 赋值的
+数据来源），逐条人工核对后处置：
+- 本仓 WhatToEat.vue 有 2 处 sessionStorage.setItem 裸调用（禁用存储的沙箱环境会抛 SecurityError），
+  已包 try 并注释说明「退化为内存态」。
+- 扫描报出的其余 setItem 位置经核对**均已带 try**（扫描窗口只看前 2~3 行，属假阳性）；
+  JSON.parse 共 56 处，唯一点名的 src/stores/navContext.js 实际已在 try 内。
+- v-html/innerHTML 共 8 处逐条确认：NoticeDetail 已是白名单消毒后的 safeBody；AgentChat/CommentTree/RichEditor
+  均为先转义再渲染；Budget 两处为 i18n 文案插值；main.js 为固定错误文案——无新增注入面。
+
+本次未改动任何业务行为，仅补齐异常兜底。
+
+
 ## v1.7.4 (2026-10-15) · 首屏性能优化：智能体大脑移出首屏 + 预载按网络状况收敛（patch）
 用户反馈「好卡／首次缓冲太大」，实测定位到根因：App.vue 静态 import 了智能体悬浮舱，依赖链一路静态到
 agent/engine.js → navAnswer.js → kb-nav.json（121KB）+ workflows.js（79KB）——也就是「打开首页就把整个智能体

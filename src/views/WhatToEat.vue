@@ -55,13 +55,13 @@ function pickFrom(pool, count) {
 function roll() {
   picks.value = pickFrom(campusPool.value, 3)
   pickedCount.value += 1
-  sessionStorage.setItem('qdu_food_picked', String(pickedCount.value))
+  try { sessionStorage.setItem('qdu_food_picked', String(pickedCount.value)) } catch { /* 存储不可用：仅在本次会话内退化为内存态 */ }
 }
 
 function pickOne() {
   picks.value = pickFrom(campusPool.value, 1)
   pickedCount.value += 1
-  sessionStorage.setItem('qdu_food_picked', String(pickedCount.value))
+  try { sessionStorage.setItem('qdu_food_picked', String(pickedCount.value)) } catch { /* 存储不可用：仅在本次会话内退化为内存态 */ }
 }
 
 function setCampus(c) {
