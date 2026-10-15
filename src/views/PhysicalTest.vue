@@ -4,6 +4,7 @@ import { ref, reactive, computed, watch } from 'vue'
 import { standards, itemWeights, itemLabels, bmiScore, itemScore, gradeOf } from '../data/physical.js'
 import { useI18n } from '../i18n/index.js'
 import { setNavContext } from '../stores/navContext.js'
+import { setJson } from '../utils/safeStorage.js'
 
 const { t, lang } = useI18n()
 
@@ -32,7 +33,7 @@ if (saved) {
 
 watch(
   [gender, years],
-  () => localStorage.setItem('qdu_physical_test', JSON.stringify({ gender: gender.value, years })),
+  () => setJson('qdu_physical_test', { gender: gender.value, years }),
   { deep: true }
 )
 

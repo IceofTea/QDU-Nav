@@ -138,9 +138,3 @@ export function hitBusuanzi(path) {
     pump()
   })
 }
-
-/** 读某 path 的 page_pv（组件展示用） */
-export function bszPagePv(path) {
-  const v = bsz.pagePvMap[path || '/']
-  return v === undefined ? null : v
-}

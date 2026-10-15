@@ -4,6 +4,7 @@ import { foods, halls } from '../data/foods.js'
 import CountUp from '../components/CountUp.vue'
 import { useI18n } from '../i18n/index.js'
 import { setNavContext } from '../stores/navContext.js'
+import { setJson, safeSet } from '../utils/safeStorage.js'
 
 const { t, lang } = useI18n()
 
@@ -108,13 +109,13 @@ function spin() {
 function pushHistory(hall, dish, tier) {
   history.value.unshift({ at: new Date().toLocaleTimeString(lang.value === 'en' ? 'en-US' : 'zh-CN'), hall: hall || '—', dish, tier })
   history.value = history.value.slice(0, 10)
-  localStorage.setItem('qdu_wheel_history', JSON.stringify(history.value))
-  sessionStorage.setItem('qdu_wheel_spins', String(spins.value))
+  setJson('qdu_wheel_history', history.value)
+  safeSet('qdu_wheel_spins', String(spins.value), { session: true })
 }
 
 function addBalance(n) {
   balance.value += n
-  localStorage.setItem('qdu_wheel_balance', String(balance.value))
+  safeSet('qdu_wheel_balance', String(balance.value))
 }
 
 function pickTier(k) {

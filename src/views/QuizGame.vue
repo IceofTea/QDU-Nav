@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { quiz } from '../data/quiz.js'
 import CountUp from '../components/CountUp.vue'
 import { useI18n } from '../i18n/index.js'
+import { setJson, safeSet } from '../utils/safeStorage.js'
 
 const { t, lang } = useI18n()
 
@@ -61,8 +62,8 @@ function next() {
     done.value = true
     rounds.value += 1
     best.value = Math.max(best.value, score.value)
-    localStorage.setItem('qdu_quiz_best', String(best.value))
-    localStorage.setItem('qdu_quiz_rounds', String(rounds.value))
+    safeSet('qdu_quiz_best', String(best.value))
+    safeSet('qdu_quiz_rounds', String(rounds.value))
     scores.value.unshift({
       score: score.value,
       correct: correct.value,
@@ -70,7 +71,7 @@ function next() {
       date: new Date().toLocaleDateString(lang.value === 'en' ? 'en-US' : 'zh-CN', { month: 'numeric', day: 'numeric' })
     })
     scores.value = scores.value.slice(0, 100)
-    localStorage.setItem('qdu_quiz_scores', JSON.stringify(scores.value))
+    setJson('qdu_quiz_scores', scores.value)
   } else {
     index.value += 1
     picked.value = null

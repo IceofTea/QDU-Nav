@@ -4,6 +4,7 @@ import { ref, computed, onMounted } from 'vue'
 import CountUp from '../components/CountUp.vue'
 import { useI18n } from '../i18n/index.js'
 import { setNavContext } from '../stores/navContext.js'
+import { safeSet } from '../utils/safeStorage.js'
 
 const { t, lang } = useI18n()
 
@@ -115,7 +116,7 @@ function checkWin() {
     done.value = true
     if (!best.value || moves.value < best.value) {
       best.value = moves.value
-      localStorage.setItem('qdu_bm_best', String(best.value))
+      safeSet('qdu_bm_best', String(best.value))
     }
   }
 }

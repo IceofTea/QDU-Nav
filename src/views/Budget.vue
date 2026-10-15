@@ -10,6 +10,7 @@ import { parseBillFile } from '../utils/billImport.js'
 import {
   buildBackup, serializeBackup, parseBackup, mergeRecords, summarize, backupFileName
 } from '../utils/budgetBackup.js'
+import { safeSet, getJson, setJson } from '../utils/safeStorage.js'
 import { SITE } from '../config/site.js'
 import { useI18n } from '../i18n/index.js'
 
@@ -117,7 +118,8 @@ function fmt(n) {
 }
 
 const records = ref(load())
-watch(records, () => localStorage.setItem(STORAGE, JSON.stringify(records.value)), { deep: true })
+/** 写回本机：隐私模式/配额满时 safeSet 静默失败，不再中断记账交互 */
+watch(records, () => setJson(STORAGE, records.value), { deep: true })
 
 /** 生成不重复的本地记录 id */
 const newId = () => Date.now() + Math.random()
@@ -309,7 +311,7 @@ let holdTimer = null
 function unlockCyber() {
   if (cyberOn.value) return
   cyberOn.value = true
-  localStorage.setItem('qdu_cyber', '1')
+  safeSet('qdu_cyber', '1')
   showToast(t('budget.eggCyber'), 3000)
 }
 function segTap() {
