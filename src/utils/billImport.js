@@ -9,8 +9,14 @@
  *   纯前端本地解析：不发起任何网络请求，数据仅存本机浏览器。
  */
 import { parseXls } from './xlsReader.js'
-import * as pdfjsLib from 'pdfjs-dist'
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+
+/* pdfjs 按需加载：仅在中行 PDF 分支触发，避免把 ~1MB 的解析库塞进 Budget 分包。
+   实际加载逻辑在同版本 worker 绑定的 pdfjsLoader.js（见该文件说明）。 */
+let pdfjsPromise = null
+function loadPdfjs() {
+  if (!pdfjsPromise) pdfjsPromise = import('./pdfjsLoader.js').then((m) => m.default || m)
+  return pdfjsPromise
+}
 const ALIPAY_CAT_MAP = {
   '餐饮美食': 'food',
   '日用百货': 'daily',
@@ -564,6 +570,7 @@ async function parseXlsx(u8) {
 async function parseBocBill(bytes) {
   let pdf
   try {
+    const pdfjsLib = await loadPdfjs()
     pdf = await pdfjsLib.getDocument({ data: bytes }).promise
   } catch (e) {
     return { ok: false, msg: 'PDF 文件解析失败：' + (e.message || '无法读取 PDF 内容') }

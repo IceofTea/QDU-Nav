@@ -75,6 +75,7 @@ function hueOf(i) {
     <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('contributors.community') }}</div>
     <ul class="changelog">
       
+      <li><b>v1.6.21</b> — 账单导入修复：pdfjs 改为按需加载 + 同版本本地 worker，Budget 分包 599KB→127KB。</li>
       <li><b>v1.6.20</b> — 冗余精简：徽章计数单一化为前端直连 GitHub，删除网关 gh-count 死路径。</li>
       <li><b>v1.6.19</b> — gh-count 全网评论计数端点：Wiki 徽章显示 GitHub 评论数（本地评论未上线不再显 0）。</li>
       <li><b>v1.6.18</b> — GitHub 评论敏感词巡检：管理员一键扫 Discussions 最新内容命中站内词表，直达处置。</li>
