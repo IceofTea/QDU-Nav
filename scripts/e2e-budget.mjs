@@ -329,6 +329,36 @@ async function main() {
       assert(await page.locator('.fav-chip').count() === 0, '取消后快捷条应为空')
       assert(/还没有收藏/.test(await page.locator('body').innerText()), '空态文案应恢复')
     })
+
+    // ─────────────── 首屏性能：智能体大脑不进首屏，悬浮舱按需就绪 ───────────────
+    await ok('首屏不请求智能体包（异步拆分生效）', async () => {
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+      const p2 = await ctx.newPage()
+      await p2.addInitScript(([a, done]) => {
+        sessionStorage.setItem(a + '_welcome_seen', '1')
+        localStorage.setItem(a + '_tour_completed', JSON.stringify(done))
+        // DOMContentLoaded 时（入口模块已执行完）抓一次资源清单：
+        // 若智能体被静态引入，此刻它的 chunk 必然已发出请求
+        document.addEventListener('DOMContentLoaded', () => {
+          window.__dclRes = performance.getEntriesByType('resource').map((r) => r.name)
+        })
+      }, [APP, tourSeed()])
+      await p2.goto(BASE + '/#/', { waitUntil: 'domcontentloaded' })
+      await p2.waitForTimeout(300)
+      const res = await p2.evaluate(() => window.__dclRes || [])
+      assert(res.length > 0, '未抓到首屏资源清单')
+      const agent = res.filter((n) => /navAnswer|workflows|AgentChat|ChatDock/i.test(n))
+      assert(agent.length === 0, '首屏就请求了智能体包：' + agent.map((x) => x.split('/').pop()).join(', '))
+      // 闲时预热后悬浮舱应就绪
+      await p2.waitForTimeout(4000)
+      assert(await p2.locator('.cd-fab').count() >= 1, '闲时预热后悬浮舱仍未就绪（预载链路断了）')
+      await ctx.close()
+    })
+
+    await ok('助手页可正常打开（懒加载链完好）', async () => {
+      await page.goto(BASE + '/#/app/assistant', { waitUntil: 'domcontentloaded', timeout: 30000 })
+      await page.locator('.ac-input').first().waitFor({ timeout: 20000 })
+    })
   } finally {
     await browser.close()
     server.close()

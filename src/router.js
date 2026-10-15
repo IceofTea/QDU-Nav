@@ -13,6 +13,7 @@ import { SITE } from './config/site.js'
 import { visitorId } from './utils/visitor.js'
 import { recordAppOpen } from './agent/profile.js'
 import { hitBusuanzi } from './utils/busuanzi.js'
+import { isSlowConnection } from './utils/netHint.js'
 import Home from './views/Home.vue'
 
 /** 首页同步加载，其他页面懒加载（手机弱网首屏只下 ~200KB，应用页按需再下） */
@@ -149,7 +150,9 @@ export function useViewState() {
 
 /** 预加载热门应用（首页空闲后调用，手机 WiFi 下提前 warming，被 FJNU 验证有效） */
 export function preloadPopular() {
-  const popular = ['assistant', 'campusWall', 'timetable', 'classroomNav', 'whatToEat', 'campusNews']
+  const popular = ['campusWall', 'timetable', 'classroomNav', 'whatToEat', 'campusNews']
+  // 弱网/省流模式不预载：预载是锦上添花，不该和首屏抢带宽
+  if (isSlowConnection()) return
   const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 3000))
   idle(() => {
     popular.forEach((id) => {

@@ -151,6 +151,26 @@
 
 > 汇总 v1.3.20–v1.3.24。站内公告已发布；详见下方各小版本明细。
 
+## v1.7.4 (2026-10-15) · 首屏性能优化：智能体大脑移出首屏 + 预载按网络状况收敛（patch）
+用户反馈「好卡／首次缓冲太大」，实测定位到根因：App.vue 静态 import 了智能体悬浮舱，依赖链一路静态到
+agent/engine.js → navAnswer.js → kb-nav.json（121KB）+ workflows.js（79KB）——也就是「打开首页就把整个智能体
+知识库下载完」，移动端首屏因此很沉。修复：
+- ChatDock 改为 defineAsyncComponent（异步组件）：它与其依赖（engine/workflows/navAnswer/kb-nav.json）全部
+  落到按需 chunk，不再进首屏；首帧后在非弱网环境闲时预热，用户点开时已就绪。
+- Home.vue 的「回车交给智能体」改为动态 import('../agent/intents.js')：识别链（FAQ + BM25）按需加载，
+  未命中时仍走本地关键词过滤，行为不变。
+- 新增 src/utils/netHint.js（isSlowConnection / whenIdle / afterPaint）：预载统一改为「弱网(2G/saveData)直接跳过
+  + 空闲时执行」；router.js 的 preloadPopular 同时去掉 assistant（它已被悬浮舱的懒载链路覆盖）并加空闲调度。
+
+实测收益（构建产物）：
+- QDU-Nav 首屏入口 chunk 499KB → 272KB（-45%）
+- FJNU-Nav 首屏入口 chunk 276KB → 76KB（-72%）
+- kb-nav.json 与 workflows 独立成块（navAnswer-*.js 79KB / workflows-*.js 55KB），仅在真正使用智能体时下载
+
+真机冒烟新增 2 项断言（12 → 18 项）：①在 DOMContentLoaded 时刻抓取资源清单，断言首屏未请求任何
+智能体包（navAnswer/workflows/AgentChat/ChatDock）；②闲时预热后悬浮舱就绪、助手页输入框可渲染。
+
+
 ## v1.7.3 (2026-10-15) · 新增「我的快捷」跨应用收藏（patch）：首页常用入口 + 应用卡片收藏
 痛点：站内 35+ 个应用，常用的其实只有三五项（课表 / 空教室 / 生活费 / 食堂），每次都要翻网格。
 新增 src/utils/favorites.js（纯函数 · 零依赖 · 可单测）提供站点无关的收藏模型：makeFavoriteId 以 kind:target 生成稳定 id（同项不会收藏两条）、normalizeFavorite 逐条规范化脏数据、pruneFavorites 超 40 条时置顶项与最新项优先保留、toggleFavorite 幂等开关、moveFavorite 上/下移、setPinned 置顶、groupByKind 分组、exportFavorites/importFavorites 支持「完整对象 / 裸数组 / items」三形态、mergeFavorites 追加去重或整体替换；存储键由 createFavorites(key) 注入，同一份实现被多站复用，读写全部经 safeStorage 不抛异常。

@@ -3,7 +3,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { apps, campusStats } from '../data/apps.js'
 import { searchApps } from '../data/searchIndex.js'
-import { recognize } from '../agent/intents.js'
 import { AGENT_PROFILE } from '../agent/config.js'
 import { campuses } from '../data/campus.js'
 import { getCourseStats, EMPTY_STATS } from '../api/courseStats.js'
@@ -102,13 +101,16 @@ function pushInbox(text) {
 function onSearchEnter() {
   const q = keyword.value.trim()
   if (!q) return
-  const r = recognize(q)
-  if (r.layer === 'intent' || r.layer === 'faq') {
-    pushInbox(q)
-    keyword.value = ''
-    emit('open', 'assistant')
-  }
-  // 未命中强意图 → 保留现有关键词过滤（下方应用网格实时响应）
+  // 智能体识别链（含 FAQ / BM25 知识层）按需加载：首屏不背这个包
+  import('../agent/intents.js').then(({ recognize }) => {
+    const r = recognize(q)
+    if (r.layer === 'intent' || r.layer === 'faq') {
+      pushInbox(q)
+      keyword.value = ''
+      emit('open', 'assistant')
+    }
+    // 未命中强意图 → 保留现有关键词过滤（下方应用网格实时响应）
+  }).catch(() => { /* 识别层加载失败不阻塞本地搜索过滤 */ })
 }
 function askAgent(text) {
   pushInbox(text)

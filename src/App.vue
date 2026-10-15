@@ -1,11 +1,15 @@
 <!-- @模块：src/App.vue —— 应用根组件组装（欢迎/顶栏/主视图/页脚/底部导航） -->
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick, defineAsyncComponent } from 'vue'
 import Welcome from './views/Welcome.vue'
 import TourOverlay from './components/TourOverlay.vue'
-import ChatDock from './components/agent/ChatDock.vue'
+/* 智能体悬浮舱：静态 import 会把 agent engine + workflows + kb-nav.json(121KB) 一起打进首屏，
+ * 手机上表现为「首次加载慢 / 打开就卡」。改为异步组件——首屏不含它，
+ * 首帧之后在**非弱网**环境下闲时预载，用户点开时已就绪。 */
+const ChatDock = defineAsyncComponent(() => import('./components/agent/ChatDock.vue'))
 import { SITE } from './config/site.js'
 import { NAV_APPS, useViewState, preloadPopular } from './router.js'
+import { whenIdle, isSlowConnection } from './utils/netHint.js'
 import { apps } from './data/apps.js'
 import { fetchLikes, toggleLike, likedByMe } from './utils/like.js'
 import { useI18n } from './i18n/index.js'
@@ -41,7 +45,11 @@ onMounted(() => {
 })
 
 const { current, currentComp, openApp, goHome, loadingView } = useViewState()
-onMounted(() => { preloadPopular() })
+onMounted(() => {
+  preloadPopular()
+  // 首帧之后再预载智能体悬浮舱（弱网/省流模式跳过，避免和首屏抢带宽）
+  if (!isSlowConnection()) whenIdle(() => { import('./components/agent/ChatDock.vue').catch(() => {}) }, 3000)
+})
 
 /** 新手引导 */
 function triggerTour() {
