@@ -69,11 +69,24 @@ function completeTour() {
   tourSteps.value = []
 }
 
-/** 跳过引导（标记为已完成，下次不再自动弹出） */
+/** 跳过当前引导（标记为已完成，下次不再自动弹出） */
 function skipTour() {
   if (activeTour.value) {
     markTourCompleted(activeTour.value)
   }
+  activeTour.value = null
+  currentStep.value = 0
+  tourSteps.value = []
+}
+
+/**
+ * 收起当前引导但**不标记完成**。
+ * 用于「用户在引导进行中切换了页面」：此时遮罩仍挂在 App 层，
+ * 锚点元素已随视图卸载，遮罩会残留在新页面上并吞掉用户的所有点击
+ * （真实缺陷：从预算页切走后再也点不动任何东西，直到手动点跳过）。
+ * 不标记完成，是为了让用户下次回到该页时仍能看到引导。
+ */
+function cancelTour() {
   activeTour.value = null
   currentStep.value = 0
   tourSteps.value = []
@@ -106,6 +119,7 @@ export function useTour() {
     prevStep,
     completeTour,
     skipTour,
+    cancelTour,
     isTourCompleted
   }
 }

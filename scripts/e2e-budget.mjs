@@ -1,7 +1,8 @@
 /**
  * ════════════════════════════════════════════════════════════════════
  * @模块路径  scripts/e2e-budget.mjs
- * @职责      生活费模块真机冒烟（估算 / 分配器 / 账单校准三页 + 新引擎口径）
+ * @职责      真机冒烟（两条链路）：① 生活费模块（估算 / 分配器 / 账单校准 + 新引擎口径）
+ *            ② 首页「我的快捷」收藏（星标 → 快捷条 → 本机持久化）
  * @用法      node scripts/e2e-budget.mjs
  *            CHROME_PATH=<chrome.exe> 可覆盖；PORT=8791 可换端口
  *            依赖 playwright-core（仓库已有则直接用；无则 SKIP 不拦本地）
@@ -65,6 +66,27 @@ const EXPECT = {
   currentSpent: 300,
   currentProjected: 620   // 10-15 当天：300 / 15 * 31
 }
+
+/** 从仓库源码里读出「新手引导 key + 当前版本号」，一次性标记为已完成——
+ *  否则首页/预算页的引导遮罩会（正确地）弹出并吞掉冒烟脚本的点击。
+ *  注意各校 TOUR_VERSION 可能不同（QDU=v1 / FJNU=v2），必须从源码读，不能写死。 */
+function tourSeed() {
+  // 跨仓冒烟（E2E_DIST 指向另一仓 dist）时必须读**那一仓**的源码，否则版本号/键名对不上
+  const SRC = process.env.E2E_DIST ? path.dirname(path.resolve(process.env.E2E_DIST)) : ROOT
+  let keys = ['home', 'budget']
+  let ver = 'v1'
+  try {
+    const src = fs.readFileSync(path.join(SRC, 'src/data/tourSteps.js'), 'utf8')
+    const k = [...src.matchAll(/export const (\w+?)Tour\b/g)].map((m) => m[1])
+    if (k.length) keys = k
+  } catch { /* 用默认 key */ }
+  try {
+    const u = fs.readFileSync(path.join(SRC, 'src/utils/useTour.js'), 'utf8')
+    const m = u.match(/TOUR_VERSION\s*=\s*'([^']+)'/)
+    if (m) ver = m[1]
+  } catch { /* 用默认版本 */ }
+  return Object.fromEntries(keys.map((x) => [x, ver]))
+}
 /** 预置一份「合计只有 90%」的方案，用来验证「一键配平」真的把占比拉到 100% */
 const SEED_PLAN = { total: 1600, pct: [40, 8, 5, 8, 5, 6, 7, 6, 5, 0] }
 
@@ -115,12 +137,15 @@ async function main() {
   const KEY = APP + '_budget_records'
   const PLAN_KEY = APP + '_budget_plan'
   const WELCOME_KEY = APP + '_welcome_seen'
+  const FAV_KEY = APP + '_favorites'
 
-  await page.addInitScript(([recs, plan, k, pk, wk]) => {
+  await page.addInitScript(([recs, plan, k, pk, wk, tk, done]) => {
     localStorage.setItem(k, JSON.stringify(recs))
     localStorage.setItem(pk, JSON.stringify(plan))
     sessionStorage.setItem(wk, '1')
-  }, [SEED_RECORDS, SEED_PLAN, KEY, PLAN_KEY, WELCOME_KEY])
+    // 预置「所有新手引导均已完成」，避免遮罩吞掉冒烟脚本的点击
+    localStorage.setItem(tk, JSON.stringify(done))
+  }, [SEED_RECORDS, SEED_PLAN, KEY, PLAN_KEY, WELCOME_KEY, APP + '_tour_completed', tourSeed()])
 
   async function shot(name) {
     try {
@@ -136,7 +161,7 @@ async function main() {
     } catch (e) {
       fail++
       failures.push(name)
-      log('  FAIL  ' + name + ' → ' + String(e && e.message).slice(0, 200))
+      log('  FAIL  ' + name + ' → ' + String(e && e.message).slice(0, 700))
       await shot(name.replace(/[^\w\u4e00-\u9fff]+/g, '_'))
     }
   }
@@ -149,6 +174,18 @@ async function main() {
   async function clickTab(label) {
     await page.getByRole('button', { name: label }).first().click()
     await page.waitForTimeout(400)
+  }
+  /** 首次访问会弹新手引导（遮罩会吞掉点击）——有则跳过；最多尝试 3 次以清掉残留 */
+  async function dismissTour() {
+    for (let i = 0; i < 3; i++) {
+      const skip = page.locator('.tour-btn--skip')
+      try {
+        if (!(await skip.count())) return
+        await skip.first().click({ timeout: 3000 })
+        await page.waitForTimeout(300)
+      } catch { return }
+      if (!(await page.locator('.tour-overlay').count())) return
+    }
   }
   /** 页面里任意位置出现该文本 */
   async function hasText(re) {
@@ -248,6 +285,49 @@ async function main() {
     await ok('全程无 JS 运行时错误', async () => {
       const real = jsErrors.filter((m) => !/favicon|404 \(Not Found\)|Failed to load resource/i.test(m))
       assert(real.length === 0, '出现 JS 错误: ' + real.slice(0, 3).join(' | '))
+    })
+
+    // ─────────────── 首页「我的快捷」收藏 ───────────────
+    await ok('首页出现「我的快捷」区块与空态', async () => {
+      await page.goto(BASE + '/#/', { waitUntil: 'domcontentloaded', timeout: 30000 })
+      await page.waitForTimeout(900)
+      await dismissTour()
+      const body = (await page.locator('body').innerText()).replace(/\s+/g, ' ')
+      assert(/我的快捷/.test(body), '未渲染「我的快捷」区块：' + body.slice(0, 200))
+      assert(/还没有收藏/.test(body), '应显示空态引导')
+    })
+
+    await ok('点星标收藏后快捷条出现该应用', async () => {
+      await dismissTour()
+      const star = page.locator('.service-tile .tile-fav').first()
+      await star.waitFor({ timeout: 10000 })
+      // 应用网格在首屏之下，先滚到可视区再点（Playwright 对深层容器的自动滚动不可靠）
+      await star.scrollIntoViewIfNeeded()
+      await page.waitForTimeout(200)
+      await star.click({ timeout: 10000 })
+      await page.waitForTimeout(400)
+      const chips = page.locator('.fav-chip')
+      assert(await chips.count() === 1, '快捷条应有 1 项，实际 ' + (await chips.count()))
+      const chipText = (await chips.first().innerText()).replace(/\s+/g, ' ')
+      assert(chipText.length > 0, '快捷项应有文字')
+      assert(!/还没有收藏/.test((await page.locator('body').innerText())), '空态应消失')
+    })
+
+    await ok('收藏已落到本机存储且刷新后仍在', async () => {
+      const raw = await page.evaluate((k) => localStorage.getItem(k), FAV_KEY)
+      assert(raw && raw.includes('"kind":"app"'), '存储里应有 app 类型收藏：' + String(raw).slice(0, 120))
+      await page.reload({ waitUntil: 'domcontentloaded' })
+      await page.waitForTimeout(900)
+      assert(await page.locator('.fav-chip').count() >= 1, '刷新后快捷项应保留')
+    })
+
+    await ok('取消收藏后空态恢复', async () => {
+      const x = page.locator('.fav-chip .fav-x').first()
+      await x.scrollIntoViewIfNeeded()
+      await x.click({ timeout: 10000 })
+      await page.waitForTimeout(400)
+      assert(await page.locator('.fav-chip').count() === 0, '取消后快捷条应为空')
+      assert(/还没有收藏/.test(await page.locator('body').innerText()), '空态文案应恢复')
     })
   } finally {
     await browser.close()

@@ -10,10 +10,29 @@ import { getCourseStats, EMPTY_STATS } from '../api/courseStats.js'
 import { SITE } from '../config/site.js'
 import VisitStats from '../components/VisitStats.vue'
 import { fetchLikes, toggleLike, likedByMe } from '../utils/like.js'
+import { createFavorites } from '../utils/favorites.js'
+import { safeSet } from '../utils/safeStorage.js'
 import { useI18n } from '../i18n/index.js'
 
 const { t, lang } = useI18n()
 const emit = defineEmits(['open'])
+
+/* ── 我的快捷：把常用应用固定到首页顶部（只存本机，跨设备请用备份） ── */
+const fav = createFavorites('qdu_favorites')
+const favList = ref(fav.load())
+function isFav(appId) { return favList.value.some((f) => f.kind === 'app' && f.target === appId) }
+function toggleFav(app, ev) {
+  if (ev) ev.stopPropagation()
+  favList.value = fav.toggle({ kind: 'app', target: app.id, label: app.title, sub: app.desc, icon: app.icon }).list
+}
+function removeFav(f, ev) {
+  if (ev) ev.stopPropagation()
+  favList.value = fav.remove(f.id)
+}
+function openFav(f) {
+  if (f.kind === 'link') { window.open(f.target, '_blank', 'noopener'); return }
+  emit('open', f.target)
+}
 
 const keyword = ref('')
 
@@ -138,6 +157,28 @@ function askAgent(text) {
 
     <section class="section">
       <div class="section-head">
+        <h3 class="section-title">{{ t('home.quickTitle') }}</h3>
+        <div class="section-head-right">
+          <span class="section-sub">{{ t('home.quickSub') }}</span>
+          <button v-if="favList.length" class="section-link" @click="favList = fav.clear()">{{ t('home.quickClear') }}</button>
+        </div>
+      </div>
+      <div v-if="favList.length" class="fav-row">
+        <div v-for="f in favList" :key="f.id" class="fav-chip" :class="{ pinned: f.pinned }">
+          <button class="fav-open" @click="openFav(f)" :title="f.label">
+            <span class="fav-icon">{{ f.icon }}</span>
+            <span class="fav-label">{{ f.label }}</span>
+          </button>
+          <button class="fav-pin" :class="{ on: f.pinned }" :title="t('home.quickPin')" @click="favList = fav.pin(f.id, !f.pinned)">📌</button>
+          <button class="fav-x" :title="t('home.quickRemove')" @click="removeFav(f, $event)">✕</button>
+        </div>
+      </div>
+      <div v-else class="fav-empty">{{ t('home.quickEmpty') }}</div>
+      <div class="hint">{{ t('home.quickHint') }}</div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
         <h3 class="section-title">{{ lang === 'en' ? 'Public Apps' : '公开应用' }}</h3>
         <div class="section-head-right">
           <span class="section-sub">{{ lang === 'en' ? 'Quick access to popular apps' : '高频应用一键直达' }}</span>
@@ -152,6 +193,16 @@ function askAgent(text) {
             <span v-if="r.hits.length" class="tile-hit">{{ lang === 'en' ? 'Match' : '匹配' }}：{{ r.hits.join(' · ') }}</span>
             <span v-else class="tile-desc">{{ appDesc(r.app) }}</span>
           </span>
+          <span
+            class="tile-fav"
+            :class="{ on: isFav(r.app.id) }"
+            role="button"
+            tabindex="0"
+            :aria-label="isFav(r.app.id) ? t('home.favOn') : t('home.favOff')"
+            :title="isFav(r.app.id) ? t('home.favOn') : t('home.favOff')"
+            @click="toggleFav(r.app, $event)"
+            @keydown.enter.prevent="toggleFav(r.app, $event)"
+          >{{ isFav(r.app.id) ? '★' : '☆' }}</span>
         </button>
       </div>
       <div v-else class="empty">{{ lang === 'en' ? 'No results for "' + keyword + '"' : '没有找到「' + keyword + '」相关内容' }}，{{ t('home.tryHint') }}</div>
@@ -244,6 +295,72 @@ function askAgent(text) {
 </template>
 
 <style scoped>
+/* ── 我的快捷（收藏） ── */
+.fav-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.fav-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px 2px 2px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 999px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.fav-chip:hover { border-color: var(--primary); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07); }
+.fav-chip.pinned { border-color: var(--primary); background: var(--primary-soft); }
+.fav-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  padding: 5px 4px 5px 9px;
+  max-width: 190px;
+}
+.fav-icon { font-size: 15px; }
+.fav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fav-pin, .fav-x {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  padding: 6px 5px;
+  border-radius: 999px;
+  color: var(--text-light, #9aa4b2);
+  font-family: inherit;
+}
+.fav-pin:hover, .fav-x:hover { background: var(--bar); color: var(--primary); }
+.fav-pin.on { color: var(--primary); }
+.fav-x { padding-right: 8px; }
+.fav-empty {
+  font-size: 12.5px;
+  color: var(--text-sub);
+  padding: 14px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  line-height: 1.8;
+}
+/* 应用卡片右上角的收藏星标（span 而非 button，避免按钮嵌套） */
+.tile-fav {
+  position: absolute;
+  top: 8px;
+  right: 9px;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--text-light, #b6bfcc);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 999px;
+}
+.tile-fav:hover { color: #f59e0b; background: var(--bar); }
+.tile-fav.on { color: #f59e0b; }
+.service-tile { position: relative; }
 .tile-hit {
   font-size: 11px;
   color: var(--primary);

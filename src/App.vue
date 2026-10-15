@@ -14,7 +14,7 @@ import { getTourSteps } from './data/tourSteps.js'
 import { adminUrl, verifyAdminToken } from './wall/apiBase.js'
 
 const { t, lang, toggleLang } = useI18n()
-const { startTour, isTourCompleted, isActive } = useTour()
+const { startTour, isTourCompleted, isActive, cancelTour } = useTour()
 
 const stage = ref(sessionStorage.getItem('qdu_welcome_seen') ? 'main' : 'welcome')
 function enter() {
@@ -57,6 +57,9 @@ function checkAndTriggerTour() {
 
 watch(stage, (val) => { if (val === 'main') checkAndTriggerTour() })
 watch(current, (val) => {
+  // 切页时先收起进行中的引导：遮罩挂在 App 层，视图卸载后锚点已失效，
+  // 若不收起会残留在新页面上吞掉点击（历史缺陷）
+  if (isActive.value) cancelTour()
   if (!isActive.value && !isTourCompleted(val)) {
     nextTick(() => { setTimeout(triggerTour, 400) })
   }
