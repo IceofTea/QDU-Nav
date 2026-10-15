@@ -8,10 +8,17 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import BarRow from '../components/BarRow.vue'
 import { useI18n } from '../i18n/index.js'
+import {
+  calibrate, balancePercentages, forecast, recurringCharges,
+  estimateRange, dailyAllowancePlan, monthKey, currentMonth, round2
+} from '../utils/budgetEngine.js'
 
 const { t, lang } = useI18n()
 
 const emit = defineEmits(['back'])
+
+/** 青岛物价系数：用于把「基准生活费模型」折算为本地区间（1 = 全国基准） */
+const PRICE = 1
 
 const tab = ref('estimate')
 
@@ -21,11 +28,17 @@ const meal = ref(2) // 伙食：1 食堂为主 / 2 偶尔外卖 / 3 常点外卖
 const social = ref(2) // 社交：1 少 / 2 一般 / 3 活跃
 const shop = ref(2) // 购物：1 低 / 2 中 / 3 高
 const score = computed(() => meal.value + social.value + shop.value)
+/** 由 budgetEngine.estimateRange 的「基准 + 增量」模型给出区间，替代旧版硬编码查表 */
 const simpleRange = computed(() => {
-  if (score.value <= 4) return { lo: 1100, hi: 1500, name: '简朴型', nameEn: 'Frugal', tip: '食堂为主、少社交，够用还能攒下一点', tipEn: 'Mainly cafeteria, minimal socializing, enough to save a bit' }
-  if (score.value <= 6) return { lo: 1400, hi: 1900, name: '标准型', nameEn: 'Standard', tip: '日常舒适，偶尔改善伙食，大多数同学的档位', tipEn: 'Comfortable daily life, occasional treats, the most common tier' }
-  if (score.value <= 8) return { lo: 1800, hi: 2400, name: '舒适型', nameEn: 'Comfortable', tip: '外卖社交比较自由，注意别月初光月末吃土', tipEn: 'Freedom with dining out and socializing, watch your budget' }
-  return { lo: 2300, hi: 3000, name: '高配型', nameEn: 'Premium', tip: '生活品质优先，理性消费，别让账单支配人生', tipEn: 'Quality of life first, spend wisely, don\'t let bills rule you' }
+  const tiers = [
+    { max: 4, combo: { meal: 1, social: 1, shop: 2 }, name: '简朴型', nameEn: 'Frugal', tip: '食堂为主、少社交，够用还能攒下一点', tipEn: 'Mainly cafeteria, minimal socializing, enough to save a bit' },
+    { max: 6, combo: { meal: 2, social: 2, shop: 2 }, name: '标准型', nameEn: 'Standard', tip: '日常舒适，偶尔改善伙食，大多数同学的档位', tipEn: 'Comfortable daily life, occasional treats, the most common tier' },
+    { max: 8, combo: { meal: 2, social: 3, shop: 3 }, name: '舒适型', nameEn: 'Comfortable', tip: '外卖社交比较自由，注意别月初光月末吃土', tipEn: 'Freedom with dining out and socializing, watch your budget' },
+    { max: 99, combo: { meal: 3, social: 3, shop: 3 }, name: '高配型', nameEn: 'Premium', tip: '生活品质优先，理性消费，别让账单支配人生', tipEn: 'Quality of life first, spend wisely, don\'t let bills rule you' }
+  ]
+  const tier = tiers.find((x) => score.value <= x.max) || tiers[3]
+  const r = estimateRange({ ...tier.combo, base: 1500, price: PRICE })
+  return { ...tier, lo: r.lo, hi: r.hi }
 })
 
 const fam = ref(2)
@@ -84,16 +97,23 @@ const allocSpent = computed(() => alloc.value.reduce((s, a) => s + allocAmt(a), 
 const allocRemain = computed(() => budgetTotal.value - allocSpent.value)
 const allocStatus = computed(() => {
   const diff = allocSum.value - 100
-  if (diff > 0.01) return { cls: 'over', text: lang.value === 'en' ? `Over 100% (+${Math.round(diff)}%). Cut something.` : `占比已超过 100%（+${Math.round(diff)}%），某项该砍一砍` }
-  if (diff < -0.01) return { cls: 'low', text: lang.value === 'en' ? `${Math.round(-diff)}% under. Remainder is reserve.` : `占比还差 ${Math.round(-diff)}%，剩下算机动余量` }
-  return { cls: 'ok', text: lang.value === 'en' ? 'Exactly 100%. Complete.' : '占比正好 100%，分配完整' }
+  if (diff > 0.01) return { cls: 'over', text: t('budgetSim.allocOver', { pct: Math.round(diff) }) }
+  if (diff < -0.01) return { cls: 'low', text: t('budgetSim.allocLow', { pct: Math.round(-diff) }) }
+  return { cls: 'ok', text: t('budgetSim.allocOk') }
 })
 function savePlan() {
   localStorage.setItem(PLAN_STORAGE, JSON.stringify({ total: budgetTotal.value, pct: alloc.value.map((a) => a.pct) }))
-  planMsg.value = lang.value === 'en' ? '✅ Budget plan saved locally (clearing cache will lose it)' : '✅ 预算方案已保存到本机浏览器（清缓存会丢失）'
+  planMsg.value = t('budgetSim.allocSaved')
+}
+/** 一键配平：把当前占比按最大余额法归一到 100%，并尊重各项上下限 */
+function balanceAlloc() {
+  const out = balancePercentages(alloc.value.map((a) => ({ key: a.key, pct: a.pct, min: a.min, max: a.max })))
+  const map = Object.fromEntries(out.map((o) => [o.key, o.pct]))
+  alloc.value = alloc.value.map((a) => ({ ...a, pct: map[a.key] }))
+  planMsg.value = t('budgetSim.allocBalanced')
 }
 
-/* ---- ③ 真实账单校准 ---- */
+/* ---- ③ 真实账单校准（由 budgetEngine 统一口径） ---- */
 const REC_STORAGE = 'qdu_budget_records'
 const calib = ref(null)
 const calibMsg = ref('')
@@ -122,67 +142,109 @@ const REF = [
   { key: 'phone', label: '电话费', labelEn: 'Phone', lo: 50, hi: 150 },
   { key: 'fun', label: '娱乐游戏', labelEn: 'Entertainment', lo: 0, hi: 300 }
 ]
-const REF_LO = 1100
-const REF_HI = 1900
+/** 参考区间与「按习惯粗估」同源：下限取简朴型下限、上限取高配型上限，避免两处常量打架 */
+const REF_LO = estimateRange({ meal: 1, social: 1, shop: 2, base: 1500, price: PRICE }).lo
+const REF_HI = estimateRange({ meal: 3, social: 3, shop: 3, base: 1500, price: PRICE }).hi
+
+const CONF_TEXT = computed(() => ({
+  high: lang.value === 'en' ? 'High' : '高',
+  medium: lang.value === 'en' ? 'Medium' : '中',
+  low: lang.value === 'en' ? 'Low' : '低',
+  none: '—'
+}))
+const CONF_REASON = computed(() => ({
+  'too-few-months': t('budgetSim.confTooFew'),
+  'high-volatility': t('budgetSim.confVolatile'),
+  'sparse-records': t('budgetSim.confSparse'),
+  'has-future-records': t('budgetSim.confFuture')
+}))
+
+function readRecords() {
+  try {
+    const v = JSON.parse(localStorage.getItem(REC_STORAGE))
+    return Array.isArray(v) ? v : []
+  } catch { return [] }
+}
 
 function refreshCalib() {
-  let records = []
-  try { records = JSON.parse(localStorage.getItem(REC_STORAGE)) || [] } catch { records = [] }
+  const records = readRecords()
   calib.value = null
   calibMsg.value = ''
   calibConclusion.value = ''
-  if (!Array.isArray(records) || !records.length) {
-    calibMsg.value = lang.value === 'en' ? 'No records yet: go back to "Budget Tracker" to add some, or import WeChat / Alipay bills first.' : '还没有记账数据：先回「生活费计数器」记几笔，或直接导入微信 / 支付宝账单，再来这里校准。'
+  const res = calibrate(records)
+  if (res.reason === 'no-records') {
+    calibMsg.value = t('budgetSim.calibNoRecords')
     return
   }
-  const exp = records.filter((r) => r.type === 'expense')
-  if (!exp.length) {
-    calibMsg.value = lang.value === 'en' ? 'Found records but no expense entries. Cannot calibrate expense budget.' : '已找到记账数据，但没有支出记录，无法校准支出预算。'
+  if (res.reason === 'no-expense') {
+    calibMsg.value = t('budgetSim.calibNoExpense')
     return
   }
-  const byMonth = {}
-  for (const r of exp) {
-    const mk = (r.date || '').slice(0, 7)
-    if (!mk) continue
-    if (!byMonth[mk]) byMonth[mk] = []
-    byMonth[mk].push(r)
-  }
-  const months = Object.keys(byMonth).sort().slice(-3)
-  if (!months.length) {
-    calibMsg.value = lang.value === 'en' ? 'Records missing dates. Cannot calibrate by month.' : '记账记录缺少日期，无法按月校准。'
+  if (res.reason === 'no-date') {
+    calibMsg.value = t('budgetSim.calibNoDate')
     return
   }
-  const avgTotal = months.reduce((s, mk) => s + byMonth[mk].reduce((x, r) => x + r.amount, 0), 0) / months.length
-  const catSum = {}
-  for (const mk of months) {
-    const seen = {}
-    for (const r of byMonth[mk]) seen[r.cat] = (seen[r.cat] || 0) + r.amount
-    for (const [c, v] of Object.entries(seen)) catSum[c] = (catSum[c] || 0) + v / months.length
+  if (!res.ok) {
+    calibMsg.value = t('budgetSim.calibOnlyCurrent', { n: res.current ? res.current.spent : 0 })
+    return
   }
-  const list = Object.entries(catSum)
-    .map(([c, v]) => ({ cat: c, label: expLabel(c), v: Math.round(v * 100) / 100 }))
-    .sort((a, b) => b.v - a.v)
+
+  const monthly = res.robustMonthly
+  const list = res.categories.list.map((c) => ({ cat: c.cat, label: expLabel(c.cat), v: c.monthly, total: c.amount, share: c.share }))
+  const fcSeries = res.completed.map((m) => m.exp)
+  const fc = fcSeries.length >= 2 ? forecast(fcSeries, { horizon: 3 }) : { points: [], method: 'none', confidence: 'low', mape: 0 }
+  const recurring = recurringCharges(records, { months: res.months })
+  const daily = dailyAllowancePlan({
+    allowance: sumByMonth(records, currentMonth()),
+    spent: res.current ? res.current.spent : 0
+  })
+
   calib.value = {
-    months: months.map((m) => lang.value === 'en' ? m.slice(2) + '/mo' : m.slice(2) + '月'),
-    avgTotal: Math.round(avgTotal * 100) / 100,
+    months: res.months.map((m) => lang.value === 'en' ? m.slice(2) : `${Number(m.slice(5))}月`),
+    rawMonths: res.months,
+    count: res.months.length,
+    robust: res.robustMonthly,
+    avg: res.avgMonthly,
+    median: res.medianMonthly,
+    trimmed: res.trimmedMonthly,
+    method: res.avgMethod,
+    avgExcluded: res.avgExcluded,
+    excluded: res.excluded,
+    current: res.current,
     list,
-    max: Math.max(1, ...list.map((i) => i.v))
+    max: Math.max(1, ...list.map((i) => i.v)),
+    confidence: res.confidence,
+    forecast: fc,
+    recurring,
+    daily
   }
-  const overRate = Math.round((avgTotal / REF_HI - 1) * 100)
-  if (lang.value === 'en') {
-    if (avgTotal < REF_LO) calibConclusion.value = `Your monthly spending ¥${calib.value.avgTotal} is below the typical range ¥${REF_LO}. You're very frugal (or missing some records). Remember to eat well!`
-    else if (avgTotal <= REF_HI) calibConclusion.value = `Your monthly spending ¥${calib.value.avgTotal} falls within the typical range ¥${REF_LO} ~ ${REF_HI}, similar to most students. Healthy rhythm.`
-    else calibConclusion.value = `Your monthly spending ¥${calib.value.avgTotal} exceeds the typical range upper limit ¥${REF_HI} by ~${overRate}%. Check which category is heaviest and cut there first.`
-  } else {
-    if (avgTotal < REF_LO) calibConclusion.value = `你的月均支出 ¥${calib.value.avgTotal} 低于常见区间下限 ¥${REF_LO}，说明生活很省（或账单没记全），注意营养均衡。`
-    else if (avgTotal <= REF_HI) calibConclusion.value = `你的月均支出 ¥${calib.value.avgTotal} 落在常见区间 ¥${REF_LO} ~ ${REF_HI} 内，与多数同学相当，节奏健康。`
-    else calibConclusion.value = `你的月均支出 ¥${calib.value.avgTotal} 比常见区间上限 ¥${REF_HI} 高出约 ${overRate}%，看看下方哪一项最重，优先从那入手。`
+
+  const overRate = Math.round((monthly / REF_HI - 1) * 100)
+  const underRate = Math.round((1 - monthly / REF_LO) * 100)
+  if (monthly < REF_LO) calibConclusion.value = t('budgetSim.calibBelow', { v: monthly, lo: REF_LO, pct: underRate })
+  else if (monthly <= REF_HI) calibConclusion.value = t('budgetSim.calibWithin', { v: monthly, lo: REF_LO, hi: REF_HI })
+  else calibConclusion.value = t('budgetSim.calibAbove', { v: monthly, hi: REF_HI, pct: overRate })
+
+  const heaviest = list[0]
+  if (heaviest && res.confidence.level !== 'low') {
+    const ref = REF.find((r) => r.key === heaviest.cat)
+    if (ref && heaviest.v > ref.hi) {
+      calibConclusion.value += ' ' + t('budgetSim.calibHeaviest', { name: expLabel(heaviest.cat), v: heaviest.v, hi: ref.hi })
+    }
   }
+}
+
+/** 某个月的「生活费」收入合计（用于剩余日预算） */
+function sumByMonth(records, key) {
+  if (!key) return 0
+  return round2(records
+    .filter((r) => r.type === 'income' && r.cat === 'allowance' && monthKey(r.date) === key)
+    .reduce((s, r) => s + r.amount, 0))
 }
 
 function applyRealAlloc() {
   if (!calib.value) return
-  const total = calib.value.avgTotal
+  const total = calib.value.robust
   const map = {}
   for (const i of calib.value.list) map[i.cat] = i.v
   alloc.value = alloc.value.map((a) => {
@@ -190,7 +252,7 @@ function applyRealAlloc() {
     return { ...a, pct: total ? Math.round(v / total * 100) : a.def }
   })
   budgetTotal.value = Math.round(total)
-  planMsg.value = lang.value === 'en' ? 'Filled with real bill proportions. Feel free to fine-tune.' : '已按真实账单的平均占比填入分配器，可再微调。'
+  planMsg.value = t('budgetSim.calibApplied')
   tab.value = 'alloc'
 }
 
@@ -399,11 +461,14 @@ const parttimeList = computed(() => PARTTIME.map(p => ({ ...p, name: lang.value 
       </div>
 
       <div class="alloc-sum" :class="allocStatus.cls">
-        <div>{{ lang === 'en' ? 'Allocated' : '已分配' }} <b>{{ allocSum }}%</b>（¥{{ allocSpent }}） / {{ lang === 'en' ? 'Budget' : '预算' }} ¥{{ budgetTotal }}</div>
-        <div>{{ lang === 'en' ? 'Remaining' : '结余' }} <b :class="allocRemain >= 0 ? '' : 'over'">¥{{ allocRemain }}</b></div>
+        <div>{{ t('budgetSim.allocAllocated') }} <b>{{ allocSum }}%</b>（¥{{ allocSpent }}） / {{ t('budgetSim.allocBudget') }} ¥{{ budgetTotal }}</div>
+        <div>{{ t('budgetSim.allocRemain') }} <b :class="allocRemain >= 0 ? '' : 'over'">¥{{ allocRemain }}</b></div>
         <div class="muted" style="font-size:11px;">{{ allocStatus.text }}</div>
       </div>
-      <button class="btn accent big" style="margin-top:12px;width:100%;" @click="savePlan">{{ t('budgetSim.allocSave') }}</button>
+      <div class="alloc-actions">
+        <button class="btn accent big" @click="savePlan">{{ t('budgetSim.allocSave') }}</button>
+        <button class="btn ghost big" :disabled="allocStatus.cls === 'ok'" @click="balanceAlloc">{{ t('budgetSim.allocBalance') }}</button>
+      </div>
       <div v-if="planMsg" class="alloc-msg">{{ planMsg }}</div>
     </div>
   </template>
@@ -417,13 +482,38 @@ const parttimeList = computed(() => PARTTIME.map(p => ({ ...p, name: lang.value 
       </div>
       <template v-else>
         <div class="sim-result">
-          <div class="sim-result-label">{{ t('budgetSim.calibMonths').replace('{n}', calib.months.length) }}</div>
-          <div class="sim-result-num">¥{{ calib.avgTotal }}<span style="font-size:14px;">{{ t('budgetSim.calibMonthUnit') }}</span></div>
-          <div class="muted" style="font-size:12px;">{{ t('budgetSim.calibMonthsList') }}{{ calib.months.join('、') }}</div>
+          <div class="sim-result-label">{{ t('budgetSim.calibRobustLabel', { n: calib.count }) }}</div>
+          <div class="sim-result-num">¥{{ calib.robust }}<span style="font-size:14px;">{{ t('budgetSim.calibMonthUnit') }}</span></div>
+          <div class="muted" style="font-size:12px;">{{ t('budgetSim.calibMonthsList') }}{{ calib.months.join(lang === 'en' ? ', ' : '、') }}</div>
+        </div>
+
+        <div class="calib-meta">
+          <span class="conf-badge" :class="'lv-' + calib.confidence.level">
+            {{ t('budgetSim.calibConf') }} {{ CONF_TEXT[calib.confidence.level] }} · {{ calib.confidence.score }}
+          </span>
+          <span class="muted" style="font-size:11px;">
+            {{ t('budgetSim.calibMethod') }}：{{ t('budgetSim.method' + calib.method.charAt(0).toUpperCase() + calib.method.slice(1)) }}
+          </span>
+        </div>
+        <div v-if="calib.confidence.reasons.length" class="calib-hints">
+          <span v-for="r in calib.confidence.reasons" :key="r" class="conf-hint">⚠ {{ CONF_REASON[r] }}</span>
+        </div>
+        <div class="calib-compare muted">
+          {{ t('budgetSim.calibCompare', { avg: calib.avg, median: calib.median, trim: calib.trimmed }) }}
+        </div>
+
+        <div v-if="calib.current" class="calib-current">
+          <b>{{ t('budgetSim.calibCurrentTitle') }}</b>
+          <div>{{ t('budgetSim.calibCurrentLine', { spent: calib.current.spent, dom: calib.current.dayOfMonth, rate: calib.current.dailyRate, projected: calib.current.projected }) }}</div>
+          <div v-if="calib.daily.remain" class="calib-daily" :class="'st-' + calib.daily.status">
+            {{ t('budgetSim.calibDaily', { remain: calib.daily.remain, days: calib.daily.leftDays, per: calib.daily.perDay }) }}
+            · {{ t('budgetSim.daily' + calib.daily.status.charAt(0).toUpperCase() + calib.daily.status.slice(1).replace('-', '')) }}
+          </div>
         </div>
 
         <div class="section-title" style="margin:16px 0 10px;"><span class="bar"></span>{{ t('budgetSim.calibExpTitle') }}</div>
-        <BarRow v-for="i in calib.list" :key="i.cat" :label="expLabel(i.cat)" :value="i.v" :max="calib.max" :text="'¥' + i.v" color="linear-gradient(90deg,#0d9488,#2dd4bf)" />
+        <p class="muted" style="font-size:11px;margin:-4px 0 8px;">{{ t('budgetSim.calibWeightedNote') }}</p>
+        <BarRow v-for="i in calib.list" :key="i.cat" :label="i.label" :value="i.v" :max="calib.max" :text="'¥' + i.v + ' · ' + Math.round(i.share * 100) + '%'" color="linear-gradient(90deg,#0d9488,#2dd4bf)" />
 
         <div class="calib-conclusion">{{ calibConclusion }}</div>
 
@@ -431,11 +521,41 @@ const parttimeList = computed(() => PARTTIME.map(p => ({ ...p, name: lang.value 
       </template>
     </div>
 
+    <div v-if="calib" class="panel">
+      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('budgetSim.calibForecastTitle') }}</div>
+      <div v-if="calib.forecast.points.length" class="fc-row">
+        <div v-for="p in calib.forecast.points" :key="p.h" class="fc-item">
+          <span class="fc-label">{{ t('budgetSim.calibForecastMonth', { n: p.h }) }}</span>
+          <b class="fc-val">¥{{ p.value }}</b>
+        </div>
+      </div>
+      <div v-else class="muted" style="font-size:12px;">{{ t('budgetSim.calibForecastInsuff') }}</div>
+      <p v-if="calib.forecast.points.length" class="muted" style="font-size:11px;margin-top:8px;">
+        {{ t('budgetSim.calibForecastNote', { n: calib.count, method: t('budgetSim.fc' + calib.forecast.method), mape: Math.round(calib.forecast.mape * 100) }) }}
+      </p>
+    </div>
+
+    <div v-if="calib" class="panel">
+      <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('budgetSim.calibRecurringTitle') }}</div>
+      <div v-if="!calib.recurring.length" class="muted" style="font-size:12px;">{{ t('budgetSim.calibRecurringEmpty') }}</div>
+      <div v-else>
+        <div v-for="r in calib.recurring" :key="r.name" class="recurring-row">
+          <span class="rec-name-sm">{{ r.name }}</span>
+          <span class="muted">¥{{ r.monthlyCost }}{{ t('budgetSim.calibRecurringMonth') }} · {{ t('budgetSim.calibRecurringYear') }} ¥{{ r.yearlyCost }}</span>
+        </div>
+        <p class="muted" style="font-size:11px;margin-top:8px;">{{ t('budgetSim.calibRecurringNote') }}</p>
+      </div>
+    </div>
+
     <div class="panel">
       <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('budgetSim.calibRefTitle') }}</div>
       <div v-for="r in refList" :key="r.key" class="ref-row">
         <span>{{ r.label }}</span>
         <span class="muted">¥{{ r.lo }} ~ {{ r.hi }}</span>
+      </div>
+      <div class="ref-row" style="border-top:1px dashed var(--border);margin-top:6px;padding-top:8px;font-weight:700;">
+        <span>{{ t('budgetSim.calibRefTotal') }}</span>
+        <span>¥{{ REF_LO }} ~ {{ REF_HI }}</span>
       </div>
       <p class="muted" style="font-size:11px;margin-top:8px;">
         {{ t('budgetSim.calibRefNote') }}
@@ -541,6 +661,56 @@ const parttimeList = computed(() => PARTTIME.map(p => ({ ...p, name: lang.value 
   border-radius: 10px;
   color: var(--soft-green-text);
 }
+.alloc-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.alloc-actions .btn { width: 100%; }
+
+/* 校准：置信度 / 稳健统计说明 / 预测 / 固定扣费 */
+.calib-meta { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.conf-badge {
+  font-size: 11px;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-sub);
+}
+.conf-badge.lv-high { color: #0f766e; border-color: rgba(13, 148, 136, 0.5); background: rgba(13, 148, 136, 0.12); }
+.conf-badge.lv-medium { color: #b45309; border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.12); }
+.conf-badge.lv-low { color: #b63a46; border-color: rgba(182, 58, 70, 0.5); background: rgba(182, 58, 70, 0.12); }
+.calib-hints { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.conf-hint { font-size: 11px; color: var(--text-sub); background: var(--bar); border-radius: 8px; padding: 2px 8px; }
+.calib-compare { font-size: 11px; margin-top: 8px; line-height: 1.7; }
+.calib-current {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--primary-soft);
+  border: 1px dashed var(--primary);
+  font-size: 12px;
+  line-height: 1.8;
+}
+.calib-daily { font-weight: 700; }
+.calib-daily.st-over { color: var(--soft-red-text); }
+.calib-daily.st-tighten { color: #b45309; }
+.calib-daily.st-relaxed { color: #0f766e; }
+.fc-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.fc-item {
+  flex: 1 1 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+.fc-label { font-size: 11px; color: var(--text-sub); }
+.fc-val { font-size: 15px; }
+.recurring-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px dashed var(--border); font-size: 12px; }
+.recurring-row:last-child { border-bottom: none; }
+.rec-name-sm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .calib-empty {
   padding: 16px 4px;
   font-size: 13px;

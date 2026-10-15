@@ -129,5 +129,65 @@ await check('微信退款自动冲抵同商户原支出', async () => {
   assert.ok(res.added.find((r) => r.merchant === '华莱士套餐'))
 })
 
+/* ---------- 以下为 v1.7 解析器升级新增能力 ---------- */
+
+await check('通用银行 CSV（单金额列 + 负号表示支出）', async () => {
+  const csv = `交易日期,摘要,对方户名,交易金额,余额
+2026-03-01,消费,某超市,-36.50,1000.00
+2026-03-02,工资代发,某某公司,5000.00,6000.00
+2026-03-03,余额宝转入,本人支付宝,-200.00,5800.00
+2026-03-04,消费,青大食堂,-15.00,5785.00
+`
+  const res = await parseBillFile(fakeFile('icbc.csv', csv))
+  assert.equal(res.ok, true)
+  assert.equal(res.brand, 'bank')
+  assert.equal(res.source, 'text')
+  assert.equal(res.added.length, 3)
+  assert.equal(sum(res.added, 'expense'), 51.5)
+  assert.equal(sum(res.added, 'income'), 5000)
+  assert.equal(res.skipped.neutral, 1, '余额宝转入属账户内部移动，应被剔除')
+  assert.equal(res.added.find((r) => r.merchant === '某超市').cat, 'daily')
+  assert.equal(res.added.find((r) => r.type === 'income').cat, 'transfer')
+  assert.equal(res.added.find((r) => r.amount === 15).cat, 'food')
+})
+
+await check('通用银行 CSV（借方/贷方 双列 + 退款冲抵同样生效）', async () => {
+  const csv = `记账日期,交易说明,借方发生额,贷方发生额,对方账户名
+2026-04-01,网上银行支付,88.80,,美团
+2026-04-02,退款,,88.80,美团
+2026-04-03,充值提现,,500.00,本人
+2026-04-04,结息,,1.20,中国银行
+`
+  const res = await parseBillFile(fakeFile('ccb2.csv', csv))
+  assert.equal(res.ok, true)
+  assert.equal(res.skipped.neutral, 1, '充值提现应被剔除')
+  assert.equal(res.added.length, 2, '退款与同商户同金额支出配对被冲抵移除')
+  const paid = res.added.find((r) => r.amount === 88.8)
+  assert.equal(paid.refunded, true)
+  const interest = res.added.find((r) => r.cat === 'invest')
+  assert.ok(interest && interest.amount === 1.2, '结息应归入理财收益')
+})
+
+await check('收入分类使用独立词表（退款/利息不再被误判为购物类）', async () => {
+  const csv = `交易时间|交易类型|交易对方|商品|收/支|金额(元)|支付方式|当前状态|交易单号|商户单号|备注
+2026-05-01 10:00:00|退款|优衣库|退款-优衣库T恤|收入|99.00|零钱|退款成功|W1|M1|/
+2026-05-02 10:00:00|其他|某平台|活动奖励|收入|8.88|零钱|已到账|W2|M2|/
+`
+  const res = await parseBillFile(fakeFile('income.csv', csv))
+  assert.equal(res.ok, true)
+  const refund = res.added.find((r) => r.amount === 99)
+  assert.equal(refund.cat, 'refund', '退款应归入 refund，而非 cloth')
+  assert.equal(res.added.find((r) => r.amount === 8.88).cat, 'prize')
+})
+
+await check('recordFingerprint 可用于幂等去重且不含易变字段', async () => {
+  const { recordFingerprint } = await import('../src/utils/billImport.js')
+  const a = { id: 1, date: '2026-01-01', time: '08:00:00', amount: 12.5, type: 'expense', cat: 'food', note: '早餐', merchant: '食堂' }
+  const b = { id: 999, date: '2026-01-01', time: '08:00:00', amount: 12.5, type: 'expense', cat: 'food', note: '早餐', merchant: '第一食堂' }
+  const c = { ...a, amount: 13 }
+  assert.equal(recordFingerprint(a), recordFingerprint(b))
+  assert.notEqual(recordFingerprint(a), recordFingerprint(c))
+})
+
 console.log(failed ? `\n${failed} 项失败` : '\n全部通过')
 process.exit(failed ? 1 : 0)

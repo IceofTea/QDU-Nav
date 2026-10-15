@@ -38,6 +38,7 @@
 ## 四、维护清单（每次改动必须按序执行）
 
 1. **改完跑 Python 单测**：`python -m unittest discover -s tests`（解析器/构建器改动必须补单测）。
+   前端纯函数改动另跑 Node 单测：`node scripts/test_budgetengine.mjs`、`node scripts/test_billimport.mjs`、`node scripts/unit-*.mjs`。
 2. **前端构建**：`npm run build`，确认无报错、JS 体积合理。
 3. **回归**：用 `node server/index.mjs` 起服务（端口 8787），跑 CDP 回归脚本 `regress_v*.mjs`（基线见 `C:\Users\13111\AppData\Local\Temp\opencode\qdunav\`），确认全绿。
 4. **更新 README**：功能表 / 数据来源 / 版权说明如有变化需同步；版本历史追加一行。
@@ -63,6 +64,7 @@
 
 | 日期 | 版本 | 内容 |
 | --- | --- | --- |
+| 2026-10-15 | v1.7.0 | **生活费预算引擎（minor 功能版本，与 FJNU-Nav v1.7.0 同算法）**。①新增共享统计内核 `src/utils/budgetEngine.js`（纯函数零依赖、34 导出、Node 可直接单测），修正旧校准器 6 个统计缺陷：**剔除进行中的当月**（旧版把没走完的当月算进均值 → 月中查看系统性低估；新版只统计完整月份 + 当月**跑量外推**）、**截尾均值替代算术平均**（≥5 样本先 Tukey 剔离群，3~4 样本取中位数；并列展示三种口径）、**分类占比改总支出加权**（旧版"各月占比再平均"让只记 1 笔的月份等权失真）、**新增样本置信度**（月数/CV/记录密度三维打分 + 可读原因，样本不足明确降级）、**参考区间与估算器同源**（旧版 `REF_LO/REF_HI` 孤立常量，与"按习惯粗估"两套数字打架）、**新增趋势预测**（线性回归 vs Holt 平滑按样本内 MAPE 择优，外推 3 个月 + 拟合误差）。②校准页新增「本月进行中（外推）」（含剩余生活费建议日限额与超支/收紧/放松节奏）、「下月支出预测」、「疑似固定扣费（订阅体检）」（同商户 ≥60% 月份且 MAD/中位数 < 20% → 提醒核对自动续费）三面板；分配器新增**一键配平**（最大余额法归一到 100% 且尊重 min/max）；估算器改「基准 + 增量」模型（base 1500 × 青岛系数 1.0）。③`billImport.js` 升级：**独立收入词表**（旧版收入复用支出词表会把"退款"判成"衣帽鞋"）、微信交易类型映射、统一 `NEUTRAL_PATTERNS` 内部资金移动识别、金额解析支持括号/负号/货币符号、日期支持 `yyyy/mm/dd` 与 `yyyymmdd`、xlsx **多工作表自动定位有表头的那张**、新增 `recordFingerprint()` 去重指纹、新增**银行通用流水解析**（工行/农行/招行/交行 等单金额列或借贷双列）、关键词补校园与品牌词。④新增 i18n 键 60+，zh/en 全量对等（门禁 ⑥ 拦）。⑤新增单测 `scripts/test_budgetengine.mjs`（22 项）+ `test_billimport.mjs` 扩至 8 项。**验证**：`npm run build` 通过（Budget 分包 127→146KB / gzip 44→49KB）；`e2e-integrity` 17/17（含 i18n 双向键对等）；`unit-grow/agent/wall/im` 51+24+47+53 全过；`audit-refs` 0/0；两个新单测全绿。 |
 | 2026-10-15 | v1.6.21 | **PDF 账单导入修复与分包瘦身（patch）**。`billImport.js` 原静态引入 `pdfjs-dist` 且 worker 指向 CDN **3.11.174**，而主库为 **v6.3.289**——v6 以 `new Worker(url,{type:'module'})` 加载 worker，版本/协议不匹配，中行 PDF 账单解析不可靠；且该静态引入把解析库整包塞进 Budget 分包（599KB）。改为 PDF 分支**按需动态 import**（新增 `src/utils/pdfjsLoader.js`），worker 经 Vite `?url` 打包为**同版本本地资源**、不再依赖 CDN。**效果**：Budget 分包 599KB→127KB（gzip 189→44KB），pdfjs 独立成块（471KB，仅导入 PDF 时下载）。**验证**：账单解析单测（CSV/xls）通过、build 通过、e2e-integrity 17/17、unit×4 全绿、audit-refs 0/0、py 单测 18/18。 |
 | 2026-10-12 | v1.6.20 | **冗余精简：徽章计数单一化（patch）**。审查三类"该删/该留"：① 删 `gh-count` 端点 + `ghCountCache` + `refreshGhBadge` 网关分支（线上无网关永远走不到=死路径，本地也用直连——两套路只剩一套真在跑）；② 留 `gh-comments` 巡检（唯一批量发现手段，词表在网关库、只读免 PAT）；③ 留「🗑 管理（GitHub）」直达、FJNU 的 gh 端点（字节级同源纪律）、多暗门入口（防御性冗余）。**验证**：语法×3、build/integrity、Wiki strict+0 死链、线上模拟徽章 `💬 5` 回归 PASS。 |
 | 2026-10-12 | v1.6.19 | **全网评论计数端点（patch）**。`GET /api/comments/gh-count`（handleComments，公开只读）：REST 拉 `GH_WATCH_REPO`（默认 IceofTea/QDU-Wiki）近 100 帖 Discussion 求 `comments` 字段和（实测 4 帖 5 条），60s 内存缓存 `ghCountCache`，8s 超时。**动机**：本地社区评论未上线，Wiki 徽章显示本地 0 无意义 → 徽章改显 GitHub 全网数；配套 Wiki 暗门改长按 1.2s（旧连点 5 次被单击滚动打断）。**验证**：curl `total=5`；浏览器三连 PASS（徽章 `💬 5`/单击滚动/长按弹口令框）。 |
