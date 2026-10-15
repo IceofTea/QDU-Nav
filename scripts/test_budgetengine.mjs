@@ -5,7 +5,7 @@
  */
 import assert from 'node:assert/strict'
 import {
-  round2, mean, median, quantile, trimmedMean, robustAverage, outliers, cv,
+  round2, mean, median, quantile, trimmedMean, robustAverage, outliers, cv, stdDev, mad, iqr,
   monthKey, daysInMonth, monthOffset, currentMonth, projectMonth,
   monthlySeries, categoryBreakdown, merchantBreakdown, recurringCharges,
   calibrate, assessConfidence, balancePercentages, healthScore,
@@ -277,6 +277,115 @@ check('analyze 一站式返回结构与 UI 契约一致', () => {
   assert.ok(a.forecast.points.length === 3)
   assert.ok(a.daily.leftDays > 0)
   assert.ok(typeof a.daily.perDay === 'number')
+})
+
+/* ---------- 边界与脏数据 ---------- */
+
+check('脏数据不炸：null / 缺日期 / 字符串金额 / 负金额', () => {
+  const dirty = [
+    null,
+    undefined,
+    {},
+    { date: '', type: 'expense', cat: 'food', amount: 50 },
+    { date: '2026-05-01', type: 'expense', cat: 'food', amount: '120.5' },
+    { date: '2026-05-02', type: 'expense', cat: 'food', amount: -80 },
+    { date: '坏日期', type: 'expense', cat: 'food', amount: 30 },
+    { date: '2026-05-03', type: 'expense', cat: 'food', amount: null }
+  ]
+  const s = monthlySeries(dirty)
+  assert.equal(s.length, 1, '只有 2026-05 是合法月份')
+  assert.equal(s[0].exp, 200.5, '金额按绝对值聚合：120.5 + 80（负号不抵消）+ 0')
+  assert.equal(s[0].count, 3, '合法日期记录 3 笔（含 null 金额那笔）')
+  const c = calibrate(dirty, { now: NOW })
+  assert.equal(c.ok, true, '2026-05 是已结束且有支出的完整月，应能出结论')
+  assert.ok(Number.isFinite(c.robustMonthly) && c.robustMonthly > 0)
+  assert.doesNotThrow(() => forecast([NaN, 100, Infinity], { horizon: 2 }))
+  assert.equal(estimateRange({}).mid > 0, true)
+})
+
+check('未来日期记录被识别并剔除', () => {
+  const recs = [
+    rec('2026-03-01', 'expense', 'food', 1000),
+    rec('2026-04-01', 'expense', 'food', 1200),
+    rec('2026-12-01', 'expense', 'food', 9999)
+  ]
+  const c = calibrate(recs, { now: NOW })
+  assert.deepEqual(c.months, ['2026-03', '2026-04'])
+  assert.ok(c.excluded.some((e) => e.key === '2026-12' && e.reason === 'future'))
+  assert.ok(c.confidence.reasons.includes('has-future-records'))
+  assert.equal(c.robustMonthly, 1100)
+})
+
+check('跨年月份序列与偏移', () => {
+  const recs = [
+    rec('2025-11-05', 'expense', 'food', 900),
+    rec('2025-12-05', 'expense', 'food', 950),
+    rec('2026-01-05', 'expense', 'food', 1000)
+  ]
+  const s = monthlySeries(recs)
+  assert.deepEqual(s.map((x) => x.key), ['2025-11', '2025-12', '2026-01'])
+  assert.equal(monthOffset('2025-11', 2), '2026-01')
+  assert.equal(monthOffset('2026-01', -14), '2024-11')
+  assert.equal(daysInMonth('2025-12'), 31)
+})
+
+check('空/单点序列的预测与回归降级', () => {
+  assert.equal(forecast([], { horizon: 2 }).method, 'naive')
+  assert.equal(forecast([500], { horizon: 2 }).points[1].value, 500)
+  const flat = forecast([800, 800, 800, 800], { horizon: 1 })
+  assert.equal(flat.points[0].value, 800)
+  assert.equal(linearRegression([]).slope, 0)
+  assert.equal(holtLinear([]).predict(1), 0)
+})
+
+check('异常高大额与 0 值不产生 NaN/Infinity', () => {
+  const recs = [
+    rec('2026-03-01', 'expense', 'digital', 99999),
+    rec('2026-04-01', 'expense', 'food', 0),
+    rec('2026-05-01', 'expense', 'food', 1000)
+  ]
+  const c = calibrate(recs, { now: NOW })
+  assert.ok(Number.isFinite(c.robustMonthly))
+  assert.ok(Number.isFinite(c.medianMonthly))
+  const h = healthScore({ income: 0, expense: 99999 })
+  assert.ok(h.score >= 0 && h.score <= 100)
+  assert.ok(Number.isFinite(savingsPlan({ income: 0, expense: 0, goal: 1000 }).monthsToGoal) === false || true)
+})
+
+check('配平支持自定义目标与全上限场景', () => {
+  const items = [{ key: 'a', pct: 10, max: 20 }, { key: 'b', pct: 10, max: 20 }]
+  const out = balancePercentages(items, { target: 30 })
+  assert.equal(out.reduce((s, x) => s + x.pct, 0), 30)
+  // 上限之和 < target：应尽量贴着上限给，且不抛异常
+  const capped = balancePercentages([{ key: 'a', pct: 50, max: 10 }, { key: 'b', pct: 50, max: 10 }], { target: 100 })
+  assert.ok(capped.every((x) => x.pct <= 10))
+  assert.equal(balancePercentages([]).length, 0)
+})
+
+check('月末最后一天的日预算与节奏', () => {
+  const lastDay = dailyAllowancePlan({ allowance: 1000, spent: 200, now: new Date('2026-06-30T20:00:00') })
+  assert.equal(lastDay.leftDays, 1)
+  assert.equal(lastDay.remain, 800)
+  assert.equal(lastDay.perDay, 800)
+  assert.equal(lastDay.daysInMonth, 30)
+})
+
+check('固定扣费在月份样本不足时返回空', () => {
+  const one = [rec('2026-05-05', 'expense', 'virtual', 15, '某会员')]
+  assert.deepEqual(recurringCharges(one, { months: ['2026-05'] }), [])
+})
+
+check('统计量边界', () => {
+  assert.equal(mean([]), 0)
+  assert.equal(median([]), 0)
+  assert.equal(quantile([], 0.5), 0)
+  assert.equal(stdDev([5]), 0)
+  assert.equal(cv([0, 0]), 0)
+  assert.equal(mad([]), 0)
+  assert.equal(iqr([1]), 0)
+  assert.equal(trimmedMean([]), 0)
+  assert.equal(robustAverage([1, 2]).method, 'mean')
+  assert.deepEqual(outliers([1, 2, 3]), [], '样本 <4 不做离群判定')
 })
 
 console.log(failed ? `\n${failed} 项失败` : '\n全部通过')

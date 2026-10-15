@@ -75,6 +75,7 @@ function hueOf(i) {
     <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('contributors.community') }}</div>
     <ul class="changelog">
       
+      <li><b>v1.7.1</b> — 备份与恢复：记账数据可导出 JSON 自行保管、清缓存/换设备后导入恢复（追加去重 + 整体替换双模式）；新增预算页真机冒烟 12 项与部署前端单测门禁。</li>
       <li><b>v1.7.0</b> — 生活费预算引擎：新增共享统计内核（稳健月均 / 剔除进行中当月 + 跑量外推 / 加权分类占比 / 样本置信度 / 趋势预测 / 订阅体检 / 占比一键配平）；账单导入扩展银行通用流水与独立收入词表。</li>
       <li><b>v1.6.21</b> — 账单导入修复：pdfjs 改为按需加载 + 同版本本地 worker，Budget 分包 599KB→127KB。</li>
       <li><b>v1.6.20</b> — 冗余精简：徽章计数单一化为前端直连 GitHub，删除网关 gh-count 死路径。</li>

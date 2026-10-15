@@ -7,6 +7,10 @@ import BudgetPro from './BudgetPro.vue'
 import BarRow from '../components/BarRow.vue'
 import PieChart from '../components/PieChart.vue'
 import { parseBillFile } from '../utils/billImport.js'
+import {
+  buildBackup, serializeBackup, parseBackup, mergeRecords, summarize, backupFileName
+} from '../utils/budgetBackup.js'
+import { SITE } from '../config/site.js'
 import { useI18n } from '../i18n/index.js'
 
 const { t, lang } = useI18n()
@@ -658,6 +662,57 @@ function clearAll() {
   }
 }
 
+/* ================= 备份 / 恢复（数据只存本机 → 给用户一条自己保管的通道） ================= */
+const backupMsg = ref('')
+const backupInfo = computed(() => summarize(records.value))
+
+function exportBackup() {
+  if (!records.value.length) {
+    backupMsg.value = t('budget.backupEmpty')
+    return
+  }
+  const payload = buildBackup(records.value, { app: 'QDU-Nav', version: SITE.version })
+  const blob = new Blob([serializeBackup(payload)], { type: 'application/json;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = backupFileName(lang.value === 'en' ? 'qdu-budget' : '青大记账')
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 2000)
+  backupMsg.value = t('budget.backupDone', { n: payload.summary.count, exp: fmt(payload.summary.expense), inc: fmt(payload.summary.income) })
+}
+
+/** 导入方式：追加去重（默认）或整体替换，二选一由用户确认 */
+async function importBackup(file, mode = 'append') {
+  backupMsg.value = ''
+  if (!file) return
+  let text = ''
+  try {
+    text = await file.text()
+  } catch {
+    backupMsg.value = t('budget.backupReadFail')
+    return
+  }
+  const parsed = parseBackup(text)
+  if (!parsed.ok) {
+    backupMsg.value = parsed.error === 'not-json'
+      ? t('budget.backupNotJson')
+      : parsed.error === 'no-records'
+        ? t('budget.backupNoRecords')
+        : t('budget.backupAllInvalid')
+    return
+  }
+  const modeKey = mode === 'replace' ? 'budget.backupConfirmReplace' : 'budget.backupConfirmAppend'
+  if (!window.confirm(t(modeKey, { n: parsed.records.length }))) return
+  const res = mergeRecords(records.value, parsed.records, { mode })
+  records.value = res.records
+  backupMsg.value = mode === 'replace'
+    ? t('budget.backupReplaced', { n: res.records.length, drop: parsed.meta.dropped || 0 })
+    : t('budget.backupAppended', { n: res.added, dup: res.dup, drop: parsed.meta.dropped || 0 })
+}
+
 /** 检测左右手倒钱：同一天或相近日期内，金额相同、类型相反的交易对 */
 const transferPairs = ref([])
 const showTransferClean = ref(false)
@@ -916,6 +971,25 @@ const monthLabel = computed(() => {
     <div class="privacy-note">
       {{ t('budget.privacyNote') }}<b>{{ t('budget.privacyBold') }}</b>{{ t('budget.privacyRest') }}
     </div>
+  </div>
+
+  <div class="panel">
+    <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>💾 {{ t('budget.backupTitle') }}</div>
+    <p class="muted" style="font-size:12px;margin-bottom:10px;">{{ t('budget.backupDesc') }}</p>
+    <div class="backup-summary">
+      <span>{{ t('budget.backupCurrent', { n: backupInfo.count }) }}</span>
+      <span class="muted">{{ t('budget.backupRange') }}{{ backupInfo.firstDate || '—' }} ~ {{ backupInfo.lastDate || '—' }}</span>
+      <span class="muted">{{ t('budget.backupTotals', { exp: fmt(backupInfo.expense), inc: fmt(backupInfo.income) }) }}</span>
+    </div>
+    <div class="backup-btns">
+      <button class="btn ghost" @click="exportBackup">⬇️ {{ t('budget.backupExport') }}</button>
+      <label class="btn ghost backup-label" for="backup-file-append">⬆️ {{ t('budget.backupImportAppend') }}</label>
+      <input id="backup-file-append" type="file" accept=".json,application/json" style="display:none;" @change="importBackup($event.target.files[0], 'append'); $event.target.value = ''" />
+      <label class="btn ghost backup-label" for="backup-file-replace">♻️ {{ t('budget.backupImportReplace') }}</label>
+      <input id="backup-file-replace" type="file" accept=".json,application/json" style="display:none;" @change="importBackup($event.target.files[0], 'replace'); $event.target.value = ''" />
+    </div>
+    <div v-if="backupMsg" class="import-msg">{{ backupMsg }}</div>
+    <p class="muted" style="font-size:11px;margin-top:8px;">{{ t('budget.backupNote') }}</p>
   </div>
 
   <div class="panel" v-if="records.length > 0">
@@ -1501,6 +1575,21 @@ const monthLabel = computed(() => {
 .search-input { flex: 1; font-size: 13px; padding: 8px 12px; }
 .active-btn { border-color: var(--primary) !important; color: var(--primary) !important; background: var(--primary-soft) !important; }
 .clean-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* 备份 / 恢复面板 */
+.backup-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  padding: 10px;
+  background: var(--bar);
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+.backup-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.backup-label { display: inline-flex; align-items: center; cursor: pointer; }
+.backup-btns .btn { flex: 0 0 auto; }
 
 /* 倒钱检测面板 */
 .transfer-clean-panel {

@@ -37,6 +37,15 @@ export function sumBy(list, fn = (x) => x) {
   return round2((list || []).reduce((s, x) => s + toNum(fn(x)), 0))
 }
 
+/**
+ * 记录金额的规范取值：**金额一律取绝对值**。
+ * 方向由 `type`（income / expense）表达，金额只表示大小；
+ * 这样即使账单解析或手工录入混入负号（如 -80 的支出），也不会静默「抵消」掉其他支出。
+ */
+export function amountOf(r) {
+  return Math.abs(toNum(r && r.amount))
+}
+
 /** 求和后 round2（数组直接求和）。 */
 export function sum(list) {
   return sumBy(list, (x) => x)
@@ -215,8 +224,8 @@ export function monthlySeries(records) {
   const byMonth = groupByMonth(records)
   return [...byMonth.keys()].sort().map((key) => {
     const list = byMonth.get(key)
-    const inc = sumBy(list.filter((r) => r.type === 'income'), (r) => r.amount)
-    const exp = sumBy(list.filter((r) => r.type === 'expense'), (r) => r.amount)
+    const inc = sumBy(list.filter((r) => r.type === 'income'), amountOf)
+    const exp = sumBy(list.filter((r) => r.type === 'expense'), amountOf)
     return { key, inc, exp, bal: round2(inc - exp), count: list.length }
   })
 }
@@ -260,8 +269,8 @@ export function categoryBreakdown(records, { type = 'expense', months = null } =
     const mk = monthKey(r.date)
     if (keep && !keep.has(mk)) continue
     if (!keep && mk) monthSet.add(mk)
-    map.set(r.cat, round2((map.get(r.cat) || 0) + toNum(r.amount)))
-    base = round2(base + toNum(r.amount))
+    map.set(r.cat, round2((map.get(r.cat) || 0) + amountOf(r)))
+    base = round2(base + amountOf(r))
   }
   const divisor = Math.max(1, monthSet.size)
   const list = [...map.entries()]
@@ -286,7 +295,7 @@ export function merchantBreakdown(records, { type = 'expense', months = null, cl
     const name = clean(r.merchant) || ''
     if (!name) continue
     const cur = map.get(name) || { name, amount: 0, count: 0, months: new Set() }
-    cur.amount = round2(cur.amount + toNum(r.amount))
+    cur.amount = round2(cur.amount + amountOf(r))
     cur.count += 1
     cur.months.add(mk)
     map.set(name, cur)
@@ -310,7 +319,7 @@ export function recurringCharges(records, { months = null, minRatio = 0.6, tolRa
     const name = clean(r.merchant)
     if (!name) continue
     if (!byMerchant.has(name)) byMerchant.set(name, [])
-    byMerchant.get(name).push({ mk, amount: toNum(r.amount) })
+    byMerchant.get(name).push({ mk, amount: amountOf(r) })
   }
   const monthCount = keep ? keep.size : new Set([...groupByMonth(records).keys()]).size
   if (monthCount < 2) return []
@@ -710,7 +719,7 @@ export function analyze(records, { now = new Date(), minMonths = 3 } = {}) {
   const expSeries = calib.series.filter((s) => s.exp > 0 || s.count > 0).map((s) => s.exp)
   const fc = expSeries.length >= 2 ? forecast(expSeries, { horizon: 3 }) : { method: 'none', points: [], slope: 0, r2: 0, mape: 0, confidence: 'low' }
   const currentExpense = calib.current ? calib.current.spent : 0
-  const allowance = sumBy((records || []).filter((r) => r.type === 'income' && r.cat === 'allowance' && monthKey(r.date) === currentMonth(now)), (r) => r.amount)
+  const allowance = sumBy((records || []).filter((r) => r.type === 'income' && r.cat === 'allowance' && monthKey(r.date) === currentMonth(now)), amountOf)
   const daily = dailyAllowancePlan({ allowance, spent: currentExpense, now })
   return { calib, forecast: fc, daily }
 }
@@ -721,5 +730,5 @@ export default {
   groupByMonth, monthlySeries, projectMonth, categoryBreakdown, merchantBreakdown,
   recurringCharges, calibrate, assessConfidence, balancePercentages, healthScore,
   dailyAllowancePlan, linearRegression, holtLinear, mape, forecast, savingsPlan,
-  estimateRange, analyze
+  estimateRange, analyze, amountOf
 }

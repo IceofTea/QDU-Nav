@@ -30,6 +30,15 @@ jobs:
       - run: npm run build
       - name: Deploy integrity gate (registry cross-refs + dist artifacts)
         run: node scripts/e2e-integrity.mjs
+      - name: Frontend unit gates (agent/wall/im/grow + budget engine + bill parser)
+        run: |
+          node scripts/unit-agent.mjs
+          node scripts/unit-wall.mjs
+          node scripts/unit-im.mjs
+          node scripts/unit-grow.mjs
+          node scripts/test_budgetengine.mjs
+          node scripts/test_billimport.mjs
+          node scripts/audit-refs.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
