@@ -151,6 +151,31 @@
 
 > 汇总 v1.3.20–v1.3.24。站内公告已发布；详见下方各小版本明细。
 
+## v1.7.9 (2026-10-15) · 统计上报加「本地/测试环境绝不打点」硬闸 + 真机断言（patch）
+【缘由】核对线上「独立访客」是否被本地测试污染时，做了四条实测：
+ ① QDU-Nav 打开本地首页，**零请求**打到自建计数服务（site.js staticMode=true 生效，读写都被挡住）；
+ ② 其 busuanzi 在 127.0.0.1 下回填的是全局公共桶数值（实测 810 万级），与线上域名并非同一个桶；
+ ③ FJNU-Nav 本地首页**没有**任何 Vercount 上报请求；
+ ④ QDU-Wiki 的 Vercount 在本地**不回填数值**（卡片停在占位符），说明它不认本地域名。
+ 结论：既有测试没有污染线上统计。但第三方（Vercount / busuanzi）的分桶规则在服务端、对我们是黑盒，
+ 而发布前必然要在本地反复预览与跑自动化测试，规则一变就可能真的打点。因此不再把这件事寄托在
+ 第三方行为上，改为代码层硬闸。
+
+【改动】新增 isLocalEnv()：localhost / 127.0.0.1 / ::1 / *.local / 常见内网段（192.168.、10.、
+172.16-31.）/ file: 一律判为本地；判断异常时按本地处理（宁可少统计，不可误上报）。命中则：
+ · 不注入 busuanzi / Vercount 第三方脚本（脚本自身会打点）；
+ · QDU-Nav 的 VisitStats 把计数服务 api 置空 —— 所有 `if (!api)` 分支自然短路，全链路不发请求；
+ · FJNU-Nav 的 Vercount 脚本注入与直连 API 两处都直接返回；
+ · QDU-Wiki 的 visit-counter.js 在 IIFE 开头直接 return（既不注入脚本也不直连 API）。
+
+【防回归】真机冒烟新增断言「本地/测试环境不向第三方统计打点」：用 Playwright 监听页面全部请求，
+断言没有任何请求命中 busuanzi / vercount / iceoftea / deno.net。两站冒烟 24 → 25 项。
+
+验证：npm run build；e2e-integrity 17/17 与 18/18；audit-refs 0/0；真机冒烟 25/25；
+FJNU 独立课表页 11/11；test_schedule / test_sanitize / test_favorites / test_budgetengine /
+test_budgetbackup / test_billimport 全绿。
+
+
 ## v1.7.8 (2026-10-15) · 绩点计算器进阶（分学期走势 + 与课表联动预填）+ 课表/空教室视图级单测 + 修 2 个真实缺陷（patch）
 【绩点计算器进阶】
 ① 记录新增「学期」维度（gpa.js）：termKey 把教务原文折成可比较数字（2026秋→202609、春夏→202604），

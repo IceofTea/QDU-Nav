@@ -15,6 +15,25 @@
  */
 import { reactive } from 'vue'
 
+/** 本地预览 / 自动化测试环境判定：命中则**绝不打点**，避免污染线上统计。
+ *  覆盖 localhost / 127.0.0.1 / ::1 / *.local / 常见内网段 / file: 协议。
+ *  判断失败时按「本地」处理（宁可少统计，不可误上报）。 */
+export function isLocalEnv() {
+  try {
+    const proto = location.protocol
+    if (proto === 'file:' || proto === 'blob:') return true
+    const h = (location.hostname || '').toLowerCase()
+    if (!h) return true
+    if (h === 'localhost' || h === '127.0.0.1' || h === '::1' || h === '[::1]') return true
+    if (h.endsWith('.local')) return true
+    if (/^192\.168\./.test(h) || /^10\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h)) return true
+    return false
+  } catch {
+    return true
+  }
+}
+
+
 const BSZ_SRC = 'https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js'
 const TIMEOUT_MS = 10000
 const POLL_MS = 250
@@ -132,6 +151,11 @@ function pump() {
  * @param {string} path 前端路由口径路径（'/' = 首页，'/app/xxx' = 应用页）
  */
 export function hitBusuanzi(path) {
+  // 本地预览 / e2e 测试：直接短路，不注入第三方统计脚本
+  if (isLocalEnv()) {
+    bsz.state = 'idle'
+    return Promise.resolve()
+  }
   const p = path || '/'
   return new Promise((resolve) => {
     queue.push({ path: p, done: resolve })

@@ -457,6 +457,21 @@ async function main() {
       await ctx.close()
     })
 
+    // ───────── 统计防污染（本地/测试环境绝不打点）─────────
+    await ok('本地/测试环境不向第三方统计打点（避免污染线上 UV）', async () => {
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+      const p4 = await ctx.newPage()
+      const ext = []
+      p4.on('request', (r) => {
+        const u = r.url()
+        if (/busuanzi|vercount|iceoftea|deno\.net/i.test(u)) ext.push(r.method() + ' ' + u.slice(0, 100))
+      })
+      await p4.goto(BASE + '/#/', { waitUntil: 'domcontentloaded' })
+      await p4.waitForTimeout(2500)
+      assert(ext.length === 0, '本地测试竟向统计服务发请求（会污染线上数据）：' + ext.slice(0, 3).join(' | '))
+      await ctx.close()
+    })
+
     await ok('切到英文后界面变为英文（英文包按需加载成功）', async () => {
       await page.evaluate((k) => localStorage.setItem(k, 'en'), APP + '_lang')
       // 带上查询串 → 触发一次真正的文档加载并回到首页

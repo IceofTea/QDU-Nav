@@ -9,6 +9,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { SITE } from '../config/site.js'
 import { visitorId } from '../utils/visitor.js'
+import { isLocalEnv } from '../utils/busuanzi.js'
 import { getSiteStats, isStaticMode } from '../api/siteStats.js'
 import { bsz } from '../utils/busuanzi.js'
 import { useI18n } from '../i18n/index.js'
@@ -16,7 +17,8 @@ const { t, lang } = useI18n()
 
 const STORAGE_KEY = 'qdu-nav-visit-v1'
 const REPORT_KEY = 'qdu-nav-visit-reported'
-const api = (SITE.counter && SITE.counter.api) || ''
+// 本地/测试环境把 api 置空：下面所有 if (!api) 分支自然短路，绝不会向计数服务发请求
+const api = isLocalEnv() ? '' : ((SITE.counter && SITE.counter.api) || '')
 const STATIC_MODE = isStaticMode()
 
 const uv = ref(null)
