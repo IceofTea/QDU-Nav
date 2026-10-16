@@ -3,6 +3,7 @@
  */
 import { createApp } from 'vue'
 import App from './App.vue'
+import { ensureLang } from './i18n/index.js'
 import './styles.css'
 
 const app = createApp(App)
@@ -20,4 +21,9 @@ app.config.errorHandler = (err, instance, info) => {
     }
   } catch { /* noop */ }
 }
-app.mount('#app')
+// 挂载前准备语言：上次若是英文则先把英文包拉下来（中文用户零网络开销），
+// 避免英文用户先看到一屏中文再被替换。
+(async () => {
+  try { await ensureLang() } catch { /* 语言准备失败按默认中文 */ }
+  app.mount('#app')
+})()

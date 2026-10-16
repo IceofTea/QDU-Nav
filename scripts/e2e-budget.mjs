@@ -51,21 +51,37 @@ const CHROME_CANDIDATES = [
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 ].filter(Boolean)
 
-/** 记账样本：3 个完整月 + 进行中的当月。预期口径在下方 EXPECT 里手算好，用于反推引擎是否算对。 */
-const SEED_RECORDS = [
-  { id: 1, type: 'expense', cat: 'food', amount: 800, note: '食堂', date: '2026-03-05', merchant: '第一食堂' },
-  { id: 2, type: 'expense', cat: 'fun', amount: 200, note: '电影', date: '2026-03-18', merchant: '猫眼' },
-  { id: 3, type: 'expense', cat: 'food', amount: 900, note: '食堂', date: '2026-04-06', merchant: '第一食堂' },
-  { id: 4, type: 'expense', cat: 'food', amount: 1000, note: '食堂', date: '2026-05-07', merchant: '第一食堂' },
-  { id: 5, type: 'expense', cat: 'study', amount: 100, note: '教材', date: '2026-05-21', merchant: '书店' },
-  { id: 6, type: 'expense', cat: 'food', amount: 300, note: '食堂', date: '2026-10-05', merchant: '第一食堂' },
-  { id: 7, type: 'income', cat: 'allowance', amount: 1500, note: '生活费', date: '2026-10-01', merchant: '' }
-]
-const EXPECT = {
-  robust: 1000,        // 完整月支出 [1000, 900, 1100] → n=3 → 中位数 1000
-  currentSpent: 300,
-  currentProjected: 620   // 10-15 当天：300 / 15 * 31
+/** 记账样本：3 个完整月 + 进行中的当月。
+ *  日期一律按「当前月份」动态生成——硬编码月份会让脚本一跨月就失效（本脚本踩过一次）。 */
+function mk(monthOffset, day) {
+  const d = new Date()
+  const t = new Date(d.getFullYear(), d.getMonth() + monthOffset, 1)
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
+function monthLabelOf(monthOffset) {
+  const d = new Date()
+  return `${new Date(d.getFullYear(), d.getMonth() + monthOffset, 1).getMonth() + 1}月`
+}
+const SEED_RECORDS = [
+  { id: 1, type: 'expense', cat: 'food', amount: 800, note: '食堂', date: mk(-3, 5), merchant: '第一食堂' },
+  { id: 2, type: 'expense', cat: 'fun', amount: 200, note: '电影', date: mk(-3, 18), merchant: '猫眼' },
+  { id: 3, type: 'expense', cat: 'food', amount: 900, note: '食堂', date: mk(-2, 6), merchant: '第一食堂' },
+  { id: 4, type: 'expense', cat: 'food', amount: 1000, note: '食堂', date: mk(-1, 7), merchant: '第一食堂' },
+  { id: 5, type: 'expense', cat: 'study', amount: 100, note: '教材', date: mk(-1, 21), merchant: '书店' },
+  { id: 6, type: 'expense', cat: 'food', amount: 300, note: '食堂', date: mk(0, 5), merchant: '第一食堂' },
+  { id: 7, type: 'income', cat: 'allowance', amount: 1500, note: '生活费', date: mk(0, 1), merchant: '' }
+]
+/** 期望值按当天日期推导：完整月支出 [1000, 900, 1100] → 中位数 1000；
+ *  当月外推 = 300 ÷ 已过天数 × 当月天数（不足 3 天不外推） */
+const NOW = new Date()
+const DOM = NOW.getDate()
+const DIM = new Date(NOW.getFullYear(), NOW.getMonth() + 1, 0).getDate()
+const EXPECT = {
+  robust: 1000,
+  currentSpent: 300,
+  currentProjected: DOM >= 3 ? Math.round((300 / DOM) * DIM * 100) / 100 : null
+}
+const EXPECT_MONTHS = [monthLabelOf(-3), monthLabelOf(-2), monthLabelOf(-1)]
 
 /** 从仓库源码里读出「新手引导 key + 当前版本号」，一次性标记为已完成——
  *  否则首页/预算页的引导遮罩会（正确地）弹出并吞掉冒烟脚本的点击。
@@ -214,10 +230,12 @@ async function main() {
     // 2. 校准页：稳健月均 = 期望值
     await ok('校准页显示稳健月均（引擎口径）', async () => {
       await clickTab(/账单校准/)
-      const body = (await page.locator('body').innerText()).replace(/\s+/g, ' ')
-      assert(/稳健月均支出/.test(body), '未显示「稳健月均支出」：' + body.slice(0, 200))
-      assert(body.includes('¥' + EXPECT.robust), `稳健月均应为 ¥${EXPECT.robust}，实际页文本：` + body.slice(0, 300))
-      assert(/参与统计的月份：.*3月.*4月.*5月/.test(body), '未列出完整月份 3/4/5 月')
+      const t = (await page.locator('body').innerText()).replace(/\s+/g, ' ')
+      assert(/稳健月均支出/.test(t), '未显示「稳健月均支出」：' + t.slice(0, 200))
+      assert(t.includes('¥' + EXPECT.robust), `稳健月均应为 ¥${EXPECT.robust}，实际页文本：` + t.slice(0, 300))
+      for (const m of EXPECT_MONTHS) {
+        assert(t.includes(m), `未列出完整月份 ${m}：` + t.slice(0, 200))
+      }
     })
 
     // 3. 置信度徽标（3 月 + 低波动 + ≥8 笔 → high）
@@ -235,9 +253,10 @@ async function main() {
 
     // 5. 当月跑量外推
     await ok('当月跑量外推数值正确', async () => {
+      if (EXPECT.currentProjected === null) return // 当月不足 3 天时产品本身不外推
       const cur = await textOf('.calib-current')
       assert(cur.includes('¥' + EXPECT.currentSpent), '当月已支出应为 ' + EXPECT.currentSpent + '：' + cur)
-      assert(cur.includes('¥' + EXPECT.currentProjected), '预计整月应为 ' + EXPECT.currentProjected + '：' + cur)
+      assert(cur.includes('¥' + EXPECT.currentProjected), `预计整月应为 ${EXPECT.currentProjected}（按当天 ${DOM} 日 / 当月 ${DIM} 天推算）：` + cur)
     })
 
     // 6. 支出构成为「加权占比」口径（带 % 后缀）
@@ -358,6 +377,35 @@ async function main() {
     await ok('助手页可正常打开（懒加载链完好）', async () => {
       await page.goto(BASE + '/#/app/assistant', { waitUntil: 'domcontentloaded', timeout: 30000 })
       await page.locator('.ac-input').first().waitFor({ timeout: 20000 })
+    })
+
+    // ─────────────── i18n：英文字包按需加载 ───────────────
+    await ok('首屏不请求英文包（i18n 按需加载）', async () => {
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+      const p3 = await ctx.newPage()
+      await p3.addInitScript(([a, done]) => {
+        sessionStorage.setItem(a + '_welcome_seen', '1')
+        localStorage.setItem(a + '_tour_completed', JSON.stringify(done))
+        document.addEventListener('DOMContentLoaded', () => {
+          window.__dclRes = performance.getEntriesByType('resource').map((r) => r.name)
+        })
+      }, [APP, tourSeed()])
+      await p3.goto(BASE + '/#/', { waitUntil: 'domcontentloaded' })
+      await p3.waitForTimeout(300)
+      const res = await p3.evaluate(() => window.__dclRes || [])
+      const en = res.filter((n) => /\/en-[A-Za-z0-9_-]+\.js$/.test(n))
+      assert(en.length === 0, '首屏就加载了英文包：' + en.join(', '))
+      await ctx.close()
+    })
+
+    await ok('切到英文后界面变为英文（英文包按需加载成功）', async () => {
+      await page.evaluate((k) => localStorage.setItem(k, 'en'), APP + '_lang')
+      // 带上查询串 → 触发一次真正的文档加载并回到首页
+      // （只改 hash 不会重新执行入口；直接 reload 会停在上一步的助手页）
+      await page.goto(BASE + '/?e2e=1#/', { waitUntil: 'domcontentloaded', timeout: 30000 })
+      await page.waitForTimeout(1500)
+      const t = (await page.locator('body').innerText()).replace(/\s+/g, ' ')
+      assert(/My Shortcuts/.test(t), '英文界面未生效（英文包可能未加载）：' + t.slice(0, 140))
     })
   } finally {
     await browser.close()
