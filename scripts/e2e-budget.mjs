@@ -366,6 +366,19 @@ async function main() {
       assert(termVal.length > 0, '学期应自动带出，实际：' + JSON.stringify(termVal))
     })
 
+    // ───────── APK 下载量（仅 FJNU 有 APK；QDU 站自动跳过）─────────
+    await ok('APK 下载入口始终可用（统计失败也不影响下载）', async () => {
+      await page.goto(BASE + '/#/', { waitUntil: 'domcontentloaded', timeout: 30000 })
+      await page.waitForTimeout(3500) // 等计数请求（成功或失败）都落定
+      const card = page.locator('a.app-download-card')
+      if (!(await card.count())) return // 该站没有 APK 下载入口
+      const href = await card.first().getAttribute('href')
+      assert(/\.apk($|[?#])/i.test(href || ''), '下载链接必须指向 .apk：' + href)
+      assert(!/^https?:\/\/(?!github\.com)/i.test(href || ''), '下载链接不应指向非 GitHub 的外部地址：' + href)
+      const txt = await page.locator('body').innerText()
+      assert(!/home\.downloadCount|home\.downloadBtn|home\.downloadTitle/.test(txt), '出现未翻译的 i18n 键，下载区文案缺失')
+    })
+
     await ok('首页出现「我的快捷」区块与空态', async () => {
       await page.goto(BASE + '/#/', { waitUntil: 'domcontentloaded', timeout: 30000 })
       await page.waitForTimeout(900)
