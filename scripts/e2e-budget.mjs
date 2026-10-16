@@ -306,7 +306,37 @@ async function main() {
       assert(real.length === 0, '出现 JS 错误: ' + real.slice(0, 3).join(' | '))
     })
 
-    // ─────────────── 首页「我的快捷」收藏 ───────────────
+    // ─────────────── 绩点计算器（仅 QDU-Nav 有这个应用；FJNU 会自动跳过）───────────────
+    await ok('绩点计算器：录一门课后算出加权平均与 4.0 绩点', async () => {
+      await page.goto(BASE + '/#/app/gpa', { waitUntil: 'domcontentloaded', timeout: 30000 })
+      await page.waitForTimeout(900)
+      if (!(await page.locator('.gpa-kpi').count())) return // 该站无此应用
+      await page.locator('.panel input.input').first().fill('高等数学')
+      const nums = page.locator('.gpa-row input[type="number"]')
+      await nums.nth(0).fill('5')
+      await nums.nth(1).fill('90')
+      await page.getByRole('button', { name: /加入成绩单|Add to transcript/ }).first().click()
+      await page.waitForTimeout(500)
+      assert(await page.locator('.gpa-item').count() === 1, '课程未加入成绩单')
+      const point = (await page.locator('.gpa-point').first().innerText()).trim()
+      assert(point === '4.0', '5 学分 90 分应为 4.0 绩点，实际 ' + point)
+      const kpi = (await page.locator('.gpa-kpi').innerText()).replace(/\s+/g, ' ')
+      assert(/90/.test(kpi), 'KPI 应显示加权平均 90：' + kpi)
+    })
+
+    await ok('绩点计算器：目标反推给出「还要拿多少分」', async () => {
+      if (!(await page.locator('.gpa-kpi').count())) return
+      const inputs = page.locator('.panel input[type="number"]')
+      const n = await inputs.count()
+      await inputs.nth(n - 2).fill('3.3')   // 目标
+      await inputs.nth(n - 1).fill('30')    // 剩余学分
+      await page.waitForTimeout(400)
+      const plan = (await page.locator('.gpa-plan').innerText()).replace(/\s+/g, ' ')
+      assert(plan.length > 6, '未给出反推结论：' + plan)
+      assert(!/先录入成绩|Add some grades/.test(plan), '反推应已生效，实际：' + plan)
+    })
+
+
     await ok('首页出现「我的快捷」区块与空态', async () => {
       await page.goto(BASE + '/#/', { waitUntil: 'domcontentloaded', timeout: 30000 })
       await page.waitForTimeout(900)

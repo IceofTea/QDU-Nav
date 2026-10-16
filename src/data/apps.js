@@ -11,6 +11,7 @@ export const apps = [
   { id: 'buildingGallery', title: '楼宇图鉴', titleEn: 'Building Gallery', desc: '真实排课数据生成：楼层房间格子图，点房查占用', descEn: 'Real schedule data: floor maps & room status', icon: '🏢', color: '#b63a46', group: '学习', groupEn: 'Study' },
   { id: 'importer', title: '课表导入器', titleEn: 'Course Importer', desc: '粘贴课表即解析存本机，解锁免班级查课表', descEn: 'Paste to import schedule, query without class', icon: '📥', color: '#0f766e', group: '学习', groupEn: 'Study' },
   { id: 'focus', title: '番茄钟', titleEn: 'Focus Timer', desc: '经典/深度/冲刺三预设 + 艾宾浩斯复习排期', descEn: 'Pomodoro presets & spaced-repetition plan', icon: '🍅', color: '#e11d48', group: '学习', groupEn: 'Study' },
+  { id: 'gpa', title: '绩点计算器', titleEn: 'GPA Calculator', desc: '录入学分与成绩，算加权平均与 4.0 绩点；可按目标反推还需多少分', descEn: 'Weighted average & 4.0 GPA from your credits and grades', icon: '📈', color: '#0f766e', group: '学习', groupEn: 'Study' },
   { id: 'studentId', title: '新生学号查询', titleEn: 'Student ID Lookup', desc: '凭录取信息查询本人学号', descEn: 'Look up student ID from admission info', icon: '🪪', color: '#0284c7', group: '新生', groupEn: 'Newcomer' },
   { id: 'physicalTest', title: '体测成绩计算器', titleEn: 'PE Test Calculator', desc: '保存并计算大一到大四体测成绩', descEn: 'Calculate PE test scores Year 1-4', icon: '💪', color: '#0f766e', group: '健康', groupEn: 'Health' },
   { id: 'officialSites', title: '学校官网', titleEn: 'University Portal', desc: '青岛大学官方网站与各学院官网大全', descEn: 'Official QDU website and all college portals', icon: '🏛️', color: '#7c3aed', group: '服务', groupEn: 'Services' },

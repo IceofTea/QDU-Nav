@@ -27,6 +27,7 @@ const VIEWS = {
   classroomNav: () => import('./views/ClassroomNav.vue'),
   canteen: () => import('./views/Canteen.vue'),
   quiz: () => import('./views/QuizGame.vue'),
+  gpa: () => import('./views/GpaCalculator.vue'),
   foodWheel: () => import('./views/FoodWheel.vue'),
   officialSites: () => import('./views/OfficialSites.vue'),
   categories: () => import('./views/Categories.vue'),
