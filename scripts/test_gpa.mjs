@@ -6,7 +6,8 @@
 import assert from 'node:assert/strict'
 import {
   LEVEL5_TO_PERCENT, DEFAULT_GPA_BANDS, round, percentOf, gpaOf, normalizeCourse,
-  summarize, solveRemaining, exportCourses, importCourses
+  summarize, solveRemaining, exportCourses, importCourses,
+  courseKey, termKey, termShort, byTerm, trendSeries
 } from '../src/utils/gpa.js'
 
 let failed = 0
@@ -148,6 +149,86 @@ check('importCourses：三形态 + 错误码 + 去重丢非法', () => {
   assert.equal(dup.ok, true)
   assert.equal(dup.courses.length, 1)
   assert.equal(dup.dropped, 2)
+})
+
+check('termKey/termShort：教务原文的各种写法', () => {
+  assert.equal(termKey('2026年秋季学期'), 202609)
+  assert.equal(termKey('2026年春季学期'), 202602)
+  assert.equal(termKey('2023年春夏学期'), 202304)
+  assert.equal(termKey('2025年夏季学期'), 202506)
+  assert.equal(termKey(''), 0)
+  assert.equal(termKey('没写学期'), 0, '没有年份 → 0（排最后，不报错）')
+  assert.equal(termKey(null), 0)
+  assert.equal(termShort('2026年秋季学期'), '26秋')
+  assert.equal(termShort('2023年春夏学期'), '23春夏')
+  assert.equal(termShort('没写学期'), '没写学期')
+  assert.ok(termKey('2026年秋季学期') > termKey('2026年春季学期'), '秋季应排在春季之后')
+  assert.ok(termKey('2026年春季学期') > termKey('2025年秋季学期'), '跨年应正确排序')
+})
+
+check('normalizeCourse：带学期、截断超长学期名', () => {
+  const a = normalizeCourse({ name: '高数', credit: 5, score: 90, term: '2026年秋季学期' })
+  assert.equal(a.term, '2026年秋季学期')
+  const b = normalizeCourse({ name: '高数', credit: 5, score: 90, term: '  ' })
+  assert.equal(b.term, '', '空白学期归一为空串')
+  const long = normalizeCourse({ name: 'x', credit: 1, score: 60, term: 'A'.repeat(50) })
+  assert.equal(long.term.length, 20, '学期名超长要截断')
+})
+
+check('courseKey：同学期同课为同一把尺，跨学期可共存', () => {
+  const base = { name: '高数', credit: 5, scoreType: 'percent', score: 88 }
+  const a = normalizeCourse({ ...base, term: '2026年秋季学期' })
+  const b = normalizeCourse({ ...base, term: '2026年秋季学期' })
+  const c = normalizeCourse({ ...base, term: '2027年春季学期' })
+  assert.equal(courseKey(a), courseKey(b), '同学期应判为重复')
+  assert.notEqual(courseKey(a), courseKey(c), '跨学期不应判为重复')
+  const dup = importCourses(JSON.stringify([{ ...base, term: '2026年秋季学期' }, { ...base, term: '2027年春季学期' }]))
+  assert.equal(dup.ok, true)
+  assert.equal(dup.courses.length, 2, '两个学期都应保留')
+})
+
+check('byTerm：分组、升序、跳过没填学期的课', () => {
+  const list = [
+    c({ name: 'A', credit: 4, score: 90, term: '2026年春季学期' }),   // 4.0
+    c({ name: 'B', credit: 2, score: 80, term: '2026年春季学期' }),   // 3.0
+    c({ name: 'C', credit: 3, score: 70, term: '2025年秋季学期' }),   // 2.0（68-71 档）
+    c({ name: 'D', credit: 5, score: 60 })                             // 没学期 → 不进趋势
+  ]
+  const r = byTerm(list)
+  assert.equal(r.length, 2, '只有填了学期的两个学期进趋势')
+  assert.equal(r[0].term, '2025年秋季学期', '应按时间升序')
+  assert.equal(r[1].term, '2026年春季学期')
+  assert.equal(r[1].short, '26春')
+  assert.equal(r[1].credit, 6)
+  assert.equal(r[1].count, 2)
+  assert.equal(r[1].avg, round((4 * 90 + 2 * 80) / 6))
+  assert.equal(r[1].gpa, round((4 * 4.0 + 2 * 3.0) / 6))
+  assert.equal(r[0].gpa, 2.0, '70 分落在 68-71 档 → 2.0')
+  assert.equal(r[1].failedCount, 0)
+})
+
+check('trendSeries：绩点 / 加权分两种口径 + 空数据安全', () => {
+  const list = [
+    c({ name: 'A', credit: 4, score: 90, term: '2026年春季学期' }),
+    c({ name: 'C', credit: 3, score: 70, term: '2025年秋季学期' })
+  ]
+  const g = trendSeries(list, 'gpa')
+  assert.deepEqual(g.labels, ['25秋', '26春'])
+  assert.deepEqual(g.data, [2.0, 4.0])
+  assert.equal(g.terms.length, 2)
+  const a = trendSeries(list, 'avg')
+  assert.deepEqual(a.data, [70, 90])
+  const empty = trendSeries([], 'gpa')
+  assert.deepEqual(empty.labels, [])
+  assert.deepEqual(empty.data, [])
+})
+
+check('导出/导入：学期随备份一起往返', () => {
+  const list = [c({ name: '高数', credit: 5, score: 88, term: '2026年秋季学期' })]
+  const text = exportCourses(list, DEFAULT_GPA_BANDS, { app: 'QDU-Nav', version: '1.7.8' })
+  const back = importCourses(text)
+  assert.equal(back.ok, true)
+  assert.equal(back.courses[0].term, '2026年秋季学期', '学期必须跟着备份走')
 })
 
 console.log(failed ? `\n${failed} 项失败` : '\n全部通过')

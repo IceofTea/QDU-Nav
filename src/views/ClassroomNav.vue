@@ -2,6 +2,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { buildings, campusFilters, campusFiltersEn, searchRooms } from '../data/classrooms.js'
+import { groupByBuilding, summarizeEmpty } from '../utils/classroom.js'
 import { apiFetch } from '../api/index.js'
 import { useI18n } from '../i18n/index.js'
 import { navCtx } from '../stores/navContext.js'
@@ -41,7 +42,8 @@ async function goEmpty() {
   )
   emptyLoading.value = false
   if (r && Array.isArray(r.rooms)) {
-    emptyResult.value = r
+    // 归一化一次：计数缺失回落到实际条数、rooms 过滤空串，模板里就不会出现 NaN / 空标签
+      emptyResult.value = summarizeEmpty(r)
     roomSched.value = null
     view.value = 'empty'
     window.scrollTo(0, 0)
@@ -55,20 +57,10 @@ async function selectRoom(room) {
   window.scrollTo(0, 0)
 }
 
-const buildOfRoom = (room) => {
-  const b = buildings.find((x) => room.startsWith(x.name))
-  return b ? b.name : room.split(/\d/)[0] || room
-}
-
+// 楼栋归属与空教室分组交给 utils/classroom.js（判定逻辑与原实现一致，另有单测覆盖）
 const emptyGroups = computed(() => {
   if (!emptyResult.value) return []
-  const g = {}
-  for (const r of emptyResult.value.rooms) {
-    const b = buildOfRoom(r)
-    if (!g[b]) g[b] = []
-    g[b].push(r)
-  }
-  return Object.entries(g).sort((a, b2) => a[0].localeCompare(b2[0], 'zh'))
+  return groupByBuilding(emptyResult.value.rooms, buildings)
 })
 
 const list = computed(() => {

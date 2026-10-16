@@ -27,10 +27,14 @@ export const clsSplit = (cls) => {
   for (const s of (cls || '').split(/[,，、]/)) {
     const t = s.trim()
     if (!t) continue
-    const m = t.match(/^(.+?)\[(\d{1,2})\s*[-–]\s*(\d{1,2})\](班)?$/)
+    const m = t.match(/^(.+?)\[(\d{1,2})\s*[-–—]\s*(\d{1,2})\](班)?$/)
     if (m) {
       const [, pre, a, b] = m
-      for (let n = +a; n <= +b; n++) out.push(`${pre}${String(n).padStart(2, '0')}班`)
+      // 起止写反（[05-03]）时按小→大展开：否则循环体一次都不执行，
+      // 这门合班课会从**所有**班级的课表里凭空消失。
+      const lo = Math.min(+a, +b)
+      const hi = Math.max(+a, +b)
+      for (let n = lo; n <= hi; n++) out.push(`${pre}${String(n).padStart(2, '0')}班`)
     } else {
       out.push(t)
     }
@@ -49,16 +53,18 @@ export const profOf = (cls) =>
 
 /**
  * 解析「周次」表达式为集合。
- * 支持形如「1-16」「3,5,7」「1-8,10」的教务处周次写法。
+ * 支持形如「1-16」「3,5,7」「1-8,10」的教务处周次写法；
+ * 连接符兼容半角 - 、短横 – 、长横 — 与波浪 ~（课表导出里都出现过），
+ * 起止写反时按小→大展开，避免把「3-1」当成两个孤立周次。
  * @param {string} w 周次表达式
  * @returns {Set<number>} 包含的具体周次
  */
 export const parseWeeks = (w) => {
   const out = new Set()
-  for (const m of (w || '').matchAll(/(\d+)(?:-(\d+))?/g)) {
+  for (const m of (w || '').matchAll(/(\d+)\s*(?:[-–—~]\s*(\d+))?/g)) {
     const a = +m[1]
     const b = m[2] ? +m[2] : a
-    for (let i = a; i <= b; i++) out.add(i)
+    for (let i = Math.min(a, b); i <= Math.max(a, b); i++) out.add(i)
   }
   return out
 }

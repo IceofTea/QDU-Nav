@@ -337,6 +337,35 @@ async function main() {
     })
 
 
+    await ok('绩点计算器：填学期后出现分学期走势', async () => {
+      if (!(await page.locator('.gpa-kpi').count())) return
+      await page.locator('.gpa-item .rec-del').first().click()          // ✎ 编辑
+      await page.waitForTimeout(300)
+      await page.getByPlaceholder(/学期|Term/).first().fill('2026年秋季学期')
+      await page.getByRole('button', { name: /保存修改|Save changes/ }).first().click()
+      await page.waitForTimeout(500)
+      const cells = await page.locator('.gpa-term-cell').count()
+      assert(cells === 1, '应有 1 个学期卡片，实际 ' + cells)
+      const cell = (await page.locator('.gpa-term-cell').first().innerText()).replace(/\s+/g, ' ')
+      assert(cell.includes('26秋'), '学期短标签应为 26秋，实际：' + cell)
+    })
+
+    await ok('绩点计算器：从课表选课自动带出学分与学期', async () => {
+      if (!(await page.locator('.gpa-kpi').count())) return
+      await page.getByRole('button', { name: /从课表选课|Pick from timetable/ }).first().click()
+      await page.locator('.gpa-dialog').waitFor({ timeout: 15000 })
+      await page.getByPlaceholder(/搜课程名关键字|Search course name/).first().fill('高等数学')
+      // 课表是 2MB 级 JSON（后台 Worker 解析），给足等待
+      await page.locator('.gpa-pick-item').first().waitFor({ timeout: 30000 })
+      await page.locator('.gpa-pick-item').first().click()
+      await page.waitForTimeout(500)
+      assert(await page.locator('.gpa-dialog').count() === 0, '选课后弹层应关闭')
+      const credit = await page.locator('.gpa-row input[type="number"]').first().inputValue()
+      assert(credit && Number(credit) > 0, '学分应自动带出，实际：' + JSON.stringify(credit))
+      const termVal = await page.getByPlaceholder(/学期|Term/).first().inputValue()
+      assert(termVal.length > 0, '学期应自动带出，实际：' + JSON.stringify(termVal))
+    })
+
     await ok('首页出现「我的快捷」区块与空态', async () => {
       await page.goto(BASE + '/#/', { waitUntil: 'domcontentloaded', timeout: 30000 })
       await page.waitForTimeout(900)

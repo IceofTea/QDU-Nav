@@ -36,6 +36,42 @@ export const DEFAULT_GPA_BANDS = [
 /** 成绩类型 */
 export const SCORE_TYPES = ['percent', 'level5', 'pass']
 
+/** 课程去重键（导入合并、去重都走这里，避免各处各写一套） */
+export function courseKey(c) {
+  return `${c.name}|${c.credit}|${c.scoreType}|${c.score || ''}${c.level || ''}${c.pass || ''}|${c.term || ''}`
+}
+
+/**
+ * 学期排序键：把教务原文折成可比较的数字。
+ * 「2026年秋季学期」→ 20260009；「2023年春夏学期」→ 20260004；无法解析 → 0（排最后）
+ */
+export function termKey(term) {
+  const s = String(term == null ? '' : term).trim()
+  const y = s.match(/(\d{4})/)
+  if (!y) return 0
+  const has = (k) => s.indexOf(k) >= 0
+  let m = 0
+  if (has('秋')) m = 9
+  else if (has('夏')) m = has('春') ? 4 : 6
+  else if (has('春')) m = 2
+  else if (has('冬')) m = 12
+  return Number(y[1]) * 100 + m
+}
+
+/** 学期短标签：「2026年秋季学期」→「26秋」，无法解析时原样返回 */
+export function termShort(term) {
+  const s = String(term == null ? '' : term).trim()
+  const y = s.match(/(\d{4})/)
+  if (!y) return s || '—'
+  const has = (k) => s.indexOf(k) >= 0
+  let k = ''
+  if (has('秋')) k = '秋'
+  else if (has('夏')) k = has('春') ? '春夏' : '夏'
+  else if (has('春')) k = '春'
+  else if (has('冬')) k = '冬'
+  return `${y[1].slice(2)}${k}`
+}
+
 function num(v) {
   // 注意：Number(null) === 0、Number('') === 0，若不显式排除，
   // 空成绩会被当成「0 分」混进加权平均（真实 bug，测试已回归）。
@@ -83,7 +119,8 @@ export function normalizeCourse(raw) {
     id: raw.id != null ? raw.id : `c${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
     name: String(raw.name == null ? '' : raw.name).trim().slice(0, 40) || '未命名课程',
     credit: round(credit, 1),
-    scoreType: type
+    scoreType: type,
+    term: String(raw.term == null ? '' : raw.term).trim().slice(0, 20)
   }
   if (type === 'percent') {
     const s = num(raw.score)
@@ -154,6 +191,47 @@ export function solveRemaining({ avg, doneCredit, remainCredit, target, kind = '
   return { need, feasible: true, reason: 'ok', ceiling: maxScale }
 }
 
+/**
+ * 按学期聚合（只统计填了学期的课程；没有学期的记录不参与趋势，但仍在总览里）。
+ * 返回按时间升序：{ term, key, short, credit, countedCredit, avg, gpa, count, failedCount }
+ */
+export function byTerm(courses, bands = DEFAULT_GPA_BANDS, level5 = LEVEL5_TO_PERCENT) {
+  const map = new Map()
+  for (const c of (courses || []).map(normalizeCourse).filter(Boolean)) {
+    const term = String(c.term || '').trim()
+    if (!term) continue
+    if (!map.has(term)) map.set(term, [])
+    map.get(term).push(c)
+  }
+  const out = []
+  for (const [term, list] of map) {
+    const s = summarize(list, bands, level5)
+    out.push({
+      term,
+      key: termKey(term),
+      short: termShort(term),
+      credit: s.totalCredit,
+      countedCredit: s.countedCredit,
+      avg: s.avg,
+      gpa: s.gpa,
+      count: list.length,
+      failedCount: s.failedCount
+    })
+  }
+  out.sort((a, b) => (a.key - b.key) || String(a.term).localeCompare(String(b.term)))
+  return out
+}
+
+/** 趋势序列：labels=短标签，data=指标值（metric 'gpa' | 'avg'），terms=同序明细 */
+export function trendSeries(courses, metric = 'gpa', bands, level5) {
+  const terms = byTerm(courses, bands, level5)
+  return {
+    labels: terms.map((x) => x.short),
+    data: terms.map((x) => (metric === 'avg' ? x.avg : x.gpa)),
+    terms
+  }
+}
+
 /** 导出为可下载 JSON 文本 */
 export function exportCourses(courses, bands, meta = {}, now = new Date()) {
   const list = (courses || []).map(normalizeCourse).filter(Boolean)
@@ -191,7 +269,7 @@ export function importCourses(text) {
   for (const it of raw) {
     const c = normalizeCourse(it)
     if (!c) { dropped++; continue }
-    const key = `${c.name}|${c.credit}|${c.scoreType}|${c.score || ''}${c.level || ''}${c.pass || ''}`
+    const key = courseKey(c)
     if (seen.has(key)) { dropped++; continue }
     seen.add(key)
     out.push(c)
@@ -205,6 +283,11 @@ export default {
   PASS_KINDS,
   DEFAULT_GPA_BANDS,
   SCORE_TYPES,
+  courseKey,
+  termKey,
+  termShort,
+  byTerm,
+  trendSeries,
   round,
   percentOf,
   gpaOf,

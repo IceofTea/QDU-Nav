@@ -10,9 +10,12 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from '../i18n/index.js'
 import { setNavContext } from '../stores/navContext.js'
 import { getJson, setJson } from '../utils/safeStorage.js'
+import { loadTimetableMeta, loadTermRows } from '../api/termTimetable.js'
+import LineChart from '../components/LineChart.vue'
 import {
   DEFAULT_GPA_BANDS, LEVEL5_TO_PERCENT, SCORE_TYPES,
-  summarize, solveRemaining, exportCourses, importCourses, normalizeCourse
+  summarize, solveRemaining, exportCourses, importCourses, normalizeCourse,
+  courseKey, trendSeries
 } from '../utils/gpa.js'
 
 const { t, lang } = useI18n()
@@ -31,6 +34,7 @@ const scoreType = ref('percent')
 const level = ref('good')
 const pass = ref('pass')
 const editing = ref(null)
+const term = ref('')
 const LEVELS = ['excellent', 'good', 'medium', 'pass', 'fail']
 
 function resetForm() {
@@ -38,6 +42,7 @@ function resetForm() {
   name.value = ''
   credit.value = ''
   score.value = ''
+  term.value = ''
   scoreType.value = 'percent'
   level.value = 'good'
   pass.value = 'pass'
@@ -47,6 +52,7 @@ function editStart(row) {
   name.value = row.name
   credit.value = String(row.credit)
   scoreType.value = row.scoreType
+  term.value = row.term || ''
   if (row.scoreType === 'percent') score.value = String(row.score)
   if (row.scoreType === 'level5') level.value = row.level
   if (row.scoreType === 'pass') pass.value = row.pass
@@ -60,7 +66,8 @@ function save() {
     scoreType: scoreType.value,
     score: score.value,
     level: level.value,
-    pass: pass.value
+    pass: pass.value,
+    term: term.value
   }
   const ok = normalizeCourse(raw)
   if (!ok) { msg.value = t('gpa.invalid'); return }
@@ -138,12 +145,12 @@ async function doImport(file, mode = 'append') {
     backupMsg.value = t('gpa.importReplaced', { n: res.courses.length })
     return
   }
-  const seen = new Set(courses.value.map((c) => `${c.name}|${c.credit}|${c.scoreType}|${c.score || ''}${c.level || ''}${c.pass || ''}`))
+  const seen = new Set(courses.value.map(courseKey))
   let added = 0
   let dup = 0
   const merged = [...courses.value]
   for (const c of res.courses) {
-    const k = `${c.name}|${c.credit}|${c.scoreType}|${c.score || ''}${c.level || ''}${c.pass || ''}`
+    const k = courseKey(c)
     if (seen.has(k)) { dup++; continue }
     seen.add(k)
     merged.push(c)
@@ -151,6 +158,85 @@ async function doImport(file, mode = 'append') {
   }
   courses.value = merged
   backupMsg.value = t('gpa.importAppended', { added, dup })
+}
+
+/* ---- 分学期趋势 ---- */
+const trendMetric = ref('gpa')
+const trend = computed(() => trendSeries(courses.value, trendMetric.value, DEFAULT_GPA_BANDS, LEVEL5_TO_PERCENT))
+const trendSeriesDef = computed(() => ([{
+  label: trendMetric.value === 'gpa' ? t('gpa.trendGpa') : t('gpa.trendAvg'),
+  color: trendMetric.value === 'gpa' ? '#0f766e' : '#1b66c9',
+  data: trend.value.data.map((v) => (v === null ? 0 : v))
+}]))
+
+/* ---- 从教务课表选课（自动带出学分与学期，省得手抄）---- */
+const picker = ref(false)
+const ttTerms = ref([])
+const ttTerm = ref('')
+const ttLoading = ref(false)
+const ttRows = ref([])
+const ttQuery = ref('')
+const ttMsg = ref('')
+
+async function openPicker() {
+  picker.value = true
+  ttMsg.value = ''
+  if (ttTerms.value.length) return
+  ttLoading.value = true
+  try {
+    const mm = await loadTimetableMeta()
+    ttTerms.value = (mm && mm.semesters && mm.semesters.length)
+      ? mm.semesters
+      : []
+    if (ttTerms.value.length) {
+      const cur = ttTerms.value.find((s) => s.semester === mm.currentSemester) || ttTerms.value[0]
+      ttTerm.value = cur.semester
+      await loadTtTerm(cur)
+    } else {
+      ttMsg.value = t('gpa.pickNoData')
+    }
+  } catch {
+    ttMsg.value = t('gpa.pickLoadFail')
+  } finally {
+    ttLoading.value = false
+  }
+}
+async function loadTtTerm(sel) {
+  if (!sel || !sel.file) { ttRows.value = []; return }
+  ttTerm.value = sel.semester
+  ttLoading.value = true
+  try {
+    const d = await loadTermRows(sel.file)
+    ttRows.value = (d && d.rows) || []
+  } catch {
+    ttRows.value = []
+    ttMsg.value = t('gpa.pickLoadFail')
+  } finally {
+    ttLoading.value = false
+  }
+}
+/** 同名课程按学分去重，避免同一门课的多个班次刷屏 */
+const ttMatches = computed(() => {
+  const q = ttQuery.value.trim()
+  const map = new Map()
+  for (const r of ttRows.value) {
+    const cn = (r.c || '').trim()
+    if (!cn) continue
+    if (q && cn.indexOf(q) < 0) continue
+    const key = `${cn}|${r.credit || ''}`
+    if (!map.has(key)) map.set(key, r)
+  }
+  const out = [...map.values()]
+  return out.slice(0, 60)
+})
+function pickCourse(r) {
+  name.value = String(r.c || '').slice(0, 40)
+  const cr = Number(r.credit)
+  if (Number.isFinite(cr) && cr > 0) credit.value = String(cr)
+  term.value = String(r.term || ttTerm.value || '').slice(0, 20)
+  ttMsg.value = t('gpa.picked')
+  picker.value = false
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const levelLabel = (k) => t('gpa.level_' + k)
@@ -193,6 +279,10 @@ const typeLabel = (k) => t('gpa.type_' + k)
         <option value="fail">{{ t('gpa.passFail') }}</option>
       </select>
     </div>
+    <div class="gpa-row">
+      <input v-model="term" class="input" :placeholder="t('gpa.termPh')" />
+      <button class="btn ghost" type="button" @click="openPicker">📚 {{ t('gpa.pickFromTT') }}</button>
+    </div>
     <div class="gpa-btns">
       <button class="btn accent" @click="save">{{ editing ? t('gpa.saveEdit') : t('gpa.addBtn') }}</button>
       <button v-if="editing" class="btn ghost" @click="resetForm">{{ t('gpa.cancel') }}</button>
@@ -214,6 +304,7 @@ const typeLabel = (k) => t('gpa.type_' + k)
           <template v-if="r.scoreType === 'percent'">{{ r.score }}</template>
           <template v-else-if="r.scoreType === 'level5'">{{ levelLabel(r.level) }}（≈{{ r.percent }}）</template>
           <template v-else>{{ r.pass === 'pass' ? t('gpa.passOk') : t('gpa.passFail') }}</template>
+          <em v-if="r.term"> · {{ r.term }}</em>
           <em v-if="!r.counted"> · {{ t('gpa.notCounted') }}</em>
         </span>
         <span class="gpa-point">{{ r.gpa === null ? '—' : r.gpa.toFixed(1) }}</span>
@@ -221,6 +312,28 @@ const typeLabel = (k) => t('gpa.type_' + k)
         <button class="rec-del" @click="remove(r.id)" :title="t('gpa.del')">✕</button>
       </div>
     </div>
+  </div>
+
+  <div class="panel">
+    <div class="section-head" style="align-items:center;margin:0 0 10px;">
+      <h3 class="section-title" style="margin:0;"><span class="bar"></span>{{ t('gpa.trendTitle') }}</h3>
+      <div class="gpa-seg">
+        <button class="btn ghost small" :class="{ on: trendMetric === 'gpa' }" @click="trendMetric = 'gpa'">{{ t('gpa.trendGpa') }}</button>
+        <button class="btn ghost small" :class="{ on: trendMetric === 'avg' }" @click="trendMetric = 'avg'">{{ t('gpa.trendAvg') }}</button>
+      </div>
+    </div>
+    <div v-if="!trend.terms.length" class="muted" style="text-align:center;padding:14px;">{{ t('gpa.trendEmpty') }}</div>
+    <template v-else>
+      <LineChart :series="trendSeriesDef" :labels="trend.labels" :height="170" />
+      <div class="gpa-term-grid">
+        <div v-for="x in trend.terms" :key="x.term" class="gpa-term-cell">
+          <b>{{ x.short }}</b>
+          <span>{{ t('gpa.trendGpa') }} {{ fmt(x.gpa) }}</span>
+          <span>{{ t('gpa.kpiAvg') }} {{ fmt(x.avg) }}</span>
+          <span>{{ x.credit }} {{ t('gpa.unit') }} · {{ x.count }} {{ t('gpa.courseCnt') }}</span>
+        </div>
+      </div>
+    </template>
   </div>
 
   <div class="panel">
@@ -243,6 +356,32 @@ const typeLabel = (k) => t('gpa.type_' + k)
       <span v-for="b in DEFAULT_GPA_BANDS" :key="b.label" class="gpa-band">{{ b.label }} → {{ b.gpa.toFixed(1) }}</span>
     </div>
     <p class="muted" style="font-size:11.5px;margin-top:8px;">{{ t('gpa.bandsNote') }}</p>
+  </div>
+
+  <!-- 从教务课表选课：课程名 / 学分 / 学期一次带出（数据源与课表页同一份，离线可缓存） -->
+  <div v-if="picker" class="gpa-mask" @click.self="picker = false">
+    <div class="gpa-dialog">
+      <div class="gpa-dlg-head">
+        <b>{{ t('gpa.pickTitle') }}</b>
+        <button class="rec-del" @click="picker = false" :title="t('gpa.pickClose')">✕</button>
+      </div>
+      <p class="muted" style="font-size:11.5px;">{{ t('gpa.pickNote') }}</p>
+      <div class="gpa-row">
+        <select v-model="ttTerm" class="input gpa-sel" @change="loadTtTerm(ttTerms.find((s) => s.semester === ttTerm))">
+          <option v-for="s in ttTerms" :key="s.semester" :value="s.semester">{{ s.semester }}</option>
+        </select>
+        <input v-model="ttQuery" class="input" :placeholder="t('gpa.pickSearchPh')" />
+      </div>
+      <div v-if="ttMsg" class="gpa-msg" style="margin-top:8px;">{{ ttMsg }}</div>
+      <div class="gpa-pick-list">
+        <div v-if="ttLoading" class="muted" style="text-align:center;padding:16px;">{{ t('gpa.pickLoading') }}…</div>
+        <div v-else-if="!ttMatches.length" class="muted" style="text-align:center;padding:16px;">{{ t('gpa.pickEmpty') }}</div>
+        <button v-for="r in ttMatches" :key="r.c + r.credit" class="gpa-pick-item" @click="pickCourse(r)">
+          <span class="gpa-name">{{ r.c }}</span>
+          <span class="gpa-meta">{{ r.credit || '—' }} {{ t('gpa.unit') }}<template v-if="r.col"> · {{ r.col }}</template></span>
+        </button>
+      </div>
+    </div>
   </div>
 
   <div class="panel">
@@ -283,4 +422,16 @@ const typeLabel = (k) => t('gpa.type_' + k)
 .gpa-plan { margin-top: 12px; padding: 12px; border-radius: 12px; background: var(--soft-green); border: 1px solid var(--soft-green-border); color: var(--soft-green-text); font-size: 13px; line-height: 1.7; }
 .gpa-bands { display: flex; flex-wrap: wrap; gap: 6px; }
 .gpa-band { font-size: 11.5px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); color: var(--text-sub); }
+.gpa-seg { display: flex; gap: 6px; }
+.gpa-seg .on { background: var(--primary); color: #fff; border-color: var(--primary); }
+.gpa-term-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; margin-top: 12px; }
+.gpa-term-cell { display: flex; flex-direction: column; gap: 2px; padding: 9px 10px; border-radius: 10px; background: var(--primary-soft); font-size: 11px; color: var(--text-sub); }
+.gpa-term-cell b { font-size: 13px; color: var(--text); }
+.gpa-mask { position: fixed; inset: 0; z-index: 90; background: rgba(15, 18, 22, 0.45); display: flex; align-items: center; justify-content: center; padding: 18px; }
+.gpa-dialog { width: 100%; max-width: 460px; max-height: 78vh; overflow: auto; background: var(--card); border-radius: 16px; padding: 16px; box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28); }
+.gpa-dlg-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 14px; }
+.gpa-pick-list { display: flex; flex-direction: column; margin-top: 10px; max-height: 46vh; overflow: auto; }
+.gpa-pick-item { display: flex; align-items: center; gap: 10px; padding: 9px 4px; border: none; border-bottom: 1px solid var(--border); background: none; text-align: left; cursor: pointer; font-size: 13px; color: var(--text); }
+.gpa-pick-item:last-child { border-bottom: none; }
+.gpa-pick-item:hover { background: var(--primary-soft); border-radius: 8px; }
 </style>
