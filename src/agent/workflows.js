@@ -14,14 +14,15 @@ import { officialGroups } from '../data/official.js'
 import { campuses } from '../data/campus.js'
 import { SITE } from '../config/site.js'
 import { extractTime, extractPeriod, extractPlace, extractKeyword, extractScheduleSlots } from './slots.js'
+import { FAQ } from './faq.js'
 import {
   loadPosts, createPost, getWallet, signInToday, signedToday, streakDays,
   hotTopics, searchPosts, hasVotedLocal
 } from '../wall/api.js'
 import { PARTS, POINTS } from '../wall/config.js'
 
-const SCHED_KEY = 'qdu_agent_schedule'
-const CLASS_KEY = 'qdu_agent_class'
+const SCHED_KEY = 'nav_agent_schedule'
+const CLASS_KEY = 'nav_agent_class'
 
 const WEEK = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日']
 
@@ -169,7 +170,7 @@ export const WORKFLOWS = {
         run: async (ctx) => {
           // 优先级①：本机导入课表（CourseImporter 写入，免班级）
           let imported = []
-          try { imported = JSON.parse(localStorage.getItem('qdu_imported_courses') || '[]') } catch { imported = [] }
+          try { imported = JSON.parse(localStorage.getItem('nav_imported_courses') || '[]') } catch { imported = [] }
           ctx.state.imported = imported
           ctx.state.cls = getClass()
           if (!imported.length && !ctx.state.cls) throw new CLARIFY('class')
@@ -737,8 +738,8 @@ export const WORKFLOWS = {
         run: async (ctx) => {
           let exec = 0
           let fb = 0
-          try { exec = Number(localStorage.getItem('qdu_agent_exec') || 0) } catch { /* noop */ }
-          try { fb = JSON.parse(localStorage.getItem('qdu_agent_fb') || '[]').length } catch { /* noop */ }
+          try { exec = Number(localStorage.getItem('nav_agent_exec') || 0) } catch { /* noop */ }
+          try { fb = JSON.parse(localStorage.getItem('nav_agent_fb') || '[]').length } catch { /* noop */ }
           ctx.state.exec = exec
           ctx.state.fbLocal = fb
           return `本机执行 ${exec} 次 · 反馈 ${fb} 条`
@@ -767,8 +768,12 @@ export const WORKFLOWS = {
       const s = ctx.state.stats || {}
       const rows = [
         { icon: '🤖', label: '用户 Agent · 本机工作流执行', value: `${ctx.state.exec} 次` },
-        { icon: '🛠️', label: '维护 Agent · 在库能力', value: '18 条工作流 · 40+ 意图 · 12 条 FAQ' }
+        { icon: '🛠️', label: '维护 Agent · 在库能力', value: `${Object.keys(WORKFLOWS).length} 条工作流 · 40+ 意图 · ${FAQ.length} 条 FAQ` }
       ]
+      const miss = (() => { try { return JSON.parse(localStorage.getItem('nav_agent_miss') || '[]') } catch { return [] } })()
+      if (miss.length) {
+        rows.push({ icon: '🕳️', label: '待学话术（本机未命中 Top5，回流维护队列）', value: miss.slice(0, 5).map((m) => `${m.q}×${m.n}`).join('、') })
+      }
       if (s && !ctx.state.offline) {
         rows.push({ icon: '💬', label: '社区评论（用户回流数据池）', value: `${s.total} 条 · ${s.pages} 页` })
         rows.push({ icon: '🧱', label: '校园墙帖子', value: `${s.posts} 条` })
@@ -1324,9 +1329,9 @@ export const WORKFLOWS = {
           } catch { /* 本机模式 */ }
           if (!online) {
             let arr = []
-            try { arr = JSON.parse(localStorage.getItem('qdu_fix_orders') || '[]') } catch { arr = [] }
+            try { arr = JSON.parse(localStorage.getItem('nav_fix_orders') || '[]') } catch { arr = [] }
             arr.unshift({ thing: ctx.state.thing, place: ctx.state.place, ts: Date.now(), status: 'local' })
-            try { localStorage.setItem('qdu_fix_orders', JSON.stringify(arr.slice(0, 50))) } catch { /* noop */ }
+            try { localStorage.setItem('nav_fix_orders', JSON.stringify(arr.slice(0, 50))) } catch { /* noop */ }
           }
           ctx.state.online = online
           return online ? '工单已进管理台反馈队列' : '已存本机工单（联网自动上报）'

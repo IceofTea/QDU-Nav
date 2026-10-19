@@ -19,7 +19,7 @@ export const NOTIFY_VERSION = '2.2.0'
 import { eventsUrl } from './apiBase.js'
 
 const LS_INBOX = 'wall_notify_inbox_v2'
-const LS_NAME = 'qdu_wall_name'
+const LS_NAME = 'nav_wall_name'
 const MAX_INBOX = 100
 
 /* ──────────────────────── 1. @ 解析 ───────────────────────── */

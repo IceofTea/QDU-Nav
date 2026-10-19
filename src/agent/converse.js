@@ -105,6 +105,30 @@ export function followupsFor(wfId) {
   return FOLLOWUPS[wfId] || ['还有其他需求吗？', '最新通知', '今天吃什么']
 }
 
+/* ──────────────────────── 复合指令拆句 ──────────────────────── */
+
+/** 连接词：出现在句中即视为并列诉求的分界（与标点切分叠加使用） */
+const COMPOUND_SEP = /顺便|再帮?我?|然后|接着|还有|并且|以及|同时|另外|也帮?我?|捎带|再说/
+
+/**
+ * 复合指令拆句：「查一下空教室，顺便看今天吃什么」→ ['查一下空教室','看今天吃什么']
+ * 保守策略：只在拆出 2~3 段时返回，其余情况回 [] 让上游走单意图。
+ * @param {string} text
+ * @returns {string[]}
+ */
+export function splitCompound(text) {
+  const t = String(text || '').trim()
+  if (t.length < 6 || t.length > 60) return []
+  const out = []
+  for (const part of t.split(/[,，;；。！!？?]/)) {
+    for (const seg of part.split(COMPOUND_SEP)) {
+      const s = seg.trim()
+      if (s.length >= 2) out.push(s)
+    }
+  }
+  return out.length >= 2 && out.length <= 3 ? out : []
+}
+
 /* ──────────────────────── 富文本 ──────────────────────── */
 
 /** HTML 转义（mdLite 前置，保证 v-html 安全） */
@@ -146,6 +170,15 @@ export function daypart(date = new Date()) {
 
 const PUSH_LABEL = { review: '🧠 去复习', activity: '🎪 去报名', job: '💼 看岗位', onboard: '🧬 完善画像' }
 
+/** 时段感知建议：饭点推吃什么、晚间推明日课表，比固定例句更贴场景 */
+export function timeChips(date = new Date()) {
+  const h = date.getHours()
+  if (h >= 10 && h < 14) return ['今天吃什么', '食堂人多吗', '今日简报']
+  if (h >= 16 && h < 19) return ['晚饭吃什么', '哪里有空教室', '看校园墙']
+  if (h >= 19) return ['明天有什么课', '今日简报', '加进日程']
+  return ['今日简报', '哪里有空教室', '今天有什么课']
+}
+
 /**
  * 组装主动问候（engine 传入画像推送 items，这里只做文案与卡片）
  * @param {object} opt {agentName, pushes:[{icon,text,action:{type,value},kind}]}
@@ -168,6 +201,6 @@ export function buildGreeting(opt = {}) {
   } : null
   const chips = pushes.length
     ? pushes.map((p) => (p.action.type === 'agent' ? p.action.value : (PUSH_LABEL[p.kind] || '看看')))
-    : ['今日简报', '哪里有空教室']
+    : timeChips()
   return { reply, card, chips }
 }

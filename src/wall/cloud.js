@@ -5,7 +5,7 @@
  *            点赞 —— Pages 纯静态站的“公共笔记本”，免自建服务器
  * @入口      cloudEnabled / getCloud / setCloud / probeCloud /
  *            cloudList / cloudCreate / cloudReply / cloudLike
- * @配置优先级 localStorage('qdu_supabase') > <meta> > ''（未配=关闭，零影响）
+ * @配置优先级 localStorage('nav_supabase') > <meta> > ''（未配=关闭，零影响）
  * @依赖      无（原生 fetch 调 PostgREST；表结构见 supabase/schema.sql）
  * @被谁用    wall/api.js（cloud 优先 → 网关 → 本机三级）·
  *            views/DataManager.vue（填 key 入口）· scripts/unit-im.mjs
@@ -17,7 +17,7 @@
 
 export const CLOUD_VERSION = '1.1.0'
 
-const LS_KEY = 'qdu_supabase' // {url, key} | {off:true}（数据管家关闭用）
+const LS_KEY = 'nav_supabase' // {url, key} | {off:true}（数据管家关闭用）
 
 /** 公网缺省配置（仓库内置：开箱即全员共享；数据管家可覆盖，清空即关闭） */
 export const CLOUD_DEFAULT = {

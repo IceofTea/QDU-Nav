@@ -371,11 +371,11 @@ function enter() {
   refreshAnnList();
 }
 
-/* ── 云端直连模式（Supabase：无网关时线上可用；配置与 Nav 数据管家同键 qdu_supabase） ── */
+/* ── 云端直连模式（Supabase：无网关时线上可用；配置与 Nav 数据管家同键 nav_supabase） ── */
 var CLOUD = null;
 function cloudCfg() {
   try {
-    var c = JSON.parse(localStorage.getItem('qdu_supabase') || 'null');
+    var c = JSON.parse((localStorage.getItem('nav_supabase') || localStorage.getItem('qdu_supabase')) || 'null');
     if (c && c.url && c.key) return { url: String(c.url).replace(/\/+$/, ''), key: c.key };
   } catch (e) { /* noop */ }
   return null;
@@ -401,7 +401,7 @@ function cloudConnect() {
   var msg = document.getElementById('cloudMsg');
   if (!u || !k) { msg.textContent = '请填写地址和 key'; return; }
   msg.textContent = '连接中…';
-  try { localStorage.setItem('qdu_supabase', JSON.stringify({ url: u, key: k })); } catch (e) { /* noop */ }
+  try { localStorage.setItem('nav_supabase', JSON.stringify({ url: u, key: k })); } catch (e) { /* noop */ }
   CLOUD = { url: u, key: k };
   cloudApi('wall_posts', '?select=id&limit=1').then(function () {
     msg.textContent = '✅ 已连通';
@@ -949,7 +949,7 @@ function switchTab(t) {
 document.getElementById('tokenInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') login(); });
 // 云端配置回填（数据管家页配过则自动带出）
 try {
-  var _cc = JSON.parse(localStorage.getItem('qdu_supabase') || 'null');
+  var _cc = JSON.parse((localStorage.getItem('nav_supabase') || localStorage.getItem('qdu_supabase')) || 'null');
   if (_cc && _cc.url) {
     document.getElementById('sbUrl').value = _cc.url;
     if (_cc.key) document.getElementById('sbKey').value = _cc.key;

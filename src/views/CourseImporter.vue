@@ -5,7 +5,7 @@
  * @职责      课表导入器：粘贴课表文本/CSV → 宽松解析 → 预览校对 → 本机存储，
  *            解锁智能体「明天上什么课」免设置班级直接查询
  * @路由      #/app/importer（apps.js + router.js 双登记）
- * @数据      localStorage: qdu_imported_courses = [{d(1-7), s, e, c, t, r}]
+ * @数据      localStorage: nav_imported_courses = [{d(1-7), s, e, c, t, r}]
  *            与 workflows.dayClass 打通（导入数据优先于班级查询）
  * @解析策略  宽松逐行：识别 周X/星期X + 第a-b节/数字节次 + 教室号(\d{3,4}) +
  *            教师名 + 其余为课程名；也支持逗号/制表符分列的 CSV 行
@@ -16,7 +16,7 @@ import { ref, computed, onMounted } from 'vue'
 
 const emit = defineEmits(['back'])
 
-const KEY = 'qdu_imported_courses'
+const KEY = 'nav_imported_courses'
 const raw = ref('')
 const parsed = ref([])
 const saved = ref([])
@@ -129,7 +129,7 @@ const grouped = computed(() => {
 })
 
 function askAgent() {
-  try { localStorage.setItem('qdu_agent_inbox', '明天上什么课') } catch { /* noop */ }
+  try { localStorage.setItem('nav_agent_inbox', '明天上什么课') } catch { /* noop */ }
   emit('open', 'assistant')
 }
 

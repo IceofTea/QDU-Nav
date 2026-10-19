@@ -59,7 +59,7 @@ const demoSteps = [
 ]
 
 function askDemo(q) {
-  try { localStorage.setItem('qdu_agent_inbox', q) } catch { /* noop */ }
+  try { localStorage.setItem('nav_agent_inbox', q) } catch { /* noop */ }
   emit('open', 'assistant')
 }
 

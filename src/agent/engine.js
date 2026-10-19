@@ -2,16 +2,16 @@
  * 对话引擎（多轮状态机 · 三层识别 · 云脑可选降级）
  * ---------------------------------------------------------------------------
  * handle(text, onStep) 返回统一响应：
- *   kind: meta | faq | workflow | app | fallback | confirm | clarify | cancel | cloud
+ *   kind: meta | faq | workflow | app | fallback | confirm | clarify | cancel | cloud | multi（复合指令，cards 多卡）
  * 状态机：澄清（补槽位）→ 确认（写操作）→ 执行（工作流）→ 卡片（可执行动作）
  * 本地推理零依赖；配置 AGENT_PROFILE.cloudApi 后复杂问题升级云端，失败自动回退。
  */
-import { recognize } from './intents.js'
+import { recognize, nearIntents } from './intents.js'
 import { navAnswer } from './navAnswer.js'
 import { AGENT_PROFILE, agentText } from './config.js'
 import { runWorkflow, workflowMeta, CLARIFY } from './workflows.js'
 import { extractKeyword, extractScheduleSlots } from './slots.js'
-import { detectContinue, mergeContinue, followupsFor, buildGreeting } from './converse.js'
+import { detectContinue, mergeContinue, followupsFor, buildGreeting, splitCompound } from './converse.js'
 import { pushList, readProfile } from './profile.js'
 import { dueReviews } from '../utils/studyPlan.js'
 import { upcoming } from '../data/activities.js'
@@ -29,7 +29,21 @@ const CONFIRM_WORDS = /^(好|好的|可以|行|确认|执行|嗯|ok|OK|Ok|是|�
 const CANCEL_WORDS = /^(不|不用|算了|取消|别了|不需要|no|No|错|不是)$/
 
 function readClass() {
-  try { return localStorage.getItem('qdu_agent_class') || '' } catch { return '' }
+  try { return localStorage.getItem('nav_agent_class') || '' } catch { return '' }
+}
+
+/** 未命中话术记录（本机 miss 日志 → 协作看板「待学话术」回流，隐私不出本机） */
+function logMiss(text) {
+  try {
+    const t = String(text || '').trim().slice(0, 40)
+    if (!t) return
+    const arr = JSON.parse(localStorage.getItem('nav_agent_miss') || '[]')
+    const ex = arr.find((m) => m.q === t)
+    if (ex) { ex.n = (ex.n || 1) + 1; ex.ts = Date.now() }
+    else arr.unshift({ q: t, n: 1, ts: Date.now() })
+    arr.sort((a, b) => (b.n - a.n) || (b.ts - a.ts))
+    localStorage.setItem('nav_agent_miss', JSON.stringify(arr.slice(0, 60)))
+  } catch { /* noop */ }
 }
 
 export class AgentEngine {
@@ -108,6 +122,44 @@ export class AgentEngine {
         if (!strongNew) {
           const merged = mergeContinue(this.lastCtx, cont, raw, this.lang)
           return this._execute(merged.wfId, merged.ctx, { confidence: 88, layer: 'context' }, onStep)
+        }
+      }
+    }
+
+    // ── 复合指令：「查空教室，顺便看今天吃什么」拆句顺序执行 ──
+    // 保守生效：每段都强命中「只读工作流」才复合（写操作/澄清型不复合，防误伤）
+    const parts = splitCompound(raw)
+    if (parts.length >= 2) {
+      const hits = []
+      for (const part of parts) {
+        const rp = recognize(part)
+        if (rp.layer !== 'intent' || !rp.intent || rp.intent.kind !== 'workflow' || rp.score < 60) break
+        const meta = workflowMeta(rp.intent.wf)
+        if (!meta || meta.needConfirm) break
+        hits.push({ part, it: rp.intent, meta })
+      }
+      if (hits.length === parts.length && hits.length >= 2) {
+        const cards = []
+        const titles = []
+        for (const h of hits) {
+          const ctx = { text: h.part, slots: {}, state: {}, lang: this.lang }
+          const kw = extractKeyword(h.part, ['查一下', '查询', '搜索', '搜', '找', '关于', '通知', '打开'])
+          if (kw) ctx.slots.keyword = kw
+          try {
+            const card = await runWorkflow(h.it.wf, ctx, onStep)
+            if (card) cards.push(card)
+            titles.push(h.meta.title)
+            try { this.lastCtx = { wfId: h.it.wf, slots: JSON.parse(JSON.stringify(ctx.slots || {})), text: ctx.text } } catch { /* noop */ }
+          } catch (e) {
+            cards.push({ title: '⚠️ ' + h.meta.title, rows: [{ icon: '•', label: '执行失败：' + (e.message || '未知错误'), value: '' }] })
+            titles.push(h.meta.title + '（未成功）')
+          }
+        }
+        return {
+          kind: 'multi', layer: 'intent', confidence: 90,
+          reply: `复合指令完成：${titles.join(' → ')}`,
+          cards,
+          chips: followupsFor(hits[hits.length - 1].it.wf)
         }
       }
     }
@@ -195,7 +247,7 @@ export class AgentEngine {
           source: ans.src,
           card: {
             title: '📚 ' + ans.t,
-            subtitle: '本地知识库 BM25 检索（kb-nav.json ' + '47 篇语料）',
+            subtitle: '本地知识库 BM25 检索（kb-nav.json 全量语料）',
             rows: [{ icon: '📖', label: ans.s.slice(0, 60) + (ans.s.length > 60 ? '…' : ''), value: '' }],
             source: ans.src,
             actions: [
@@ -210,16 +262,16 @@ export class AgentEngine {
     }
 
     // ── 云脑升级（管理台配置后生效；未配置时 server 秒回 501，本地兜底无感） ──
-    if (true) {
-      const cloud = await this._cloud(raw)
-      if (cloud) return { ...base, kind: 'cloud', reply: cloud, layer: 'cloud', chips: ['最新通知', '哪里有空教室'] }
-    }
+    const cloud = await this._cloud(raw)
+    if (cloud) return { ...base, kind: 'cloud', reply: cloud, layer: 'cloud', chips: ['最新通知', '哪里有空教室'] }
 
-    // ── 兜底 ────────────────────────────────────────
+    // ── 兜底：记录未命中话术（本机回流看板）+「猜你想说」相近意图建议 ──
+    logMiss(raw)
+    const near = nearIntents(raw, 3).map((it) => it.patterns[0]).filter(Boolean)
     return {
       ...base, kind: 'fallback',
       reply: this.t().fallback,
-      chips: AGENT_PROFILE.examples.slice(0, 4)
+      chips: near.length ? near : AGENT_PROFILE.examples.slice(0, 4)
     }
   }
 
@@ -311,7 +363,7 @@ export class AgentEngine {
 
     // 班级记忆落库
     if (p.field === 'class') {
-      try { localStorage.setItem('qdu_agent_class', raw.trim()) } catch { /* noop */ }
+      try { localStorage.setItem('nav_agent_class', raw.trim()) } catch { /* noop */ }
       ctx.text = `班级是${raw.trim()}`
     }
 

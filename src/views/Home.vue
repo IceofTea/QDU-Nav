@@ -96,7 +96,7 @@ function toggleCampus(name) { expanded.value = expanded.value === name ? null : 
 
 /* ── 首页对话式入口：回车先过意图识别，命中即交给智能体办事 ── */
 function pushInbox(text) {
-  try { localStorage.setItem('qdu_agent_inbox', text) } catch { /* noop */ }
+  try { localStorage.setItem('nav_agent_inbox', text) } catch { /* noop */ }
 }
 function onSearchEnter() {
   const q = keyword.value.trim()

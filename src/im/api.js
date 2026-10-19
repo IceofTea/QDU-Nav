@@ -61,7 +61,7 @@ function genId() {
 }
 function now() { return Date.now() }
 function me() {
-  try { return localStorage.getItem('qdu_wall_name') || '我' } catch { return '我' }
+  try { return localStorage.getItem('nav_wall_name') || '我' } catch { return '我' }
 }
 
 /** 会话表读写 */

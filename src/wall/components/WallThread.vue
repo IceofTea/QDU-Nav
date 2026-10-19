@@ -38,7 +38,7 @@ function subOf(id) { return (props.post.replies || []).filter((r) => r.parent ==
 /** 是否本人可编辑/删除（本地帖或本机作者） */
 function mine(r) {
   try {
-    const me = localStorage.getItem('qdu_wall_name') || ''
+    const me = localStorage.getItem('nav_wall_name') || ''
     return (me && r.author === me && !props.offline) || String(props.post.id).startsWith('L')
   } catch { return String(props.post.id).startsWith('L') }
 }

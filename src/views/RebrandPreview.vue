@@ -192,11 +192,11 @@ function resetFromSite() {
 /* ── 智能体联动 ── */
 function askAgentAboutConfig() {
   const text = `介绍当前站点配置：品牌${form.brand}、学校${form.university}、主题色${primary.value}`
-  try { localStorage.setItem('qdu_agent_inbox', text) } catch { /* noop */ }
+  try { localStorage.setItem('nav_agent_inbox', text) } catch { /* noop */ }
   emit('open', 'assistant')
 }
 function tryThemeInAgent() {
-  try { localStorage.setItem('qdu_agent_inbox', `换校向导 里的主题试穿怎么用`) } catch { /* noop */ }
+  try { localStorage.setItem('nav_agent_inbox', `换校向导 里的主题试穿怎么用`) } catch { /* noop */ }
   emit('open', 'assistant')
 }
 

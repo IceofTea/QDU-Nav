@@ -20,10 +20,10 @@ const authed = ref(false)
 const stats = ref({ runs: 0, posts: 0, replies: 0, feedback: 0, reports: 0 })
 const weekExec = ref([])
 
-/** 近 7 天执行柱（qdu_agent_exec_ts 本机记录，无记录即空态） */
+/** 近 7 天执行柱（nav_agent_exec_ts 本机记录，无记录即空态） */
 function execWeek() {
   let arr = []
-  try { arr = JSON.parse(localStorage.getItem('qdu_agent_exec_ts') || '[]') } catch { arr = [] }
+  try { arr = JSON.parse(localStorage.getItem('nav_agent_exec_ts') || '[]') } catch { arr = [] }
   const out = []
   for (let i = 6; i >= 0; i--) {
     const d = new Date(Date.now() - i * 86400000)
@@ -41,7 +41,7 @@ const err = ref('')
 
 function wfRuns() {
   try {
-    const u = JSON.parse(localStorage.getItem('qdu_wf_usage') || '{}')
+    const u = JSON.parse(localStorage.getItem('nav_wf_usage') || '{}')
     return Object.values(u).reduce((a, n) => a + (n || 0), 0)
   } catch { return 0 }
 }
@@ -55,7 +55,7 @@ async function load() {
   } catch { /* 空态 */ }
   const replies = posts.reduce((a, p) => a + (p.replies || []).length, 0)
   let feedback = 0
-  try { feedback = (JSON.parse(localStorage.getItem('qdu_agent_fb') || '[]') || []).length } catch { /* noop */ }
+  try { feedback = (JSON.parse(localStorage.getItem('nav_agent_fb') || '[]') || []).length } catch { /* noop */ }
   stats.value = { runs: wfRuns(), posts: posts.length, replies, feedback, reports: 0 }
   weekExec.value = execWeek()
   const rep = modReport(posts, [])

@@ -54,7 +54,7 @@ export function useImStore() {
    */
   function contacts(posts, limit = 8) {
     let me = ''
-    try { me = localStorage.getItem('qdu_wall_name') || '' } catch { /* noop */ }
+    try { me = localStorage.getItem('nav_wall_name') || '' } catch { /* noop */ }
     const blocked = new Set(blocks.value)
     const freq = new Map()
     for (const p of posts || []) {

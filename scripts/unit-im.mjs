@@ -248,7 +248,7 @@ await okAsync('显式关闭后抛错', async () => {
   cloud.setCloud('', '')
   assert.equal(cloud.cloudEnabled(), false)
   await assert.rejects(cloud.cloudList(), /未配置/)
-  localStorage.removeItem('qdu_supabase') // 回到仓库缺省
+  localStorage.removeItem('nav_supabase'); localStorage.removeItem('qdu_supabase') // 回到仓库缺省
 })
 ok('仓库缺省即启用（开箱共享）', () => {
   assert.equal(cloud.cloudEnabled(), true)

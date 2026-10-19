@@ -61,13 +61,14 @@ function newAgentMsg(extra = {}) {
 }
 
 /* ── 会话历史（localStorage 持久化） ── */
-const HISTORY_KEY = 'qdu_agent_session'
+const HISTORY_KEY = 'nav_agent_session'
 function saveSession() {
   try {
     const slim = messages.slice(-24).map((m) => ({
       role: m.role, text: m.fullText || m.text,
       res: m.res ? { kind: m.res.kind, reply: m.res.reply, layer: m.res.layer, confidence: m.res.confidence, source: m.res.source, chips: m.res.chips, confirmActions: m.res.confirmActions, mode: m.res.mode } : null,
-      card: m.card || null
+      card: m.card || null,
+      cards: m.cards || null
     }))
     localStorage.setItem(HISTORY_KEY, JSON.stringify({ t: Date.now(), msgs: slim }))
   } catch { /* noop */ }
@@ -77,7 +78,7 @@ function restoreSession() {
     const d = JSON.parse(localStorage.getItem(HISTORY_KEY) || 'null')
     if (!d || !d.msgs || !d.msgs.length) return false
     messages.length = 0
-    d.msgs.forEach((m) => messages.push(reactive({ ...m, steps: [], done: true, stepsOpen: true, elapsed: 0 })))
+    d.msgs.forEach((m) => messages.push(reactive({ ...m, chips: m.chips || (m.res && m.res.chips) || [], steps: [], done: true, stepsOpen: true, elapsed: 0 })))
     showHistory.value = false
     scrollBottom()
     return true
@@ -98,11 +99,11 @@ async function send(text) {
 
   const msg = newAgentMsg({ text: '', thinking: true, done: false, steps: [], stepsOpen: true })
   // 执行计数 + 时间戳（协作看板/成长曲线数据源之一，上限 200 条防膨胀）
-  try { localStorage.setItem('qdu_agent_exec', String(Number(localStorage.getItem('qdu_agent_exec') || 0) + 1)) } catch { /* noop */ }
+  try { localStorage.setItem('nav_agent_exec', String(Number(localStorage.getItem('nav_agent_exec') || 0) + 1)) } catch { /* noop */ }
   try {
-    const arr = JSON.parse(localStorage.getItem('qdu_agent_exec_ts') || '[]')
+    const arr = JSON.parse(localStorage.getItem('nav_agent_exec_ts') || '[]')
     arr.push(Date.now())
-    localStorage.setItem('qdu_agent_exec_ts', JSON.stringify(arr.slice(-200)))
+    localStorage.setItem('nav_agent_exec_ts', JSON.stringify(arr.slice(-200)))
   } catch { /* noop */ }
   const startedAt = Date.now()
   msg.elapsed = 0
@@ -128,7 +129,9 @@ async function send(text) {
   msg.done = true
   msg.res = res
   msg.fullText = res.reply || ''
-  if (res.card) msg.card = res.card
+  if (res.cards && res.cards.length) msg.cards = res.cards
+  else if (res.card) msg.card = res.card
+  msg.chips = res.chips || null
   if (res.mode) mode.value = res.mode
   reveal(msg, msg.fullText)
   if (msg.steps.length) msg.stepsOpen = false // 默认折叠为摘要
@@ -233,9 +236,9 @@ function dislike(m) {
   if (!m.disliked) return
   // 反馈回流：上报社区网关（管理台「👎 反馈」聚合视图），同时本地留底
   try {
-    const fb = JSON.parse(localStorage.getItem('qdu_agent_fb') || '[]')
+    const fb = JSON.parse(localStorage.getItem('nav_agent_fb') || '[]')
     fb.push({ text: m.text.slice(0, 80), kind: m.res?.kind, ts: Date.now() })
-    localStorage.setItem('qdu_agent_fb', JSON.stringify(fb.slice(-100)))
+    localStorage.setItem('nav_agent_fb', JSON.stringify(fb.slice(-100)))
   } catch { /* noop */ }
   fetch('/api/feedback', {
     method: 'POST',
@@ -319,7 +322,7 @@ const histIdx = ref(-1)
 function onHistKey(e) {
   if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
   let h = []
-  try { h = JSON.parse(localStorage.getItem('qdu_chat_history_v1') || '[]') } catch { h = [] }
+  try { h = JSON.parse(localStorage.getItem('nav_chat_history_v1') || '[]') } catch { h = [] }
   if (!h.length) return
   if (e.key === 'ArrowUp') { histIdx.value = Math.min(histIdx.value + 1, h.length - 1) }
   else { histIdx.value = Math.max(histIdx.value - 1, -1) }
@@ -433,21 +436,21 @@ defineExpose({ send, restoreSession })
               </div>
             </div>
 
-            <!-- 结果卡片 -->
-            <div v-if="m.card" class="ac-card">
-              <div class="ac-card-title">{{ m.card.title }}</div>
-              <div v-if="m.card.subtitle" class="ac-card-sub">{{ m.card.subtitle }}</div>
-              <div v-if="m.card.rows && m.card.rows.length" class="ac-card-rows">
-                <div v-for="(r, j) in m.card.rows" :key="j" class="ac-row" @click="r.url && runAction({ type: 'url', value: r.url })">
+            <!-- 结果卡片（复合指令可多卡） -->
+            <div v-for="(c, ci) in (m.cards && m.cards.length ? m.cards : (m.card ? [m.card] : []))" :key="ci" class="ac-card">
+              <div class="ac-card-title">{{ c.title }}</div>
+              <div v-if="c.subtitle" class="ac-card-sub">{{ c.subtitle }}</div>
+              <div v-if="c.rows && c.rows.length" class="ac-card-rows">
+                <div v-for="(r, j) in c.rows" :key="j" class="ac-row" @click="r.url && runAction({ type: 'url', value: r.url })">
                   <span class="ac-row-icon">{{ r.icon || '•' }}</span>
                   <span class="ac-row-label" :class="{ link: !!r.url }">{{ r.label }}</span>
                   <span class="ac-row-value">{{ r.value }}</span>
                 </div>
               </div>
-              <div v-if="m.card.source" class="ac-card-source">📌 {{ T.source }}：{{ m.card.source }}</div>
-              <div v-if="m.card.note" class="ac-card-note">ℹ️ {{ m.card.note }}</div>
-              <div v-if="m.card.actions && m.card.actions.length" class="ac-actions">
-                <button v-for="(a, j) in m.card.actions" :key="j" class="ac-action" @click="runAction(a)">{{ a.label }}</button>
+              <div v-if="c.source" class="ac-card-source">📌 {{ T.source }}：{{ c.source }}</div>
+              <div v-if="c.note" class="ac-card-note">ℹ️ {{ c.note }}</div>
+              <div v-if="c.actions && c.actions.length" class="ac-actions">
+                <button v-for="(a, j) in c.actions" :key="j" class="ac-action" @click="runAction(a)">{{ a.label }}</button>
               </div>
             </div>
 

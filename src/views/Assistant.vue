@@ -40,9 +40,9 @@ onMounted(() => {
 
   // 入口①：站内收件箱（首页对话框）
   try {
-    const inbox = localStorage.getItem('qdu_agent_inbox')
+    const inbox = localStorage.getItem('nav_agent_inbox')
     if (inbox) {
-      localStorage.removeItem('qdu_agent_inbox')
+      localStorage.removeItem('nav_agent_inbox')
       setTimeout(() => chatRef.value?.send(inbox), 350)
       return
     }
@@ -58,11 +58,11 @@ onMounted(() => {
 
 const wfUsage = ref({})
 function bumpUsage() {
-  try { wfUsage.value = JSON.parse(localStorage.getItem('qdu_wf_usage') || '{}') } catch { wfUsage.value = {} }
+  try { wfUsage.value = JSON.parse(localStorage.getItem('nav_wf_usage') || '{}') } catch { wfUsage.value = {} }
 }
 function recordUsage(id) {
   wfUsage.value[id] = (wfUsage.value[id] || 0) + 1
-  try { localStorage.setItem('qdu_wf_usage', JSON.stringify(wfUsage.value)) } catch { /* noop */ }
+  try { localStorage.setItem('nav_wf_usage', JSON.stringify(wfUsage.value)) } catch { /* noop */ }
 }
 const wfList = computed(() => {
   bumpUsage()
@@ -74,12 +74,12 @@ const wfList = computed(() => {
 const memory = ref({ class: '' })
 const memSummary = ref('')
 function refreshMem() {
-  try { memory.value.class = localStorage.getItem('qdu_agent_class') || '' } catch { memory.value.class = '' }
+  try { memory.value.class = localStorage.getItem('nav_agent_class') || '' } catch { memory.value.class = '' }
   try { memSummary.value = profileSummary() } catch { memSummary.value = '' }
 }
 refreshMem()
 function clearMemory() {
-  try { localStorage.removeItem('qdu_agent_class') } catch { /* noop */ }
+  try { localStorage.removeItem('nav_agent_class') } catch { /* noop */ }
   memory.value.class = ''
   refreshMem()
 }

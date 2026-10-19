@@ -7,9 +7,9 @@
  *            卡片详情弹层（触发语/步骤/降级说明）· 「立即使用」一键跳转
  *            智能体执行 · 个性化置顶（常用优先）
  * @路由      #/app/skills（apps.js + router.js 双登记）
- * @数据      WORKFLOWS 元信息 + localStorage（qdu_wf_usage 使用计数 ·
- *            qdu_wf_fav 收藏）——与 Assistant 技能面板同一数据源
- * @联动      点击「立即使用」→ 写 qdu_agent_inbox → 打开 Assistant 自动执行
+ * @数据      WORKFLOWS 元信息 + localStorage（nav_wf_usage 使用计数 ·
+ *            nav_wf_fav 收藏）——与 Assistant 技能面板同一数据源
+ * @联动      点击「立即使用」→ 写 nav_agent_inbox → 打开 Assistant 自动执行
  * @设计参考  智能体商店通行范式：分类标签 + 卡片网格 + 立即使用 + 使用次数
  * ════════════════════════════════════════════════════════════════════
  */
@@ -49,16 +49,16 @@ const detail = ref(null)   // 详情弹层
 const usage = ref({})
 const favs = ref({})
 function loadLocal() {
-  try { usage.value = JSON.parse(localStorage.getItem('qdu_wf_usage') || '{}') } catch { usage.value = {} }
-  try { favs.value = JSON.parse(localStorage.getItem('qdu_wf_fav') || '{}') } catch { favs.value = {} }
+  try { usage.value = JSON.parse(localStorage.getItem('nav_wf_usage') || '{}') } catch { usage.value = {} }
+  try { favs.value = JSON.parse(localStorage.getItem('nav_wf_fav') || '{}') } catch { favs.value = {} }
 }
 function toggleFav(id) {
   favs.value[id] = !favs.value[id]
-  try { localStorage.setItem('qdu_wf_fav', JSON.stringify(favs.value)) } catch { /* noop */ }
+  try { localStorage.setItem('nav_wf_fav', JSON.stringify(favs.value)) } catch { /* noop */ }
 }
 function bumpUsage(id) {
   usage.value[id] = (usage.value[id] || 0) + 1
-  try { localStorage.setItem('qdu_wf_usage', JSON.stringify(usage.value)) } catch { /* noop */ }
+  try { localStorage.setItem('nav_wf_usage', JSON.stringify(usage.value)) } catch { /* noop */ }
 }
 
 /* ── 卡片数据 ── */
@@ -107,7 +107,7 @@ const board = computed(() => {
 /** 立即使用：写入智能体收件箱并跳转（与首页对话框同一协议） */
 function run(w) {
   bumpUsage(w.id)
-  try { localStorage.setItem('qdu_agent_inbox', w.title) } catch { /* noop */ }
+  try { localStorage.setItem('nav_agent_inbox', w.title) } catch { /* noop */ }
   emit('open', 'assistant')
 }
 function openDetail(w) { detail.value = w }

@@ -94,7 +94,7 @@ function download(name, obj) {
 }
 function backupAll() {
   const data = {
-    app: 'qdu-nav-backup', version: 1, exportedAt: Date.now(),
+    app: 'nav-backup', version: 1, exportedAt: Date.now(),
     drafts: exportDrafts(), threads: exportThreads(), wallet: getWallet()
   }
   download('nav-backup-' + new Date().toISOString().slice(0, 10) + '.json', data)
@@ -107,7 +107,7 @@ function restoreFile(e) {
   rd.onload = () => {
     try {
       const d = JSON.parse(String(rd.result || ''))
-      if (d.app !== 'qdu-nav-backup') throw new Error('不是本站备份文件')
+      if (d.app !== 'nav-backup' && d.app !== 'qdu-nav-backup') throw new Error('不是本站备份文件')
       if (!confirm('恢复将合并草稿/覆盖钱包，继续？')) return
       const r1 = importDrafts(d.drafts || { drafts: [] })
       if (d.wallet && typeof d.wallet.points === 'number') {

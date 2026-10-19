@@ -19,7 +19,7 @@ const portable = ref([
   { name: '课表/空教室/通知类', n: 0, note: '换数据源即移植（教务接口/快照）' },
   { name: '社区类（墙/私信/反馈）', n: 0, note: '换网关地址即移植（apiBase）' },
   { name: '通用类（提醒/番茄/画像）', n: 0, note: '零改动，直接复用' },
-  { name: '校本类（师大智答/校领导测试）', n: 0, note: '留在本校，不移植' }
+  { name: '校本类（本校智答/校领导测试）', n: 0, note: '留在本校，不移植' }
 ])
 onMounted(() => {
   const ids = Object.keys(WORKFLOWS)
@@ -54,8 +54,8 @@ onMounted(() => {
       <em>{{ p.note }}</em>
     </div>
     <div class="tp-proof">
-      <b>两校验证</b>
-      <span>QDU-Nav（青岛大学）⇄ FJNU-Nav（福建师大）：同一骨架，校本应用各自保留（师大智答/日程助手/研究生服务），回归测试双站全绿。</span>
+      <b>多校验证</b>
+      <span>同一骨架已在异校部署验证：校本应用各自保留（本校智答/日程助手），回归测试全绿。</span>
     </div>
     <div class="tp-go">
       <button class="primary" @click="emit('open', 'rebrand')">🔁 去换校向导试试</button>

@@ -6,7 +6,7 @@
  * @入口      getApiBase / setApiBase / clearApiBase / apiUrl / eventsUrl /
  *            describeMode
  * @优先级    ?api= 查询参数 > localStorage 手工设置 > <meta> 预置 >
- *            window.QDU_AGENT_API > 同源 ''（本地 vite 代理 / 网关托管 dist）
+ *            window.NAV_AGENT_API > 同源 ''（本地 vite 代理 / 网关托管 dist）
  * @依赖      无（纯字符串逻辑，可被 unit 直接断言）
  * @被谁用    wall/api.js · im/api.js · wall/notify.js（SSE）·
  *            views/DataManager.vue（网关地址设置入口）· 管理台 ?api= 同规
@@ -17,11 +17,13 @@
  * ════════════════════════════════════════════════════════════════════
  */
 
-/** 公网网关缺省地址（部署后填入，如 'https://qdu-nav-gateway.onrender.com'；留空=不预设） */
+/** 公网网关缺省地址（部署后填入，如 'https://nav-gateway.onrender.com'；留空=不预设） */
 export const PUBLIC_API_DEFAULT = ''
 
-const LS_KEY = 'qdu_api_base'
-const META_NAME = 'qdu-agent-api'
+const LS_KEY = 'nav_api_base'
+const LS_KEY_LEGACY = 'qdu_api_base'
+const META_NAME = 'nav-agent-api'
+const META_NAME_LEGACY = 'qdu-agent-api'
 
 /** 去尾斜杠 */
 function trimSlash(s) {
@@ -36,16 +38,16 @@ export function apiFromQuery() {
   } catch { return '' }
 }
 
-/** 手工设置的基地址 */
+/** 手工设置的基地址（兼容旧 qdu_* 键名，见 utils/storageMigrate.js） */
 export function apiFromStore() {
-  try { return trimSlash(localStorage.getItem(LS_KEY) || '') } catch { return '' }
+  try { return trimSlash(localStorage.getItem(LS_KEY) || localStorage.getItem(LS_KEY_LEGACY) || '') } catch { return '' }
 }
 
-/** 页面预置（<meta name="qdu-agent-api" content="https://…"> / window.QDU_AGENT_API） */
+/** 页面预置（<meta name="nav-agent-api" content="https://…"> / window.NAV_AGENT_API；兼容旧 qdu 命名） */
 export function apiFromPage() {
   try {
-    if (window.QDU_AGENT_API) return trimSlash(window.QDU_AGENT_API)
-    const meta = document.querySelector('meta[name="' + META_NAME + '"]')
+    if (window.NAV_AGENT_API || window.QDU_AGENT_API) return trimSlash(window.NAV_AGENT_API || window.QDU_AGENT_API)
+    const meta = document.querySelector('meta[name="' + META_NAME + '"],meta[name="' + META_NAME_LEGACY + '"]')
     if (meta && meta.content) return trimSlash(meta.content)
   } catch { /* noop */ }
   return ''

@@ -6,7 +6,7 @@
  *            页面打开即启动轮询检查，到期弹 Toast + 声音提示（可关）+
  *            桌面 Notification（权限允许时），并汇总"今日提醒/已过期/完成"
  * @路由      #/app/reminder（apps.js + router.js 双登记）
- * @数据      自定义提醒 localStorage: qdu_agent_reminders；日程读 qdu_agent_schedule
+ * @数据      自定义提醒 localStorage: nav_agent_reminders；日程读 nav_agent_schedule
  *            （与智能体 addSchedule/workflows 同一数据源，打通闭环）
  * @被谁用    用户手动管理；智能体"提醒我"产生的日程自动进入本中心
  * @提醒引擎  30s 轮询比对 now>=fireAt 且未触发 → toast+notification+记录
@@ -16,9 +16,9 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 
 const emit = defineEmits(['back'])
 
-const REM_KEY = 'qdu_agent_reminders'
-const SCHED_KEY = 'qdu_agent_schedule'
-const FIRED_KEY = 'qdu_agent_reminders_fired'
+const REM_KEY = 'nav_agent_reminders'
+const SCHED_KEY = 'nav_agent_schedule'
+const FIRED_KEY = 'nav_agent_reminders_fired'
 
 const reminders = ref(loadRem())
 const schedule = ref(loadSched())
@@ -209,7 +209,7 @@ function toICS() {
 }
 
 function jumpToAgent() {
-  try { localStorage.setItem('qdu_agent_inbox', '我的日程') } catch { /* noop */ }
+  try { localStorage.setItem('nav_agent_inbox', '我的日程') } catch { /* noop */ }
   emit('back')
   setTimeout(() => { location.hash = '#/app/assistant' }, 120)
 }
@@ -280,7 +280,7 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
 
     <div class="rc-tips">
       💡 引擎说明：页面打开即启动 30s 轮询；到期 → 页内 Toast + 蜂鸣 + 桌面通知（已授权时）。
-      每日重复提醒会自动顺延。智能体产生的日程与本中心同源（qdu_agent_schedule），双端打通零延迟。
+      每日重复提醒会自动顺延。智能体产生的日程与本中心同源（nav_agent_schedule），双端打通零延迟。
     </div>
 
     <div v-if="toast" class="rc-toast">{{ toast }}</div>

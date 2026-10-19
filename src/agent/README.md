@@ -49,7 +49,7 @@
 
 - `src/wall/api.js`：发墙/失物/悬赏/资源等工作流经此写入社区网关。
 - `/api/feedback`：👎与"提交反馈"工作流 → 管理台聚合视图 → 维护 Agent 消化。
-- `views/Assistant.vue` 技能使用计数（localStorage `qdu_wf_usage`）→ 常用技能置顶。
+- `views/Assistant.vue` 技能使用计数（localStorage `nav_wf_usage`）→ 常用技能置顶。
 - 协作看板工作流（`agentBoard`）：本机执行数 + 网关评论/帖子/反馈统计一站式呈现。
 
 ## 6. 常见任务速查

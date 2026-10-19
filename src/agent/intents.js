@@ -174,6 +174,37 @@ export function matchIntent(text) {
   return bestScore >= 40 ? { intent: best, score: bestScore } : null
 }
 
+/**
+ * 「猜你想说」召回：bigram 重合度从意图表找相近话术（兜底建议用）。
+ * 与 matchIntent 的包含式打分不同，这里容忍换说法/错别字，只用来出建议 chips。
+ * @param {string} text
+ * @param {number} limit
+ * @returns {Array} 相近意图（kind !== 'meta'）
+ */
+export function nearIntents(text, limit = 3) {
+  const t = normalize(text)
+  if (t.length < 2) return []
+  const grams = new Set()
+  for (let i = 0; i < t.length - 1; i++) grams.add(t.slice(i, i + 2))
+  if (t.length === 2) grams.add(t)
+  const scored = []
+  for (const it of INTENTS) {
+    if (it.kind === 'meta') continue
+    let best = 0
+    for (const p of it.patterns) {
+      const pl = normalize(p)
+      if (!pl) continue
+      let hit = 0
+      for (const g of grams) if (pl.includes(g)) hit++
+      const ratio = hit / grams.size
+      if (ratio > best) best = ratio
+    }
+    if (best >= 0.4) scored.push({ it, best })
+  }
+  scored.sort((a, b) => b.best - a.best)
+  return scored.slice(0, limit).map((s) => s.it)
+}
+
 /** 三层识别主入口：意图表 → FAQ → 应用检索 */
 export function recognize(text) {
   const hit = matchIntent(text)

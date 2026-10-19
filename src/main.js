@@ -5,10 +5,12 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import { ensureLang } from './i18n/index.js'
 import './styles.css'
+import { migrateStorage } from './utils/storageMigrate.js'
 
+migrateStorage()
 const app = createApp(App)
 // 全局渲染保险：模板断头引用等运行时错误不再静默白屏，而是显式报错盒
-// （2026-10-08 FJNU 主界面白屏事故复盘：App.vue 模板调用了未定义的 navLabel）
+// （2026-10-08 骨架仓主界面白屏事故复盘：App.vue 模板调用了未定义的 navLabel）
 app.config.errorHandler = (err, instance, info) => {
   try { console.error('[app-error]', info, err) } catch { /* noop */ }
   try {

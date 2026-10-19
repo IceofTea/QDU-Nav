@@ -47,7 +47,7 @@ export const bsz = reactive({
 })
 
 function ensureHost() {
-  // 逐个补齐缺失的 span：FJNU 站的 Vercount 会自建 site_pv/site_uv 两个 span，
+  // 逐个补齐缺失的 span：姊妹站的 Vercount 会自建 site_pv/site_uv 两个 span，
   // 若按「已存在就不建」的整体判断会漏掉 page_pv → collect 永远等不齐 → 卡 loading
   const ids = ['busuanzi_value_site_pv', 'busuanzi_value_site_uv', 'busuanzi_value_page_pv']
   let host = null

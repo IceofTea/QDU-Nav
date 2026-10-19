@@ -95,7 +95,7 @@ function toggleFold(r) {
 }
 function mine(r) {
   try {
-    const me = localStorage.getItem('qdu_wall_name') || ''
+    const me = localStorage.getItem('nav_wall_name') || ''
     return (me && r.author === me) || String(props.postId).startsWith('L')
   } catch { return String(props.postId).startsWith('L') }
 }
