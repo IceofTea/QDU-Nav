@@ -87,7 +87,8 @@ const appDesc = (a) => lang.value === 'en' && a.descEn ? a.descEn : a.desc
 
 const filtered = computed(() => {
   const kw = keyword.value.trim()
-  if (!kw) return apps.map((a) => ({ app: a, score: 0, hits: [] }))
+  // 首页网格只放实用功能——「关于」组（换校向导/移植/演示向页面）只进分类面板最底分组；搜索仍可达
+  if (!kw) return apps.filter((a) => a.group !== '关于').map((a) => ({ app: a, score: 0, hits: [] }))
   return searchApps(kw)
 })
 
