@@ -235,13 +235,13 @@ body {
   letter-spacing: 0.5px;
   color: #fff;
 }
-/* 夜间模式：深蓝底换鎏金底，深色字保持对比度 */
+/* 夜间模式：底与边框压暗，字切鎏金 */
 [data-theme="dark"] .brand-logo {
-  background: linear-gradient(135deg, #e7c65a 0%, #d4af37 55%, #b8860b 100%);
-  border-color: rgba(0, 0, 0, 0.28);
-  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  background: linear-gradient(135deg, #0c2a56 0%, #123f7c 55%, #155094 100%);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
-[data-theme="dark"] .brand-logo span { color: #1c2b4a; }
+[data-theme="dark"] .brand-logo span { color: #e7c65a; }
 .brand-name { font-size: 19px; font-weight: 700; color: var(--primary-dark); line-height: 1.1; white-space: nowrap; }
 .brand-sub { font-size: 12px; color: var(--text-sub); }
 .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }

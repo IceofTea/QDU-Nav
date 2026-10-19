@@ -75,6 +75,7 @@ function hueOf(i) {
     <div class="section-title" style="margin:0 0 10px;"><span class="bar"></span>{{ t('contributors.community') }}</div>
     <ul class="changelog">
       
+      <li><b>v1.7.14</b> — 夜间模式徽标修正：底色与边框压暗，品牌字切换鎏金（替代上一版整底换金的方案）。</li>
       <li><b>v1.7.13</b> — 修复左上角品牌徽标点击不回首页（内联处理漏写调用括号）；徽标改版为深蓝底白字，夜间模式自动切换鎏金配色。</li>
       <li><b>v1.7.12</b> — 首页减负：首页网格只留实用功能并按日频排序，换校向导/移植/演示向页面沉入分类最底「关于」组（搜索仍可达）。</li>
       <li><b>v1.7.11</b> — Agent 新工具：内联计算器（纯算式直出结果）、「帮我做决定」随机抽选、相对时间快速提醒入提醒中心；Ctrl+K/Alt+A 全局唤起；番茄钟/绩点直达意图。</li>
