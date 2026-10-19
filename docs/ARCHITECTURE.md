@@ -70,7 +70,7 @@
 | 服务 | 端口 | 启动 |
 |---|---|---|
 | Vite 开发 | 5173（或 --port 指定） | `npm run dev` |
-| 社区网关 | 8787（FJNU 版 8788） | `node server/index.mjs` |
+| 社区网关 | 8787 | `node server/index.mjs` |
 | Wiki 本地 | 8000（或 mkdocs serve 指定） | `py -m mkdocs serve` |
 
 冒烟：`node scripts/smoke-community.mjs [baseUrl]` → 18 PASS 才算绿。

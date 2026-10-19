@@ -219,7 +219,7 @@ export function mergeFavorites(existing, incoming, { mode = 'append' } = {}) {
 
 /**
  * 站点实例工厂：绑定一个存储键，返回带读写能力的收藏 store。
- * @param key 例如 'qdu_favorites' / 'fjnu_favorites'
+ * @param key 例如 'nav_favorites'
  */
 export function createFavorites(key) {
   const load = () => sortFavorites(getJson(key, []))

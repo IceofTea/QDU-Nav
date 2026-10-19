@@ -20,8 +20,8 @@ const STRICT = process.env.E2E_STRICT === '1'
 const SKIP_MOBILE = process.env.E2E_SKIP_MOBILE === '1'
 const SHOTS = path.join(os.tmpdir(), 'nav-e2e-shots')
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
-const IS_FJNU = fs.existsSync(path.join(ROOT, 'mobile.html'))
-const APP_NAME = IS_FJNU ? 'FJNU' : 'QDU'
+const HAS_MOBILE = fs.existsSync(path.join(ROOT, 'mobile.html'))
+const APP_NAME = 'QDU'
 
 let pw = null
 try {
@@ -134,8 +134,8 @@ try {
     const r = await page.goto(BASE + '/nope-xyz-' + Date.now(), { timeout: 30000 })
     assert(r && r.ok(), '状态码 ' + (r && r.status()))
   })
-  // 10. 移动端页（仅 FJNU 有）
-  if (!SKIP_MOBILE && IS_FJNU) {
+  // 10. 移动端页（仅当仓内含 mobile.html 才跑）
+  if (!SKIP_MOBILE && HAS_MOBILE) {
     await ok(page, '移动端课表页', async () => {
       await page.goto(BASE + '/mobile.html', { waitUntil: 'domcontentloaded', timeout: 30000 })
       await page.locator('#agent-fab, #app').first().waitFor({ timeout: 20000 })

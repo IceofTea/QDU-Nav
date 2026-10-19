@@ -16,6 +16,7 @@ import { pushList, readProfile } from './profile.js'
 import { dueReviews } from '../utils/studyPlan.js'
 import { upcoming } from '../data/activities.js'
 import { matchJobs } from '../data/jobs.js'
+import { looksLikeExpr } from './mathx.js'
 
 const ASK = {
   time: '什么时间的日程？（例如：明天下午三点）',
@@ -124,6 +125,11 @@ export class AgentEngine {
           return this._execute(merged.wfId, merged.ctx, { confidence: 88, layer: 'context' }, onStep)
         }
       }
+    }
+
+    // ── 纯算式短路：整段输入就是算式时直接内联计算（不进意图打分）──
+    if (looksLikeExpr(raw)) {
+      return this._execute('calc', { text: raw, slots: {}, state: {}, lang: this.lang }, { confidence: 96, layer: 'expr' }, onStep)
     }
 
     // ── 复合指令：「查空教室，顺便看今天吃什么」拆句顺序执行 ──

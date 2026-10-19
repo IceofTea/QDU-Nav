@@ -122,6 +122,9 @@ export const INTENTS = [
   { id: 'wf.courseReview', kind: 'workflow', wf: 'courseReview', title: '课程评价', patterns: ['课程评价', '评价课程', '这门课怎么样', '选课避雷', '老师怎么样', '水课'] },
   { id: 'wf.lostStats', kind: 'workflow', wf: 'lostStats', title: '失物统计', patterns: ['失物统计', '丢东西多吗', '招领统计', '失物多吗'] },
   { id: 'wf.canteenRank', kind: 'workflow', wf: 'canteenRank', title: '食堂红黑榜', patterns: ['红黑榜', '食堂排行', '食堂推荐榜', '哪个食堂好吃', '食堂避雷榜'] },
+  { id: 'wf.calc', kind: 'workflow', wf: 'calc', title: '内联计算', patterns: ['算一下', '算下', '帮我算', '计算', '等于多少', '换算'] },
+  { id: 'wf.decide', kind: 'workflow', wf: 'decide', title: '帮你做决定', patterns: ['帮我决定', '做决定', '纠结', '抛硬币', '掷骰子', '抽签', '二选一', '三选一', '选哪个', '还是'] },
+  { id: 'wf.remindMe', kind: 'workflow', wf: 'remindMe', title: '快速提醒', patterns: ['分钟后提醒', '小时后提醒', '一会儿提醒', '待会提醒', '明早提醒', '今晚提醒'] },
 
   // ── 应用直达 ───────────────────────────────────────────
   { id: 'app.reminder', kind: 'app', app: 'reminder', title: '提醒中心', patterns: ['提醒中心', '定时提醒', '看提醒', '闹钟', '提醒列表'] },
@@ -143,7 +146,9 @@ export const INTENTS = [
   { id: 'app.compare', kind: 'app', app: 'compare', title: '为什么选我', patterns: ['为什么选你', '和豆包区别', '对比', '优势', '和官网区别', '小程序区别'] },
   { id: 'app.flywheel', kind: 'app', app: 'flywheel', title: '协作飞轮', patterns: ['飞轮', '协作看板详情', '维护进展', 'AI贡献'] },
   { id: 'app.transplant', kind: 'app', app: 'transplant', title: '换校移植', patterns: ['换校移植', '移植看板', '复制到别的学校', '开分站'] },
-  { id: 'app.profile', kind: 'app', app: 'profile', title: '我的画像', patterns: ['我的画像', '画像', '了解我', '个性化', '我的标签'] }
+  { id: 'app.profile', kind: 'app', app: 'profile', title: '我的画像', patterns: ['我的画像', '画像', '了解我', '个性化', '我的标签'] },
+  { id: 'app.focus', kind: 'app', app: 'focus', title: '番茄钟', patterns: ['番茄钟', '番茄', '专注', '开始专注', '学习计时'] },
+  { id: 'app.gpa', kind: 'app', app: 'gpa', title: '绩点计算器', patterns: ['绩点', '算绩点', 'gpa', '加权平均', '学分绩', '平均分'] }
 ]
 
 /** 归一化：去标点、降噪 */

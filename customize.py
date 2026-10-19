@@ -59,16 +59,16 @@ def gather_info():
     
     info = {}
     print('\n📝 基本信息：')
-    info['university'] = input_with_default('学校全称', '福建师范大学')
-    info['shortName'] = input_with_default('学校简称', '福star')
-    info['brand'] = input_with_default('品牌名（英文/缩写）', 'FJNU-Nav')
-    info['motto'] = input_with_default('校训', '知明行笃 · 立诚致广')
+    info['university'] = input_with_default('学校全称', '青岛大学')
+    info['shortName'] = input_with_default('学校简称', '青大')
+    info['brand'] = input_with_default('品牌名（英文/缩写）', 'QDU-Nav')
+    info['motto'] = input_with_default('校训', '明德 博学 守正 出奇')
     
     print('\n🌐 网络信息：')
-    info['jwUrl'] = input_with_default('教务处网址', 'https://jwc.fjnu.edu.cn')
-    info['tiebaUrl'] = input_with_default('贴吧URL（学校名URL编码）', 'https://tieba.baidu.com/f?kw=%E7%A6%8F%E5%BB%BA%E5%B8%88%E8%8C%83%E5%A4%A7%E5%AD%A6')
-    info['github'] = input_with_default('GitHub仓库地址', 'https://github.com/icyteacn/FJNU-Nav')
-    info['pagesUrl'] = input_with_default('GitHub Pages地址', 'https://icyteacn.github.io/FJNU-Nav/')
+    info['jwUrl'] = input_with_default('教务处网址', 'https://jwc.qdu.edu.cn')
+    info['tiebaUrl'] = input_with_default('贴吧URL（学校名URL编码）', 'https://tieba.baidu.com/f?kw=%E9%9D%92%E5%B2%9B%E5%A4%A7%E5%AD%A6')
+    info['github'] = input_with_default('GitHub仓库地址', 'https://github.com/IceofTea/QDU-Nav')
+    info['pagesUrl'] = input_with_default('GitHub Pages地址', 'https://IceofTea.github.io/QDU-Nav/')
     
     print('\n🏛️ 学校数据：')
     info['campuses'] = input_with_default('校区数量', '2')
@@ -145,7 +145,7 @@ def update_sentiment_data(info):
     if sentiment_file.exists():
         content = sentiment_file.read_text(encoding='utf-8')
         content = re.sub(
-            r"FJNU-Nav",
+            r"QDU-Nav",
             info['brand'],
             content
         )
@@ -157,7 +157,7 @@ def update_industry_data(info):
     if industry_file.exists():
         content = industry_file.read_text(encoding='utf-8')
         content = re.sub(
-            r"福建师范大学",
+            r"青岛大学",
             info['university'],
             content
         )

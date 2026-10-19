@@ -85,7 +85,7 @@ const EXPECT_MONTHS = [monthLabelOf(-3), monthLabelOf(-2), monthLabelOf(-1)]
 
 /** 从仓库源码里读出「新手引导 key + 当前版本号」，一次性标记为已完成——
  *  否则首页/预算页的引导遮罩会（正确地）弹出并吞掉冒烟脚本的点击。
- *  注意各校 TOUR_VERSION 可能不同（QDU=v1 / FJNU=v2），必须从源码读，不能写死。 */
+ *  注意各校 TOUR_VERSION 可能不同（各校可能不同），必须从源码读，不能写死。 */
 function tourSeed() {
   // 跨仓冒烟（E2E_DIST 指向另一仓 dist）时必须读**那一仓**的源码，否则版本号/键名对不上
   const SRC = process.env.E2E_DIST ? path.dirname(path.resolve(process.env.E2E_DIST)) : ROOT
@@ -149,7 +149,7 @@ async function main() {
   page.on('pageerror', (e) => jsErrors.push(String(e && e.message)))
   page.on('console', (m) => { if (m.type() === 'error') jsErrors.push(m.text()) })
 
-  const APP = process.env.E2E_APP || (fs.existsSync(path.join(ROOT, 'mobile.html')) ? 'fjnu' : 'qdu')
+  const APP = process.env.E2E_APP || (fs.existsSync(path.join(ROOT, 'mobile.html')) ? 'qdu' : 'qdu')
   const KEY = APP + '_budget_records'
   const PLAN_KEY = APP + '_budget_plan'
   const WELCOME_KEY = APP + '_welcome_seen'
@@ -306,7 +306,7 @@ async function main() {
       assert(real.length === 0, '出现 JS 错误: ' + real.slice(0, 3).join(' | '))
     })
 
-    // ─────────────── 绩点计算器（仅 QDU-Nav 有这个应用；FJNU 会自动跳过）───────────────
+    // ─────────────── 绩点计算器（应用不存在时自动跳过）───────────────
     await ok('绩点计算器：录一门课后算出加权平均与 4.0 绩点', async () => {
       await page.goto(BASE + '/#/app/gpa', { waitUntil: 'domcontentloaded', timeout: 30000 })
       await page.waitForTimeout(900)
@@ -366,7 +366,7 @@ async function main() {
       assert(termVal.length > 0, '学期应自动带出，实际：' + JSON.stringify(termVal))
     })
 
-    // ───────── APK 下载量（仅 FJNU 有 APK；QDU 站自动跳过）─────────
+    // ───────── APK 下载量（无 APK 的站点自动跳过）─────────
     await ok('APK 主下载走同域本地文件（点击即下载、不跳外站）', async () => {
       await page.goto(BASE + '/#/', { waitUntil: 'domcontentloaded', timeout: 30000 })
       await page.waitForTimeout(3500)

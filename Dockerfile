@@ -1,4 +1,4 @@
-# 社区网关 + 静态站一体镜像（QDU-Nav / FJNU-Nav 通用，PORT 由平台注入）
+# 社区网关 + 静态站一体镜像（校园导航通用，PORT 由平台注入）
 # 构建：docker build -t campus-nav .
 # 本地跑：docker run -p 8787:8787 -e ADMIN_TOKEN=xxx -v navdata:/app/server/data campus-nav
 FROM node:20-alpine

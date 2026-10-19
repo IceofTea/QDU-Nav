@@ -1,10 +1,10 @@
 /**
  * ════════════════════════════════════════════════════════════════════
  * @模块路径  scripts/sync-diff.mjs
- * @职责      校本同步盘点（QDU ↔ FJNU）：对比两仓同路径文件清单，
+ * @职责      校本同步盘点：对比本仓与另一克隆的同路径文件清单，
  *            报告「只在一边有」的文件——专抓结构性漏同步
  * @用法      node scripts/sync-diff.mjs <另一仓根目录>
- *            例：node scripts/sync-diff.mjs ../FJNU-Nav-agent
+ *            例：node scripts/sync-diff.mjs ../Other-Nav-agent
  * @忽略      node_modules / dist / site / .git / public/data / server/data /
  *            package-lock.json（快照与依赖噪音）
  * @说明      同路径不同内容是校本常态（校名/配色/接口各校不同），不逐文件报；

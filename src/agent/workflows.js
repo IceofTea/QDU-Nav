@@ -20,6 +20,7 @@ import {
   hotTopics, searchPosts, hasVotedLocal
 } from '../wall/api.js'
 import { PARTS, POINTS } from '../wall/config.js'
+import { evalExpr } from './mathx.js'
 
 const SCHED_KEY = 'nav_agent_schedule'
 const CLASS_KEY = 'nav_agent_class'
@@ -1654,6 +1655,171 @@ export const WORKFLOWS = {
           { label: '发帖评价', type: 'reask', value: '发帖' }
         ],
         note: '样本少时仅供参考；多发美食帖让榜单更准'
+      }
+    }
+  },
+
+  /* ── 39. 内联计算器（本地安全求值，零 eval） ── */
+  calc: {
+    id: 'calc', title: '内联计算', icon: '🧮',
+    steps: [
+      {
+        label: '抽取算式',
+        run: async (ctx) => {
+          const expr = (ctx.text || '')
+            .replace(/帮我|请|算一下|算下|计算|等于多少|是多少|等于几|等于|换算|一下|，|。|？|\?/g, ' ')
+            .trim()
+          if (!expr) throw new CLARIFY('keyword')
+          ctx.state.expr = expr
+          return `算式：${expr}`
+        }
+      },
+      {
+        label: '本地求值',
+        run: async (ctx) => {
+          const r = evalExpr(ctx.state.expr)
+          if (!r.ok) throw new Error(r.error || '计算失败')
+          ctx.state.value = r.value
+          return `= ${r.value}`
+        }
+      }
+    ],
+    clarify: { field: 'keyword', ask: '要算什么？直接给算式，比如 "(12+8)*3" 或 "100*0.85"' },
+    buildCard(ctx) {
+      const s = `${ctx.state.expr} = ${ctx.state.value}`
+      return {
+        title: `🧮 ${s}`,
+        subtitle: '本地计算 · 支持 + - * / % ^ 与括号',
+        rows: [{ icon: '🔢', label: '结果', value: String(ctx.state.value) }],
+        actions: [
+          { label: '📋 复制结果', type: 'copy', value: String(ctx.state.value) },
+          { label: '再算一个', type: 'reask', value: '算一下 (88+92)/2' }
+        ],
+        note: '纯本地求值，算式不出本机'
+      }
+    }
+  },
+
+  /* ── 40. 帮我做决定（选项拆分 + 随机抽选） ── */
+  decide: {
+    id: 'decide', title: '帮你做决定', icon: '🎲',
+    steps: [
+      {
+        label: '解析选项',
+        run: async (ctx) => {
+          const t = (ctx.text || '').trim()
+          if (/抛硬币|扔硬币|掷硬币|抛个硬币/.test(t)) { ctx.state.mode = 'coin'; ctx.state.opts = ['正面', '反面']; return '抛硬币' }
+          if (/掷骰子|扔骰子|扔个骰子|摇骰子/.test(t)) { ctx.state.mode = 'dice'; ctx.state.opts = ['1', '2', '3', '4', '5', '6']; return '掷骰子' }
+          let body = t.replace(/帮我|请|做决定|决定一下|选一下|抽一个|抽签|纠结|二选一|三选一|选哪个|选什么|哪个好|哪个|吃还是|还是去|要不要/g, ' ').trim()
+          let opts = []
+          const m = t.match(/(.+?)(?:还是|或者|或)(.+)/)
+          if (m) {
+            body = (m[1] + ' 还是 ' + m[2])
+            opts = m[2].split(/还是|或者|或|，|,|、/).map((s) => s.trim()).filter(Boolean)
+            const head = m[1].replace(/选|还是|或者|或|帮我|纠结/g, '').trim()
+            if (head && head.length <= 12) opts.unshift(head)
+          }
+          if (opts.length < 2) opts = body.split(/，|,|、|还是|或者|或/).map((s) => s.trim()).filter((s) => s && s.length <= 20)
+          if (opts.length < 2) throw new CLARIFY('keyword')
+          ctx.state.mode = 'pick'
+          ctx.state.opts = opts.slice(0, 6)
+          return `候选 ${ctx.state.opts.length} 项`
+        }
+      },
+      {
+        label: '随机抽取',
+        run: async (ctx) => {
+          const opts = ctx.state.opts
+          let idx
+          try {
+            const arr = new Uint32Array(1)
+            crypto.getRandomValues(arr)
+            idx = arr[0] % opts.length
+          } catch {
+            idx = Math.floor(Math.random() * opts.length)
+          }
+          ctx.state.pick = opts[idx]
+          return `抽到：${ctx.state.pick}`
+        }
+      }
+    ],
+    clarify: { field: 'keyword', ask: '在纠结什么？把选项给我，比如"吃米饭还是吃面"' },
+    buildCard(ctx) {
+      const opts = ctx.state.opts || []
+      return {
+        title: `🎲 帮你选了：${ctx.state.pick}`,
+        subtitle: ctx.state.mode === 'coin' ? '抛硬币' : ctx.state.mode === 'dice' ? '掷骰子' : `从 ${opts.length} 个选项里抽的`,
+        rows: opts.map((o) => ({ icon: o === ctx.state.pick ? '✅' : '·', label: o, value: o === ctx.state.pick ? '当选' : '' })),
+        actions: [
+          { label: '🔄 再抽一次', type: 'reask', value: ctx.text },
+          { label: '🍜 吃的纠结', type: 'openApp', value: 'whatToEat' }
+        ],
+        note: '随机抽取仅供参考，重大决定请三思'
+      }
+    }
+  },
+
+  /* ── 41. 快速提醒（写操作需确认：N分钟后 / HH:MM / 今晚） ── */
+  remindMe: {
+    id: 'remindMe', title: '快速提醒', icon: '⏰', needConfirm: true,
+    steps: [
+      {
+        label: '解析时间与事项',
+        run: async (ctx) => {
+          const t = (ctx.text || '').trim()
+          let ts = 0
+          let thing = t.replace(/提醒我|帮我|到时候|记得|一下|别忘|别忘了/g, ' ').trim()
+          const mMin = t.match(/(\d+)\s*分钟后/)
+          const mHour = t.match(/(\d+)\s*小时(?:后|之后)/)
+          const mClock = t.match(/(今天|明天|后天|今晚|明晚|下午|早上|上午|中午|晚上)?\s*(\d{1,2})[:：点](\d{1,2})?分?/)
+          const now = new Date()
+          if (mMin) ts = now.getTime() + Number(mMin[1]) * 60000
+          else if (mHour) ts = now.getTime() + Number(mHour[1]) * 3600000
+          else if (mClock) {
+            const d = new Date(now)
+            const wd = mClock[1]
+            if (/明/.test(wd || '')) d.setDate(d.getDate() + 1)
+            if (/后天/.test(wd || '')) d.setDate(d.getDate() + 1)
+            let hh = Number(mClock[2]); const mm = Number(mClock[3] || 0)
+            if (/[下晚夜]/.test(wd || '') && hh < 12) hh += 12
+            if (/中午/.test(wd || '') && hh < 12) hh += 12
+            d.setHours(hh, mm, 0, 0)
+            if (d.getTime() <= now.getTime() && !/明|后天/.test(wd || '')) d.setDate(d.getDate() + 1)
+            ts = d.getTime()
+          }
+          if (!ts) throw new CLARIFY('time')
+          thing = thing.replace(/\d+\s*分钟后|\d+\s*小时(?:后|之后)?|今天|明天|后天|今晚|明晚|下午|早上|上午|中午|晚上|\d{1,2}[:：点]\d{0,2}分?/g, ' ').replace(/\s+/g, '').trim()
+          if (thing.length > 40) thing = thing.slice(0, 40)
+          if (!thing) thing = '提醒'
+          ctx.state.thing = thing
+          ctx.state.ts = ts
+          ctx.state.when = new Date(ts).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+          return `${ctx.state.when} · ${thing}`
+        }
+      },
+      {
+        label: '写入提醒中心',
+        run: async (ctx) => {
+          const KEY = 'nav_agent_reminders'
+          let list = []
+          try { list = JSON.parse(localStorage.getItem(KEY) || '[]') } catch { list = [] }
+          list.push({ id: Date.now().toString(36), title: ctx.state.thing, ts: ctx.state.ts, repeat: 'once', createdAt: Date.now() })
+          try { localStorage.setItem(KEY, JSON.stringify(list)) } catch { /* noop */ }
+          return `提醒已入列（共 ${list.length} 条）`
+        }
+      }
+    ],
+    clarify: { field: 'time', ask: '什么时候提醒？比如"10分钟后提醒我收衣服"或"今晚9点提醒我背单词"' },
+    buildCard(ctx) {
+      return {
+        title: `⏰ 提醒已创建 · ${ctx.state.thing}`,
+        subtitle: `到点 ${ctx.state.when} 自动弹出（页内弹窗 + 提示音）`,
+        rows: [
+          { icon: '🕐', label: '时间', value: ctx.state.when },
+          { icon: '📝', label: '事项', value: ctx.state.thing }
+        ],
+        actions: [{ label: '⏰ 打开提醒中心', type: 'openApp', value: 'reminder' }],
+        note: '提醒只存在本机，关闭浏览器后到点不保证弹出'
       }
     }
   }

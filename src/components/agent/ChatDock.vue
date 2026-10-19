@@ -3,7 +3,7 @@
  * ChatDock —— 右下角悬浮智能体舱（全站可用）
  * FAB 点击展开对话面板；承接 App 层的 openApp 动作。
  */
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import AgentChat from './AgentChat.vue'
 import { AGENT_PROFILE } from '../../agent/config.js'
 
@@ -16,6 +16,19 @@ function toggle() {
   open.value = !open.value
 }
 
+/** 全局热键 Ctrl+K / Alt+A 唤起智能体（输入控件聚焦时不劫持） */
+function onHotkey(e) {
+  const hit = (e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')
+  const alt = e.altKey && (e.key === 'a' || e.key === 'A')
+  if (!hit && !alt) return
+  const tag = (e.target && e.target.tagName) || ''
+  if (e.isComposing || tag === 'INPUT' || tag === 'TEXTAREA') return
+  e.preventDefault()
+  toggle()
+}
+onMounted(() => window.addEventListener('keydown', onHotkey))
+onBeforeUnmount(() => window.removeEventListener('keydown', onHotkey))
+
 function onOpenApp(id) {
   emit('open', id)
   open.value = false
@@ -24,7 +37,7 @@ function onOpenApp(id) {
 
 <template>
   <!-- FAB -->
-  <button class="cd-fab" :class="{ open }" :title="AGENT_PROFILE.agentName + ' · ' + AGENT_PROFILE.subtitle" @click="toggle">
+  <button class="cd-fab" :class="{ open }" :title="AGENT_PROFILE.agentName + ' · ' + AGENT_PROFILE.subtitle + '（Ctrl+K）'" @click="toggle">
     <span class="cd-fab-icon">{{ open ? '✕' : '🤖' }}</span>
     <span v-if="!open" class="cd-fab-badge">AI</span>
   </button>

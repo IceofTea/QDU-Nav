@@ -3,7 +3,7 @@
  * @模块路径  scripts/audit-refs.mjs
  * @职责      模板引用审计（防白屏）：扫描全部 .vue，揪出模板中使用但
  *            <script setup> 未定义的标识符 + 无扩展名的相对 import
- *            —— 2026-10-08 FJNU 白屏事故（navLabel 断头引用）的制度化复盘
+ *            —— 2026-10-08 白屏事故（navLabel 断头引用）的制度化复盘
  * @用法      node scripts/audit-refs.mjs [--strict]
  *            缺省只报错（exit 1），--strict 把警告也算失败（CI 门禁）
  * @设计      纯正则近似（非全量 AST），宁可误报不可漏报；误报用

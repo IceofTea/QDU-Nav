@@ -54,7 +54,7 @@ python customize_wiki.py --config templates/qdu_wiki.json
 
 ## 配置 JSON 模板
 
-`templates/` 下已有三份同构配置：`pku.json`（示例）· `qdu.json` · `fjnu.json`。
+`templates/` 下已有三份同构配置：`pku.json`（示例）· `qdu.json`。
 字段：university / shortName / brand / motto / jwUrl / tiebaUrl / github / pagesUrl /
 campuses / colleges / majors / theme{name, primary, accent, bg}。
 读取兼容 UTF-8 BOM（记事本另存的 JSON 也能用）。

@@ -9,7 +9,7 @@
 |---|---|---|
 | QDU-Nav | GitHub Pages | `npm run build` → `dist/` 上传（Actions 自动化见 `.github/workflows`） |
 | QDU-Wiki | GitHub Pages | `py -m mkdocs gh-deploy --force`（CI 亦然） |
-| FJNU-Nav | GitHub Pages | 同 QDU-Nav |
+| 姊妹导航仓 | GitHub Pages | 同 QDU-Nav |
 
 静态模式下：导航/课表/智能体本地识别/知识库问答全部可用；
 评论与校园墙自动降级 🟡 本机模式（localStorage），UI 明示不撒谎。
@@ -17,7 +17,7 @@
 ## B. 社区网关（可选升级 · 一个 Node 进程）
 
 ```bash
-node server/index.mjs            # 默认 8787；FJNU 版改用 PORT=8788
+node server/index.mjs            # 默认 8787；姊妹仓 版改用 PORT=8788
 PORT=8788 node server/index.mjs  # 指定端口
 ADMIN_TOKEN=<强口令> node server/index.mjs   # 管理台口令（生产必改）
 ```

@@ -169,20 +169,20 @@ def gather_info_interactive():
     else:
         print('\n📝 基本信息：')
     
-    info['university'] = input_with_default('学校全称', '福建师范大学')
-    info['shortName'] = input_with_default('学校简称', '福star')
-    info['brand'] = input_with_default('品牌名（英文/缩写）', 'FJNU-Nav')
-    info['motto'] = input_with_default('校训', '知明行笃 · 立诚致广')
+    info['university'] = input_with_default('学校全称', '青岛大学')
+    info['shortName'] = input_with_default('学校简称', '青大')
+    info['brand'] = input_with_default('品牌名（英文/缩写）', 'QDU-Nav')
+    info['motto'] = input_with_default('校训', '明德 博学 守正 出奇')
     
     if console:
         console.print("\n[bold cyan]🌐 网络信息[/bold cyan]")
     else:
         print('\n🌐 网络信息：')
     
-    info['jwUrl'] = input_with_default('教务处网址', 'https://jwc.fjnu.edu.cn')
-    info['tiebaUrl'] = input_with_default('贴吧URL', 'https://tieba.baidu.com/f?kw=%E7%A6%8F%E5%BB%BA%E5%B8%88%E8%8C%83%E5%A4%A7%E5%AD%A6')
-    info['github'] = input_with_default('GitHub仓库地址', 'https://github.com/icyteacn/FJNU-Nav')
-    info['pagesUrl'] = input_with_default('GitHub Pages地址', 'https://icyteacn.github.io/FJNU-Nav/')
+    info['jwUrl'] = input_with_default('教务处网址', 'https://jwc.qdu.edu.cn')
+    info['tiebaUrl'] = input_with_default('贴吧URL', 'https://tieba.baidu.com/f?kw=%E9%9D%92%E5%B2%9B%E5%A4%A7%E5%AD%A6')
+    info['github'] = input_with_default('GitHub仓库地址', 'https://github.com/IceofTea/QDU-Nav')
+    info['pagesUrl'] = input_with_default('GitHub Pages地址', 'https://IceofTea.github.io/QDU-Nav/')
     
     if console:
         console.print("\n[bold cyan]🏛️ 学校数据[/bold cyan]")
@@ -228,14 +228,14 @@ def generate_excel_template():
     
     # 数据行
     data = [
-        ("学校全称", "福建师范大学", "完整学校名称"),
-        ("学校简称", "福star", "用于显示的简称"),
-        ("品牌名", "FJNU-Nav", "英文/缩写品牌名"),
-        ("校训", "知明行笃 · 立诚致广", "学校校训"),
-        ("教务处网址", "https://jwc.fjnu.edu.cn", "教务处官网"),
-        ("贴吧URL", "https://tieba.baidu.com/f?kw=福建师范大学", "学校贴吧"),
-        ("GitHub仓库", "https://github.com/icyteacn/FJNU-Nav", "GitHub仓库地址"),
-        ("Pages地址", "https://icyteacn.github.io/FJNU-Nav/", "GitHub Pages地址"),
+        ("学校全称", "青岛大学", "完整学校名称"),
+        ("学校简称", "青大", "用于显示的简称"),
+        ("品牌名", "QDU-Nav", "英文/缩写品牌名"),
+        ("校训", "明德 博学 守正 出奇", "学校校训"),
+        ("教务处网址", "https://jwc.qdu.edu.cn", "教务处官网"),
+        ("贴吧URL", "https://tieba.baidu.com/f?kw=青岛大学", "学校贴吧"),
+        ("GitHub仓库", "https://github.com/IceofTea/QDU-Nav", "GitHub仓库地址"),
+        ("Pages地址", "https://IceofTea.github.io/QDU-Nav/", "GitHub Pages地址"),
         ("校区数量", "2", "数字"),
         ("学院数量", "28", "数字"),
         ("专业数量", "84", "数字"),
@@ -391,7 +391,7 @@ def update_sentiment_data(info):
     sentiment_file = SRC_DIR / 'data' / 'siteSentiment.js'
     if sentiment_file.exists():
         content = sentiment_file.read_text(encoding='utf-8')
-        content = re.sub(r"FJNU-Nav", info['brand'], content)
+        content = re.sub(r"QDU-Nav", info['brand'], content)
         sentiment_file.write_text(content, encoding='utf-8')
         print_rich("[green]✅ 本站舆情品牌名已更新[/green]")
 
@@ -400,7 +400,7 @@ def update_industry_data(info):
     industry_file = SRC_DIR / 'data' / 'industryValue.js'
     if industry_file.exists():
         content = industry_file.read_text(encoding='utf-8')
-        content = re.sub(r"福建师范大学", info['university'], content)
+        content = re.sub(r"青岛大学", info['university'], content)
         industry_file.write_text(content, encoding='utf-8')
         print_rich("[green]✅ 产业价值学校名已更新[/green]")
 

@@ -308,7 +308,7 @@ if (/\.github\.io$/.test(location.hostname)) {
   document.addEventListener('DOMContentLoaded', function () {
     var bar = document.createElement('div');
     bar.style.cssText = 'background:#3b2f0b;color:#fbbf24;font-size:12.5px;padding:9px 16px;text-align:center;line-height:1.7';
-    bar.innerHTML = '本站为 GitHub Pages 纯静态演示，无后端 API，管理台仅展示界面；完整管理功能请在本地启动网关后访问 http://localhost:8787/admin（QDU）/ 8788（FJNU），或给本页 URL 加 ?api=你的网关地址 后重试。';
+    bar.innerHTML = '本站为 GitHub Pages 纯静态演示，无后端 API，管理台仅展示界面；完整管理功能请在本地启动网关后访问 http://localhost:8787/admin，或给本页 URL 加 ?api=你的网关地址 后重试。';
     document.body.insertBefore(bar, document.body.firstChild);
   });
 }

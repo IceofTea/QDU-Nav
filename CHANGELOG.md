@@ -2,6 +2,14 @@
 
 > 面向使用者的版本摘要。逐条工程日志见 `AGENTS.md`「六、更新日志」。
 
+## v1.7.11 (2026-10-19) · Agent 新工具 + 全局热键 + 异校字样清零（patch）
+- 🧮 内联计算器：整段输入是纯算式（如 `(88+92)/2`）直接出结果；「算一下/换算」话术亦命中，本地安全求值零 eval
+- 🎲 帮你做决定：「吃 A 还是吃 B」「抛硬币」「掷骰子」「抽签」随机抽选，纠结交给骰子
+- ⏰ 快速提醒：「10 分钟后提醒我喝水」「今晚 9 点提醒我背单词」一键入提醒中心（写操作需确认）
+- ⌨️ Ctrl+K / Alt+A 全局唤起智能体悬浮舱（输入框聚焦时不劫持）
+- 🍅 新应用直达意图：番茄钟、绩点计算器一句话打开
+- 🧹 工程清理：全仓异校字样清零——换校工具默认值回本校、姊妹校模板移除、脚本/文档/管理页中性化
+
 ## v1.7.10 (2026-10-18) · Agent 智能升级 + 存储键中立化（patch）
 - 🧠 复合指令：识别「顺便/然后/接着/还有/并且/以及」把一句话拆 2~3 段，逐段强命中且全部为**只读免确认工作流**时自动连续执行、返回多结果卡（写操作/需澄清一律不复合，转常规澄清）
 - 🕐 时段感知建议：问候空态按当前时段推荐吃饭/空教室/明日课程等 chips
@@ -35,7 +43,7 @@
 
 ## v1.6.20 (2026-10-12) · 冗余精简：徽章计数单一化（patch 小版本）
 - 🧹 删除网关 `GET /api/comments/gh-count` 端点与 `ghCountCache`；`refreshGhBadge` 删"优先走网关"分支——**线上无网关该分支永远走不到（死路径）**，两套路维护一套无意义
-- ✅ 徽章统一为前端直连 GitHub（sessionStorage 30min 缓存 + 限频回退），线上模拟回归 `💬 5` PASS；巡检 `gh-comments`、管理直达、FJNU 同源等保留项经审查维持
+- ✅ 徽章统一为前端直连 GitHub（sessionStorage 30min 缓存 + 限频回退），线上模拟回归 `💬 5` PASS；巡检 `gh-comments`、管理直达、姊妹仓 同源等保留项经审查维持
 
 ## v1.6.19 (2026-10-12) · 全网评论计数端点（patch 小版本）
 - 🏅 新增公开只读 `GET /api/comments/gh-count`：拉 `GH_WATCH_REPO` 近 100 帖 Discussion 求 `comments` 和（当前 5 条/4 帖），60s 缓存——Wiki 标题徽章由本地 0（未上线）改为显示 **GitHub 全网评论数**
@@ -67,7 +75,7 @@
 ## v1.6.13 (2026-10-10) · 防复发门禁与工程体检（patch 小版本）
 - 🚧 integrity 新增两道硬门禁：⑤ kb-nav 与 faq/workflows/apps 源同步（确定性重生成比对，根治「改源忘重跑」）；⑥ i18n zh/en 键对等双向同构（补齐 3 个缺英文键后硬拦）
 - 🧪 网关支持 `COMMUNITY_DATA` 环境变量——本地测试写数据副本（已 gitignore），不再污染正式 community.json；snapshot 降频 4 次/天 → 1 次/天
-- 🛠 新增 `crosscheck-kbnav.mjs`（出处交叉审计固化）与 `sync-diff.mjs`（QDU↔FJNU 漏同步盘点）；e2e-browser 新增 11 号检查「375 全应用无横向溢出」
+- 🛠 新增 `crosscheck-kbnav.mjs`（出处交叉审计固化）与 `sync-diff.mjs`（QDU↔姊妹仓 漏同步盘点）；e2e-browser 新增 11 号检查「375 全应用无横向溢出」
 - ✅ 验证：build / integrity（含新门禁）/ unit×4 / audit / scenes / Python 单测 18/18 / 本地网关 E2E 全绿
 
 ## v1.6.12 (2026-10-10) · kb-nav 知识库重生成与交叉审计（patch 小版本）
@@ -85,8 +93,8 @@
 - 🐛 修复换校向导 375px 横向溢出（三列数字输入 content-box 撑破 grid → minmax(0,1fr) + border-box）
 - ✅ 验证：单测 18/18 + unit 175 项 + audit-refs 0/0；CDP 冒烟 ALL PASS（三指标回填/导航 site_pv 递增/host 常驻）；35 应用页 375px 扫描 0 溢出
 ## v1.6.10 (2026-10-09) · i18n/E2E/收尾（patch 小版本）
-- 🌐 FJNU 全 36 应用注册表英文字段 + 网格/分类/底部导航跟进 + 完整性门禁新增英文字段检查
-- 🖥️ E2E 浏览器脚本（10 关键链路，QDU 9/9 · FJNU 10/10）+ 独立 workflow
+- 🌐 姊妹仓 全 36 应用注册表英文字段 + 网格/分类/底部导航跟进 + 完整性门禁新增英文字段检查
+- 🖥️ E2E 浏览器脚本（10 关键链路，QDU 9/9 · 姊妹仓 10/10）+ 独立 workflow
 - 🗂️ 多草稿箱 UI + 树形回复视图切换 + RichEditor 进私信输入
 
 ## v1.6.9 (2026-10-09) · 高级感与新工作流（patch 小版本）
@@ -120,7 +128,7 @@
 - ☁️ 管理台云端直连模式：Supabase 看帖数/看帖删帖，配置与数据管家同键，失败直连测试先行
 
 ## v1.6.2 (2026-10-08) · 全局渲染保险（patch 小版本）
-- 🛡️ `main.js` 注册全局 `errorHandler`：运行时错误显式报错盒 + 一键重载，不再静默白屏（FJNU 白屏事故复盘）
+- 🛡️ `main.js` 注册全局 `errorHandler`：运行时错误显式报错盒 + 一键重载，不再静默白屏（姊妹仓 白屏事故复盘）
 
 ## v1.6.1 (2026-10-08) · 智能体交互升级（patch 小版本）
 - 💬 上下文追问：上条查完直接说“明天呢/换博文楼/再查一次”，强新意图自动让路
@@ -162,7 +170,7 @@
 【缘由】核对线上「独立访客」是否被本地测试污染时，做了四条实测：
  ① QDU-Nav 打开本地首页，**零请求**打到自建计数服务（site.js staticMode=true 生效，读写都被挡住）；
  ② 其 busuanzi 在 127.0.0.1 下回填的是全局公共桶数值（实测 810 万级），与线上域名并非同一个桶；
- ③ FJNU-Nav 本地首页**没有**任何 Vercount 上报请求；
+ ③ 姊妹导航仓 本地首页**没有**任何 Vercount 上报请求；
  ④ QDU-Wiki 的 Vercount 在本地**不回填数值**（卡片停在占位符），说明它不认本地域名。
  结论：既有测试没有污染线上统计。但第三方（Vercount / busuanzi）的分桶规则在服务端、对我们是黑盒，
  而发布前必然要在本地反复预览与跑自动化测试，规则一变就可能真的打点。因此不再把这件事寄托在
@@ -172,14 +180,14 @@
 172.16-31.）/ file: 一律判为本地；判断异常时按本地处理（宁可少统计，不可误上报）。命中则：
  · 不注入 busuanzi / Vercount 第三方脚本（脚本自身会打点）；
  · QDU-Nav 的 VisitStats 把计数服务 api 置空 —— 所有 `if (!api)` 分支自然短路，全链路不发请求；
- · FJNU-Nav 的 Vercount 脚本注入与直连 API 两处都直接返回；
+ · 姊妹导航仓 的 Vercount 脚本注入与直连 API 两处都直接返回；
  · QDU-Wiki 的 visit-counter.js 在 IIFE 开头直接 return（既不注入脚本也不直连 API）。
 
 【防回归】真机冒烟新增断言「本地/测试环境不向第三方统计打点」：用 Playwright 监听页面全部请求，
 断言没有任何请求命中 busuanzi / vercount / iceoftea / deno.net。两站冒烟 24 → 25 项。
 
 验证：npm run build；e2e-integrity 17/17 与 18/18；audit-refs 0/0；真机冒烟 25/25；
-FJNU 独立课表页 11/11；test_schedule / test_sanitize / test_favorites / test_budgetengine /
+姊妹仓 独立课表页 11/11；test_schedule / test_sanitize / test_favorites / test_budgetengine /
 test_budgetbackup / test_billimport 全绿。
 
 
@@ -226,7 +234,7 @@ test_billimport 全绿；unit-agent/wall/im/grow 全绿；真机冒烟 22 → **
 
 
 ## v1.7.7 (2026-10-15) · 新增应用：青岛大学 · 绩点计算器（patch）
-背景：本站有 35 个应用，却一直没有「成绩/学分核算」这一类工具（FJNU 站有，但那是**福师大**的综测细则，
+背景：本站有 35 个应用，却一直没有「成绩/学分核算」这一类工具（姊妹仓 站有，但那是**另一高校**的综测细则，
 不能也不该搬到青大来）。本轮为 QDU-Nav **从零写一个青大自己的版本**，不引入任何他校数据或口径。
 
 新增 src/utils/gpa.js（纯函数 · 零依赖 · 13 项单测）：
@@ -250,7 +258,7 @@ searchIndex.js 搜索索引（关键词/功能点）+ i18n zh/en 全量对等（
 `node scripts/gen_kb_nav.mjs` 重生成知识库（104 → 105 条）。
 
 验证：npm run build；e2e-integrity 17/17；audit-refs 0/0；test_gpa 13 项全绿；其余 5 个专项单测 + unit×4 全绿；
-真机冒烟 20 → **22 项**（新增「录课后算出 4.0 绩点」「目标反推给出需要多少分」，FJNU 站自动跳过）。
+真机冒烟 20 → **22 项**（新增「录课后算出 4.0 绩点」「目标反推给出需要多少分」，姊妹仓 站自动跳过）。
 
 
 ## v1.7.6 (2026-10-15) · i18n 英文字包按需加载 + 冒烟脚本日期动态化（patch）
@@ -297,7 +305,7 @@ agent/engine.js → navAnswer.js → kb-nav.json（121KB）+ workflows.js（79KB
 
 实测收益（构建产物）：
 - QDU-Nav 首屏入口 chunk 499KB → 272KB（-45%）
-- FJNU-Nav 首屏入口 chunk 276KB → 76KB（-72%）
+- 姊妹导航仓 首屏入口 chunk 276KB → 76KB（-72%）
 - kb-nav.json 与 workflows 独立成块（navAnswer-*.js 79KB / workflows-*.js 55KB），仅在真正使用智能体时下载
 
 真机冒烟新增 2 项断言（12 → 18 项）：①在 DOMContentLoaded 时刻抓取资源清单，断言首屏未请求任何
@@ -309,7 +317,7 @@ agent/engine.js → navAnswer.js → kb-nav.json（121KB）+ workflows.js（79KB
 新增 src/utils/favorites.js（纯函数 · 零依赖 · 可单测）提供站点无关的收藏模型：makeFavoriteId 以 kind:target 生成稳定 id（同项不会收藏两条）、normalizeFavorite 逐条规范化脏数据、pruneFavorites 超 40 条时置顶项与最新项优先保留、toggleFavorite 幂等开关、moveFavorite 上/下移、setPinned 置顶、groupByKind 分组、exportFavorites/importFavorites 支持「完整对象 / 裸数组 / items」三形态、mergeFavorites 追加去重或整体替换；存储键由 createFavorites(key) 注入，同一份实现被多站复用，读写全部经 safeStorage 不抛异常。
 首页新增「我的快捷」区块：空态给出引导文案，有收藏时按用户排好的顺序展示为胶囊（点击直达 · 📌 置顶 · ✕ 移除 · 一键清空），并提示「只存本机、换设备请用数据管家备份」。应用卡片右上角新增 ☆/★ 星标（用 span + role=button 实现，避免按钮嵌套导致的无效 HTML；带 aria-label 与键盘 Enter 支持）。
 顺带修掉一个真实缺陷：新手引导遮罩挂在 App 层，用户在引导进行中切换页面时遮罩不会收起——锚点元素已随视图卸载，遮罩会残留在新页面上并吞掉用户的所有点击（表现为「切页后什么都点不动」）。现给 useTour 增加 cancelTour()（收起但不标记完成，用户回到该页仍能看到引导），并在路由变化时先收起进行中的引导。
-真机冒烟扩容：scripts/e2e-budget.mjs 12 → 16 项，新增「首页空态 / 点星标出现快捷项 / 收藏落本机并刷新后仍在 / 取消后恢复空态」四个断言；脚本会自动从源码读取各校引导 key 与 TOUR_VERSION（QDU=v1 / FJNU=v2）并预置为已完成，避免遮罩干扰。
+真机冒烟扩容：scripts/e2e-budget.mjs 12 → 16 项，新增「首页空态 / 点星标出现快捷项 / 收藏落本机并刷新后仍在 / 取消后恢复空态」四个断言；脚本会自动从源码读取各校引导 key 与 TOUR_VERSION（QDU=v1 / 姊妹仓=v2）并预置为已完成，避免遮罩干扰。
 新增单测 scripts/test_favorites.mjs（17 项）。
 
 
