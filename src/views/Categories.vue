@@ -69,8 +69,10 @@ async function tapLike(appId, ev) {
     <div class="cat-grid">
       <button v-for="a in g.items" :key="a.id" class="cat-tile" @click="emit('open', a.id)">
         <span class="cat-tile-icon" :style="{ background: a.color + '1a', color: a.color }">{{ a.icon }}</span>
-        <span class="cat-tile-title">{{ appName(a) }}</span>
-        <span class="cat-tile-desc">{{ appDesc(a) }}</span>
+        <span class="cat-tile-body">
+          <span class="cat-tile-title">{{ appName(a) }}</span>
+          <span class="cat-tile-desc">{{ appDesc(a) }}</span>
+        </span>
         <span class="cat-like" :class="{ on: likedState[a.id] }" :title="lang === 'en' ? 'Like / Unlike' : '点赞 / 取消'" @click.stop="tapLike(a.id)">
           👍 {{ likes[a.id] != null ? likes[a.id] : 0 }}
         </span>
@@ -99,7 +101,7 @@ async function tapLike(appId, ev) {
 .cat-group-dot { width: 10px; height: 10px; border-radius: 50%; }
 .cat-group-name { font-weight: 700; font-size: 15px; }
 .cat-group-count { font-size: 12px; color: var(--text-sub); }
-.cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
 .cat-tile {
   display: flex; align-items: center; gap: 10px;
   padding: 12px 14px; border-radius: 14px;
@@ -108,9 +110,19 @@ async function tapLike(appId, ev) {
 }
 .cat-tile:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08); }
 .cat-tile-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.cat-tile-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .cat-tile-title { font-weight: 700; font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cat-tile-desc { font-size: 12px; color: var(--text-sub); display: block; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
-.cat-like { margin-left: auto; font-size: 12px; color: var(--text-sub); cursor: pointer; flex-shrink: 0; }
+.cat-tile-desc { font-size: 12px; color: var(--text-sub); display: block; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cat-like { margin-left: auto; font-size: 12px; color: var(--text-sub); cursor: pointer; flex-shrink: 0; padding: 4px 6px; border-radius: 8px; }
+.cat-like:hover { background: var(--primary-soft); color: var(--primary); }
 .cat-like.on { color: #e11d48; }
-.cat-tile-body { flex: 1; min-width: 0; }
+/* 移动端：两列竖版卡片，标题永远可见（横排挤压会把名字缩没） */
+@media (max-width: 560px) {
+  .cat-grid { grid-template-columns: repeat(2, 1fr); }
+  .cat-tile { flex-direction: column; align-items: flex-start; gap: 8px; padding: 14px 12px; position: relative; }
+  .cat-tile-body { width: 100%; }
+  .cat-tile-title { font-size: 13.5px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .cat-tile-desc { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .cat-like { position: absolute; top: 10px; right: 8px; margin-left: 0; }
+}
 </style>
