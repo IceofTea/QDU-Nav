@@ -169,7 +169,7 @@ onBeforeUnmount(() => { if (mourningTimer) clearInterval(mourningTimer) })
   <div v-else class="app-shell">
     <header class="header">
       <div class="header-inner">
-        <div class="brand" @click="goHome; secretPortal()">
+        <div class="brand" role="link" title="返回首页" @click="goHome(); secretPortal()">
           <div class="brand-logo"><span>{{ SITE.brand }}</span></div>
           <div>
             <div class="brand-name">{{ t('site.name') }}</div>

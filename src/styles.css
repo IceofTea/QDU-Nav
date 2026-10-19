@@ -218,23 +218,30 @@ body {
   height: 42px;
   padding: 0 13px;
   border-radius: 12px;
-  background: var(--card, #fff);
-  border: 1px solid var(--border);
+  background: linear-gradient(135deg, #0f3a75 0%, #144e9c 55%, #1b66c9 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(27, 102, 201, 0.12);
+  box-shadow: 0 4px 14px rgba(15, 58, 117, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transition: transform 0.15s, filter 0.15s;
 }
+.brand:hover .brand-logo { transform: translateY(-1px); filter: brightness(1.08); }
+.brand:active .brand-logo { transform: translateY(0); }
 .brand-logo span {
   white-space: nowrap;
   font-size: 15px;
   font-weight: 800;
   letter-spacing: 0.5px;
-  background: linear-gradient(90deg, #f43f5e 0%, #f59e0b 20%, #10b981 40%, #06b6d4 60%, #3b82f6 80%, #8b5cf6 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: #fff;
 }
+/* 夜间模式：深蓝底换鎏金底，深色字保持对比度 */
+[data-theme="dark"] .brand-logo {
+  background: linear-gradient(135deg, #e7c65a 0%, #d4af37 55%, #b8860b 100%);
+  border-color: rgba(0, 0, 0, 0.28);
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+[data-theme="dark"] .brand-logo span { color: #1c2b4a; }
 .brand-name { font-size: 19px; font-weight: 700; color: var(--primary-dark); line-height: 1.1; white-space: nowrap; }
 .brand-sub { font-size: 12px; color: var(--text-sub); }
 .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
