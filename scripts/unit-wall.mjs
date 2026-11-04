@@ -192,7 +192,9 @@ ok('7天过期清理', () => {
   assert.ok(clearExpired() >= 0)
 })
 ok('timeToPublish 文案', () => {
-  assert.ok(timeToPublish(Date.now() + 3600000).includes('小时'))
+  // 用 2 小时而非正好 1 小时：原写法在 diff 掉到 3599999ms 时会被 floor 成 59 分钟，
+  // 返回「59 分钟后发布」而不含「小时」，是毫秒级边界竞态。
+  assert.ok(timeToPublish(Date.now() + 2 * 3600000).includes('小时'))
   assert.equal(timeToPublish(null), '')
 })
 ok('dueDrafts 到期检出', () => {
