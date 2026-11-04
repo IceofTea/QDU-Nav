@@ -19,7 +19,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Setup Python
         run: python3 --version
@@ -56,13 +56,28 @@ jobs:
 
       - name: Commit and push if changed
         run: |
+          set -euo pipefail
           git config user.name "qdu-nav-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data/snapshot.json public/data/course_stats.json public/data/tieba_stats.json public/data/timetable_meta.json public/data/terms
           if git diff --cached --quiet; then
             echo "snapshot unchanged, skip commit"
-          else
-            git commit -m "data: refresh snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)" -m "${{ steps.diff.outputs.summary }}"
-            git push
-            echo "snapshot refreshed and pushed (deploy workflow will rebuild the site)"
+            exit 0
           fi
+          git commit -m "data: refresh snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)" -m "${{ steps.diff.outputs.summary }}"
+          # 复盘 #221：原实现只有一次 git push，遇到 GitHub 临时 5xx 或远端在抓取期间
+          # 被 deploy/手动提交推进（non-fast-forward）就直接整步失败。显式推 HEAD:main，
+          # 失败则 rebase 到最新 main 后重试，最多 3 次，并把状态打到日志便于排查。
+          for i in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "snapshot refreshed and pushed (attempt $i); deploy workflow will rebuild the site"
+              exit 0
+            fi
+            echo "::warning::push attempt $i failed; rebasing onto latest main and retrying"
+            git pull --rebase --autostash origin main || true
+            sleep $((i * 5))
+          done
+          echo "::error::snapshot push failed after 3 attempts"
+          git status
+          git log --oneline -3
+          exit 1
