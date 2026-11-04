@@ -154,7 +154,9 @@ ok('upcoming 按日期正序', () => {
   for (let i = 1; i < u.length; i++) assert.ok(u[i - 1].date <= u[i].date)
 })
 ok('signupLocal 幂等', () => {
-  const id = acts.upcoming().find((a) => !a.expired).id
+  // 不依赖「未过期」活动：示例活动日期固定，过期后 upcoming() 里已无 !expired 项
+  const id = acts.ACTIVITIES[0].id
+  localStorage.removeItem('agent_activity_sign_v1')
   acts.signupLocal(id)
   assert.equal(acts.signupLocal(id).already, true)
 })
