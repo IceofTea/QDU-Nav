@@ -11,7 +11,8 @@ const emit = defineEmits(['back'])
 
 /** 版本编年史（数据化渲染：v=版本 tag=里程碑标 d=日期 t=中文 te=英文；按 semver 降序，8 条/页） */
 const CHANGELOG = [
-  {"v":"v1.7.15","d":"2026-10-20","t":"版本历史规范化：编年史迁移为数据数组（版本号/日期/「大版本」徽标），semver 降序、8 条/页分页；公告中心补齐大版本与重点更新说明；修复分类页应用名被挤压隐藏（补上缺失的标题容器），移动端改为两列竖版卡片。","te":"Changelog normalized into a data array with dates and milestone badges, semver-sorted with 8-per-page pagination; announcements backfilled for major releases; fixed category tiles hiding app names."},
+  {"v":"v1.7.16","d":"2026-11-05","t":"版本面一致性修复：README 头部与版本表补齐 v1.7.12~1.7.16 五条（曾漂移 5 个版本）；维护日志姊妹校标识词字面提及清零。"},
+   {"v":"v1.7.15","d":"2026-10-20","t":"版本历史规范化：编年史迁移为数据数组（版本号/日期/「大版本」徽标），semver 降序、8 条/页分页；公告中心补齐大版本与重点更新说明；修复分类页应用名被挤压隐藏（补上缺失的标题容器），移动端改为两列竖版卡片。","te":"Changelog normalized into a data array with dates and milestone badges, semver-sorted with 8-per-page pagination; announcements backfilled for major releases; fixed category tiles hiding app names."},
   {"v":"v1.7.14","d":"2026-10-20","t":"夜间模式徽标修正：底色与边框压暗，品牌字切换鎏金（替代上一版整底换金的方案）。"},
   {"v":"v1.7.13","d":"2026-10-20","t":"修复左上角品牌徽标点击不回首页（内联处理漏写调用括号）；徽标改版为深蓝底白字，夜间模式自动切换鎏金配色。"},
   {"v":"v1.7.12","d":"2026-10-20","t":"首页减负：首页网格只留实用功能并按日频排序，换校向导/移植/演示向页面沉入分类最底「关于」组（搜索仍可达）。"},
