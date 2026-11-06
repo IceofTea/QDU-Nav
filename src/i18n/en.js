@@ -95,6 +95,12 @@ export default {
     favOff: 'Pin to My Shortcuts',
     apps: 'apps',
   },
+  todayStrip: {
+    p: 'P',
+    pSuffix: '',
+    none: 'No classes today ✨',
+    importHint: 'Import your timetable to see today classes →',
+  },
   welcome: {
     enter: 'Enter Campus Navigator →',
   },

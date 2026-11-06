@@ -8,6 +8,7 @@ import { campuses } from '../data/campus.js'
 import { getCourseStats, EMPTY_STATS } from '../api/courseStats.js'
 import { SITE } from '../config/site.js'
 import VisitStats from '../components/VisitStats.vue'
+import TodayStrip from '../components/TodayStrip.vue'
 import { fetchLikes, toggleLike, likedByMe } from '../utils/like.js'
 import { createFavorites } from '../utils/favorites.js'
 import { safeSet } from '../utils/safeStorage.js'
@@ -139,6 +140,8 @@ function askAgent(text) {
         <button v-for="s in AGENT_PROFILE.examples.slice(0, 4)" :key="s" class="hero-chip" @click="askAgent(s)">{{ s }}</button>
       </div>
     </section>
+
+    <TodayStrip @open="(id) => emit('open', id)" />
 
     <section class="section">
       <div class="wiki-card">

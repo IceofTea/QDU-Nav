@@ -78,6 +78,12 @@ export default {
     favOff: '收藏到「我的快捷」',
     apps: '个应用',
   },
+  todayStrip: {
+    p: '第',
+    pSuffix: '节',
+    none: '今日无课 ✨',
+    importHint: '导入你的课表，这里就能看今日课 →',
+  },
   welcome: {
     enter: '进入校园导航 →',
   },
