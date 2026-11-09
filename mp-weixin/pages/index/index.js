@@ -4,6 +4,8 @@ const { openWeb, SITE_URL } = require('../../utils/api.js');
 
 Page({
   data: { groups: APP_GROUPS },
+  onShareAppMessage() { return { title: '青大导航 · 校园服务速查', path: '/pages/index/index' }; },
+  onShareTimeline() { return { title: '青大导航 · 校园服务速查' }; },
   open(e) {
     const a = e.currentTarget.dataset.app;
     if (a.native && a.tab) { wx.switchTab({ url: a.tab }); return; }
