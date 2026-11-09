@@ -1,0 +1,18 @@
+<!-- 文件路径: /qdu-nav/mp-weixin/pages/services/services.wxml -->
+<view class="page safe-bottom">
+  <view wx:for="{{groups}}" wx:key="name" class="card">
+    <view class="g-title">{{item.icon}} {{item.name}}</view>
+    <view wx:for="{{item.sites}}" wx:for-item="s" wx:key="name" class="site" data-s="{{s}}" bindtap="open">
+      <view class="s-body">
+        <view class="row">
+          <text class="s-name">{{s.name}}</text>
+          <text class="badge" wx:if="{{s.featured}}">常用</text>
+        </view>
+        <text class="s-desc">{{s.desc}}</text>
+        <text class="s-url">{{s.url}}</text>
+      </view>
+      <text class="s-arrow">›</text>
+    </view>
+  </view>
+  <view class="foot mut">点击复制链接后浏览器打开</view>
+</view>

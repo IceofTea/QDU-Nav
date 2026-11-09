@@ -1,0 +1,25 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/services/services",
+    "pages/about/about"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#0f5aa8",
+    "navigationBarTitleText": "青大导航",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f5f6fa"
+  },
+  "tabBar": {
+    "color": "#8a8f99",
+    "selectedColor": "#0f5aa8",
+    "backgroundColor": "#ffffff",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "首页" },
+      { "pagePath": "pages/services/services", "text": "服务" },
+      { "pagePath": "pages/about/about", "text": "我的" }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2"
+}

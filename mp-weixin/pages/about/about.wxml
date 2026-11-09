@@ -1,0 +1,26 @@
+<!-- 文件路径: /qdu-nav/mp-weixin/pages/about/about.wxml -->
+<view class="page safe-bottom">
+  <view class="card center">
+    <view class="logo">🧭</view>
+    <view class="name">青大导航</view>
+    <view class="mut">v1.0.0 · 青岛大学校园服务速查</view>
+  </view>
+
+  <view class="card">
+    <view class="row-item" bindtap="copySite">
+      <text>🌐 打开网页版（复制链接）</text>
+      <text class="mut">iceoftea.github.io/QDU-Nav</text>
+    </view>
+    <view class="row-item" bindtap="copyWiki">
+      <text>📚 青大 Wiki</text>
+      <text class="mut">iceoftea.github.io/QDU-Wiki</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="sec-title">说明</view>
+    <view class="mut li">· 全量功能请用网页版（课表/空教室/绩点/食堂等35+应用）</view>
+    <view class="mut li">· 官方链接均指向 qdu.edu.cn 官方站点</view>
+    <view class="mut li">· 本应用不收集任何个人信息</view>
+  </view>
+</view>

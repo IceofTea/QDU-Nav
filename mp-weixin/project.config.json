@@ -1,0 +1,9 @@
+{
+  "description": "青大导航 微信小程序原生端",
+  "appid": "touristappid",
+  "compileType": "miniprogram",
+  "libVersion": "3.5.0",
+  "projectname": "qdu-nav-mp",
+  "setting": { "es6": true, "enhance": true, "minified": true, "urlCheck": false, "postcss": true },
+  "condition": {}
+}

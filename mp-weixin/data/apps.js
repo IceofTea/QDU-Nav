@@ -1,0 +1,72 @@
+// 文件路径: /qdu-nav/mp-weixin/data/apps.js
+const APP_GROUPS = [
+  {
+    group: '学习',
+    apps: [
+      { id: 'timetable', title: '课程表', icon: '🗓️', color: '#1b66c9', url: '/#/timetable', desc: '班级/教室/教师课表' },
+      { id: 'importer', title: '课表导入', icon: '📥', color: '#0f766e', url: '/#/importer', desc: '粘贴课表即解析' },
+      { id: 'classroomNav', title: '教室导航', icon: '🧭', color: '#b63a46', url: '/#/classroomNav', desc: '空教室查询' },
+      { id: 'calendar', title: '校历', icon: '📅', color: '#f43f5e', url: '/#/calendar', desc: '学期与放假安排' },
+      { id: 'gpa', title: '绩点计算器', icon: '📈', color: '#0f766e', url: '/#/gpa', desc: '加权平均与4.0绩点' },
+      { id: 'buildingGallery', title: '楼宇图鉴', icon: '🏢', color: '#b63a46', url: '/#/buildingGallery', desc: '楼层房间格子图' },
+    ],
+  },
+  {
+    group: '生活',
+    apps: [
+      { id: 'canteen', title: '食堂空座率', icon: '🍽️', color: '#ea580c', url: '/#/canteen', desc: '实时空座与高峰' },
+      { id: 'whatToEat', title: '今天吃什么', icon: '🍜', color: '#e76f51', url: '/#/whatToEat', desc: '帮你做决定' },
+      { id: 'budget', title: '生活费', icon: '🧮', color: '#0e7490', url: '/#/budget', desc: '收支随手记' },
+      { id: 'reminder', title: '提醒中心', icon: '⏰', color: '#d97706', url: '/#/reminder', desc: '定时提醒' },
+      { id: 'physicalTest', title: '体测计算', icon: '💪', color: '#0f766e', url: '/#/physicalTest', desc: '体测成绩' },
+    ],
+  },
+  {
+    group: '服务',
+    apps: [
+      { id: 'assistant', title: '智能助手', icon: '🤖', color: '#1b66c9', url: '/#/assistant', desc: '一句话办事' },
+      { id: 'campusNews', title: '校园动态', icon: '📢', color: '#e11d48', url: '/#/campusNews', desc: '教务处通知' },
+      { id: 'official', title: '官方链接', icon: '🔗', color: '#475569', native: true, tab: '/pages/services/services', desc: '办事大厅/邮箱/官网' },
+      { id: 'studentId', title: '学号查询', icon: '🪪', color: '#0284c7', url: '/#/studentId', desc: '新生学号' },
+      { id: 'jobs', title: '就业信息', icon: '💼', color: '#9a3412', url: '/#/jobs', desc: '招聘宣讲' },
+      { id: 'leaders', title: '通讯录', icon: '☎️', color: '#0369a1', url: '/#/leaders', desc: '学院部门电话' },
+    ],
+  },
+  {
+    group: '新生',
+    apps: [
+      { id: 'campusLife', title: '校园生活', icon: '🧳', color: '#0d9488', url: '/#/campusLife', desc: '生活指南' },
+      { id: 'quiz', title: '入学测试', icon: '📝', color: '#65a30d', url: '/#/quiz', desc: '校情知识问答' },
+      { id: 'campus', title: '校园导览', icon: '🏫', color: '#7c3aed', url: '/#/campus', desc: '校区楼宇地图' },
+    ],
+  },
+];
+
+const OFFICIAL_GROUPS = [
+  {
+    name: '信息化与服务', icon: '🖥️',
+    sites: [
+      { name: '网上办事大厅', url: 'https://ehall.qdu.edu.cn', desc: '选课/成绩/缴费一站式服务', featured: true },
+      { name: '校园邮箱', url: 'https://mail.qdu.edu.cn', desc: '学生邮箱 学号@qdu.edu.cn' },
+      { name: '智慧校园与信息化建设中心', url: 'https://nic.qdu.edu.cn', desc: '网络/账号/智慧校园' },
+    ],
+  },
+  {
+    name: '学校主站', icon: '🏛️',
+    sites: [
+      { name: '青岛大学官网', url: 'https://www.qdu.edu.cn', desc: '学校主站' },
+      { name: '教务处', url: 'https://jwc.qdu.edu.cn', desc: '教学通知/教务公告' },
+      { name: '研究生院', url: 'https://grad.qdu.edu.cn', desc: '研究生教育' },
+      { name: '图书馆', url: 'https://lib.qdu.edu.cn', desc: '馆藏/借阅/数据库' },
+    ],
+  },
+  {
+    name: '社区与资源', icon: '📚',
+    sites: [
+      { name: '青大 Wiki', url: 'https://iceoftea.github.io/QDU-Wiki/', desc: '课程笔记/考研复试/经验文档' },
+      { name: '青岛大学吧', url: 'https://tieba.baidu.com/f?kw=青岛大学', desc: '学生社区交流' },
+    ],
+  },
+];
+
+module.exports = { APP_GROUPS, OFFICIAL_GROUPS };

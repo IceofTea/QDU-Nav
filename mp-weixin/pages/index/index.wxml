@@ -1,0 +1,20 @@
+<!-- 文件路径: /qdu-nav/mp-weixin/pages/index/index.wxml -->
+<view class="page safe-bottom">
+  <view class="hero">
+    <view class="hero-title">青大导航</view>
+    <view class="hero-sub">青岛大学 · 校园服务速查</view>
+  </view>
+
+  <view wx:for="{{groups}}" wx:key="group" class="card">
+    <view class="g-title">{{item.group}}</view>
+    <view class="grid">
+      <view wx:for="{{item.apps}}" wx:for-item="a" wx:key="id" class="cell" data-app="{{a}}" bindtap="open">
+        <view class="ic" style="background:{{a.color}}18;color:{{a.color}}">{{a.icon}}</view>
+        <text class="t">{{a.title}}</text>
+        <text class="d" wx:if="{{a.desc}}">{{a.desc}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="foot mut">本端内置功能直接打开，其余复制网页版链接后浏览器访问</view>
+</view>
