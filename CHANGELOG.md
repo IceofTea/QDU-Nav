@@ -3,6 +3,13 @@
 > 面向使用者的版本摘要。逐条工程日志见 `AGENTS.md`「六、更新日志」。
 
 
+## 2026-11-09 · 客户端基建 — app-uniapp + mp-weixin + backend-options（站点未动）
+
+- **`app-uniapp/`**（HBuilderX 云打包 iOS）：应用网格分组 + 官方服务页 + 我的页，安全区适配。
+- **`mp-weixin/`**（微信原生上架）：同款独立实现，数据内置零请求、全页分享卡片。
+- **`backend-options/`**：GitHub文件/CF KV/LeanCloud/PocketBase 四套备选后端含部署代码，默认关闭。
+- 验证：全量语法+导出引用审计 0 错误；打包/上架待办见 AGENTS.md 日志。
+
 ## v1.7.17 — 首页「今日速览」条（patch）
 
 新增 src/components/TodayStrip.vue，挂载于首页 hero 与 Wiki 卡之间：
