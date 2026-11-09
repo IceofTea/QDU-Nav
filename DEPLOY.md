@@ -1,11 +1,11 @@
-# 客户端上架部署清单 · QDU-Nav
+﻿# 客户端上架部署清单 · QDU-Nav
 
 > 双端源码已就绪（`app-uniapp/` iOS、`mp-weixin/` 微信小程序）。客户端数据全部内置，**无任何网络请求**——上架最省事的一款。
 
 ## 一、微信小程序（约 10 分钟）
 
 1. [mp.weixin.qq.com](https://mp.weixin.qq.com) 注册小程序 → 拿 **AppID**。
-2. `mp-weixin/project.config.json` 换 AppID → 开发者工具导入 `mp-weixin/` 预览。
+2. `mp-weixin/project.config.json` AppID 已填 `wx313c28f3fdf79289` → 开发者工具直接导入 `mp-weixin/` 预览。
 3. **域名配置：无需配置**（应用数据内置、外部链接走复制而非请求）。
 4. 上传 → 版本管理提审。类目建议「教育 > 教育信息服务」。
 
