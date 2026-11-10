@@ -9,11 +9,13 @@
 3. **域名配置：无需配置**（应用数据内置、外部链接走复制而非请求）。
 4. 上传 → 版本管理提审。类目建议「教育 > 教育信息服务」。
 
-## 二、iOS App（uni-app）
+## 二、iOS App —— 已完成（H5 免费路线）
 
-**路线 A · 零成本**：H5 发行 + 「添加到主屏幕」（详见 FJNU-Nav 仓 DEPLOY.md 同款说明）。
+**H5 产物已构建并铺进 `public/app/`**，随站点 Pages 流水线自动上线：
 
-**路线 B · 正式 ipa**：Apple 开发者账号 $99/年 → p12 + 描述文件 → `manifest.json` 填 DCloud appid → HBuilderX 云打包。
+- iOS 使用：Safari 打开 **https://iceoftea.github.io/QDU-Nav/app/** → 分享 →「添加到主屏幕」。
+- 重新构建：`cd app-uniapp && npm install && npm run build:h5`；本地预览 `npm run dev:h5`。
+- 正式 ipa（App Store）才需 Apple 开发者 $99/年，暂不启用。
 
 ## 三、后端（可选，默认关闭）
 

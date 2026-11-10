@@ -73,6 +73,7 @@
 
 | 日期 | 版本 | 内容 |
 | --- | --- | --- |
+| 2026-11-09 | —（客户端基建·续2） | **iOS 免费路线落地**：uni-app CLI 构建体系补齐（`npm run build:h5`，根布局经 `UNI_INPUT_DIR` 直调 vite），H5 产物铺 `public/app/` → `/QDU-Nav/app/` 上线，iOS 添加主屏幕即用。 |
 | 2026-11-09 | —（客户端基建·续） | **tabBar 图标 + `DEPLOY.md`**：home/grid/person 灰+主题蓝双态 PNG 落地双端；DEPLOY 列 AppID 替换位、零请求免域名、iOS 两路线。 |
 | 2026-11-09 | —（客户端基建） | **新增 `app-uniapp/` + `mp-weixin/` 两套独立客户端源码 + `backend-options/` 后端备选（站点本体未动，不涉及版本号）**。①`app-uniapp/`（Vue3 `<script setup>`，HBuilderX 云打包 iOS）：应用网格（服务/学习/生活分组，native 直达+网页链接兜底）、官方服务页（办事大厅/邮箱/教务处/图书馆/Wiki 等官方链接组）、我的页；iOS 安全区适配。②`mp-weixin/`：同功能微信原生实现（WXML/WXSS/JS/JSON），数据内置零请求（上架免域名配置）、全页分享卡片。③`backend-options/`：GitHub仓内JSON/CF Workers+KV/LeanCloud/PocketBase 四套（worker.js+wrangler.toml 可部署+双端 cloud-sync 适配器），默认关闭；README 写清免费额度/配置/权限——写凭据只存本机不进代码。**验证**：全量 node --check + JSON + import/require/导出审计 0 错误。**待办（需人工）**：HBuilderX 填 appid+iOS 证书；开发者工具换小程序 AppID 上架。 |
 | 2026-11-05 | v1.7.16（patch） | **版本面一致性修复 + 姊妹校字样清零**。①README 头部停在 v1.7.10、版本表停在 v1.7.11，与 `site.js` v1.7.15 漂移 5 个版本——按 Contributors 数据补齐 v1.7.12~1.7.16 五条真实条目并校正头部；②维护日志中 v1.4.x 姊妹校清理时写下的扫描词表字面提及（含姊妹校缩写等）改为泛称，全仓扫描（src/public/scripts/docs/工作流，不区分大小写）命中 0；③14 页冒烟截图（首页/课表/智能体/校园墙/食堂/记账/移动端）仅 `/mourning` 灰白开关探测按设计 404，无其它异常。 |
