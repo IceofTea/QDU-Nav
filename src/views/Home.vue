@@ -287,6 +287,7 @@ function askAgent(text) {
         <div class="about-line"><b>{{ lang === 'en' ? 'Crawling:' : '抓取方式：' }}</b>{{ t('site.aboutCrawl') }}</div>
         <div class="about-line"><b>{{ lang === 'en' ? 'Usage:' : '用途与版权：' }}</b>{{ t('site.aboutUsage') }}</div>
         <div class="about-actions">
+          <a class="btn ghost small" href="app/" target="_blank" rel="noopener">📱 {{ lang === 'en' ? 'App version (iPhone: Add to Home Screen)' : '手机版 App（iPhone 可添加到主屏幕）' }} ↗</a>
           <button class="btn ghost small" @click="emit('open', 'contributors')">🏆 {{ lang === 'en' ? 'Contributors' : '查看贡献者墙' }} ›</button>
           <button class="site-like" :class="{ on: likedState.site }" @click="tapLike('site')">
             <span class="sl-icon">👍</span>
