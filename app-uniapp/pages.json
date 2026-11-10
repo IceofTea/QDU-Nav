@@ -1,4 +1,4 @@
-﻿{
+{
     "pages":  [
                   {
                       "path":  "pages/index/index",
@@ -22,12 +22,12 @@
     "globalStyle":  {
                         "navigationBarTextStyle":  "white",
                         "navigationBarTitleText":  "青大导航",
-                        "navigationBarBackgroundColor":  "#0f5aa8",
+                        "navigationBarBackgroundColor":  "#1b66c9",
                         "backgroundColor":  "#f5f6fa"
                     },
     "tabBar":  {
                    "color":  "#8a8f99",
-                   "selectedColor":  "#0f5aa8",
+                   "selectedColor":  "#1b66c9",
                    "backgroundColor":  "#ffffff",
                    "borderStyle":  "black",
                    "list":  [

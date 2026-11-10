@@ -1,5 +1,5 @@
 /* 文件路径: /qdu-nav/mp-weixin/pages/index/index.wxss */
-.hero { background: linear-gradient(135deg, #0f5aa8, #1976d2); color: #fff; padding: 48rpx 32rpx 36rpx; }
+.hero { background: linear-gradient(135deg, #1b66c9, #3b82f6); color: #fff; padding: 48rpx 32rpx 36rpx; }
 .hero-title { font-size: 44rpx; font-weight: 700; }
 .hero-sub { opacity: .85; margin-top: 8rpx; font-size: 26rpx; }
 .g-title { font-size: 30rpx; font-weight: 600; margin-bottom: 18rpx; }

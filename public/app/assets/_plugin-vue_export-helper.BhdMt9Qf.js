@@ -1,0 +1,1 @@
+import{g as t,h as s}from"./index-s-3IDQge.js";const o="https://iceoftea.github.io/QDU-Nav";function n(o,n){t({data:o,success:()=>s({title:n||"网页链接",content:"链接已复制：\n"+o+"\n\n请在浏览器中打开。",showCancel:!1})})}const c=(t,s)=>{const o=t.__vccOpts||t;for(const[n,c]of s)o[n]=c;return o};export{o as S,c as _,n as o};

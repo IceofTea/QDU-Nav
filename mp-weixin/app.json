@@ -1,18 +1,18 @@
-﻿{
+{
     "pages":  [
                   "pages/index/index",
                   "pages/services/services",
                   "pages/about/about"
               ],
     "window":  {
-                   "navigationBarBackgroundColor":  "#0f5aa8",
+                   "navigationBarBackgroundColor":  "#1b66c9",
                    "navigationBarTitleText":  "青大导航",
                    "navigationBarTextStyle":  "white",
                    "backgroundColor":  "#f5f6fa"
                },
     "tabBar":  {
                    "color":  "#8a8f99",
-                   "selectedColor":  "#0f5aa8",
+                   "selectedColor":  "#1b66c9",
                    "backgroundColor":  "#ffffff",
                    "list":  [
                                 {
